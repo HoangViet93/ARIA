@@ -1,0 +1,43 @@
+{
+  "name": "srs-studio",
+  "version": "0.1.0",
+  "description": "Requirements management for automotive system/component SRS. Item tree, typed items, LaTeX as single source of truth, PDF export.",
+  "main": "main.js",
+  "scripts": {
+    "build": "esbuild renderer/src/richtext.js renderer/src/shared.js --bundle --format=esm --outdir=renderer/dist",
+    "version:write": "node scripts/write-version.js",
+    "prestart": "npm run build && npm run version:write",
+    "start": "electron .",
+    "test": "node --test test/model.test.js test/check.test.js test/docdiff.test.js test/gitrepo.test.js test/newtypes.test.js test/uiux.test.js test/richtext.test.mjs test/latex-compile.test.mjs",
+    "test:ui": "SRS_TEST=1 SRS_SHOTS=.shots electron test/ui-smoke.js",
+    "test:cache": "SRS_TEST=1 electron test/render-cache.js",
+    "sample": "node scripts/make-sample.js && node scripts/make-epb-sample.js",
+    "sample:workspace": "node scripts/make-vf9-workspace.js",
+    "check": "node scripts/check.js projects/BCM-Door-Lock/data.tex projects/EPB-Park-Brake/data.tex",
+    "test:editor": "SRS_TEST=1 electron test/editor-audit.js",
+    "test:all": "npm test && npm run test:ui && npm run test:editor && npm run test:git && npm run test:cache && npm run test:workspace",
+    "test:git": "SRS_TEST=1 electron test/git-ui.js",
+    "test:workspace": "node scripts/make-vf9-workspace.js --force && SRS_TEST=1 electron test/workspace-ui.js",
+    "seed-history": "node scripts/seed-history.js",
+    "perf": "SRS_TEST=1 electron test/perf.js"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-highlight": "^3.31.3",
+    "@tiptap/extension-image": "^3.31.3",
+    "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/extension-table": "^3.31.3",
+    "@tiptap/extension-table-cell": "^3.31.3",
+    "@tiptap/extension-table-header": "^3.31.3",
+    "@tiptap/extension-table-row": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "exceljs": "^4.4.0",
+    "isomorphic-git": "^1.42.2",
+    "katex": "^0.18.7"
+  }
+}

@@ -1,0 +1,935 @@
+% =====================================================================
+% SRS Studio — presentation layer.
+%
+% This file owns ALL formatting. data.tex owns only content. The app
+% copies this file into the project folder on every compile, so editing
+% it here changes every project's next export.
+%
+% data.tex is \input TWICE on purpose:
+%   pass 1 — item macros are no-ops, so only \doc* metadata is harvested;
+%            that lets the title page and running headers be typeset
+%            before any body content exists.
+%   pass 2 — item macros get their real definitions and the body prints.
+% Everything in data.tex lives inside macro arguments, so pass 1 emits
+% nothing but blank space.
+% =====================================================================
+\documentclass[10.5pt,a4paper]{article}
+
+% The on-screen document view is sans-serif end to end, so the export is too —
+% "Xuất PDF giống hiển thị trên app" only holds if the type matches.
+\usepackage{fontspec}
+\setmainfont{DejaVu Sans}[Scale=0.96]
+\setsansfont{DejaVu Sans}[Scale=0.96]
+\setmonofont{DejaVu Sans Mono}[Scale=0.84]
+\linespread{1.16}
+
+\usepackage[margin=2.2cm,headheight=15pt]{geometry}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[normalem]{ulem}   % \sout for struck-through rich text
+\usepackage{hyperref}
+\usepackage{tikz}   % \obdconnector snippet only — see resources/template.tex \obdconnector
+\hypersetup{
+  colorlinks=true, linkcolor=srsaccent, urlcolor=srsaccent,
+  citecolor=srsaccent, bookmarksnumbered=true, bookmarksopen=true,
+}
+
+% ------------------------------------------------------------- palette
+\definecolor{srsaccent}{HTML}{1D4ED8}
+\definecolor{srsinfo}{HTML}{475569}
+\definecolor{srsfunc}{HTML}{1D4ED8}
+\definecolor{srsdesign}{HTML}{7C3AED}
+\definecolor{srsdvp}{HTML}{0F766E}
+\definecolor{srscal}{HTML}{15803D}
+\definecolor{srsiface}{HTML}{B45309}
+\definecolor{srscomp}{HTML}{0E7490}
+\definecolor{srsrule}{HTML}{CBD5E1}
+\definecolor{srsline}{HTML}{E2E8F0}
+\definecolor{srsmuted}{HTML}{64748B}
+\definecolor{srsmuted2}{HTML}{94A3B8}
+\definecolor{srsdanger}{HTML}{B91C1C}
+\definecolor{srsink}{HTML}{0F172A}
+\definecolor{srsink2}{HTML}{334155}
+\definecolor{srsthbg}{HTML}{F8FAFC}
+% ASIL chip colours, copied from .asil-* in renderer/style.css
+\definecolor{asilQMbg}{HTML}{EEF2F6}\definecolor{asilQMfg}{HTML}{475569}
+\definecolor{asilAbg}{HTML}{FEF9C3}\definecolor{asilAfg}{HTML}{854D0E}
+\definecolor{asilBbg}{HTML}{FFEDD5}\definecolor{asilBfg}{HTML}{9A3412}
+\definecolor{asilCbg}{HTML}{FEE2E2}\definecolor{asilCfg}{HTML}{B91C1C}
+\definecolor{asilDbg}{HTML}{FECACA}\definecolor{asilDfg}{HTML}{7F1D1D}
+\definecolor{srschipbg}{HTML}{EEF2F6}
+\definecolor{srsuiux}{HTML}{6D28D9}
+\definecolor{srsuiuxbg}{HTML}{FAF9FF}
+
+% Table rules on screen are 1px of --line-strong, not the default heavy black.
+\arrayrulecolor{srsrule}
+\setlength{\arrayrulewidth}{0.5pt}
+
+\color{srsink2}
+
+% ------------------------------------------------------------ sectioning
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{3}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+% Without this, a page ending with just a short properties table gets its
+% interline glue stretched to justify the page bottom — a huge blank gap
+% that has nothing to do with the table's own content.
+\raggedbottom
+
+\titleformat{\section}{\large\bfseries\sffamily\color{srsink}}{\color{srsmuted2}\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalsize\bfseries\sffamily\color{srsink}}{\color{srsmuted2}\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\small\bfseries\sffamily\color{srsink}}{\color{srsmuted2}\thesubsubsection}{0.7em}{}
+\titleformat{\paragraph}[hang]{\small\bfseries\sffamily}{\theparagraph}{0.7em}{}
+\titlespacing*{\paragraph}{0pt}{2.2ex plus 1ex minus .2ex}{1ex plus .2ex}
+\titleformat{\subparagraph}[hang]{\small\bfseries\sffamily}{\thesubparagraph}{0.7em}{}
+\titlespacing*{\subparagraph}{0pt}{2.2ex plus 1ex minus .2ex}{1ex plus .2ex}
+
+% ------------------------------------------------- document metadata slots
+\gdef\srsShortName{}\gdef\srsTitle{}\gdef\srsSubtitle{}
+\gdef\srsDocNo{}\gdef\srsRevision{}\gdef\srsDate{}\gdef\srsClass{}
+
+\newcommand{\docname}[1]{\gdef\srsShortName{#1}}
+\newcommand{\doctitle}[1]{\gdef\srsTitle{#1}}
+\newcommand{\docsubtitle}[1]{\gdef\srsSubtitle{#1}}
+\newcommand{\docno}[1]{\gdef\srsDocNo{#1}}
+\newcommand{\docrevision}[1]{\gdef\srsRevision{#1}}
+\newcommand{\docdate}[1]{\gdef\srsDate{#1}}
+\newcommand{\docclass}[1]{\gdef\srsClass{#1}}
+\newcommand{\docnextid}[1]{}  % bookkeeping for the app; nothing to typeset
+
+% ----------------------------------------------------------- field labels
+% One line per field key declared in lib/itemTypes.js. An unknown key falls
+% back to printing the raw key, so a hand-added field still shows up.
+\expandafter\def\csname srslabel@deployMaster\endcsname{Master}
+\expandafter\def\csname srslabel@deploySlave\endcsname{Slave}
+\expandafter\def\csname srslabel@featureCode\endcsname{Feature code}
+\expandafter\def\csname srslabel@rationale\endcsname{Rationale}
+\expandafter\def\csname srslabel@functionCode\endcsname{Function code}
+\expandafter\def\csname srslabel@asil\endcsname{ASIL level}
+\expandafter\def\csname srslabel@verification\endcsname{Verification methods}
+\expandafter\def\csname srslabel@enterCondition\endcsname{Enter condition}
+\expandafter\def\csname srslabel@exitCondition\endcsname{Exit condition}
+\expandafter\def\csname srslabel@verifies\endcsname{Verifies}
+\expandafter\def\csname srslabel@testLevel\endcsname{Test level}
+\expandafter\def\csname srslabel@equipment\endcsname{Equipment / fixture}
+\expandafter\def\csname srslabel@preCondition\endcsname{Pre-condition}
+\expandafter\def\csname srslabel@postCondition\endcsname{Post-condition}
+\expandafter\def\csname srslabel@acceptance\endcsname{Acceptance criteria}
+\expandafter\def\csname srslabel@symbol\endcsname{Symbol}
+\expandafter\def\csname srslabel@unit\endcsname{Unit}
+\expandafter\def\csname srslabel@defaultValue\endcsname{Default value}
+\expandafter\def\csname srslabel@values\endcsname{Allowed values}
+\expandafter\def\csname srslabel@physical\endcsname{Physical layer}
+\expandafter\def\csname srslabel@uiImpact\endcsname{UI/UX impact}
+\expandafter\def\csname srslabel@enterCondition@warn\endcsname{Shown when}
+\expandafter\def\csname srslabel@exitCondition@warn\endcsname{Cleared when}
+\expandafter\def\csname srslabel@enterDelay@warn\endcsname{Turn-on delay}
+\expandafter\def\csname srslabel@exitDelay@warn\endcsname{Turn-off delay}
+\expandafter\def\csname srslabel@minValue\endcsname{Minimum value}
+\expandafter\def\csname srslabel@maxValue\endcsname{Maximum value}
+\expandafter\def\csname srslabel@dataType\endcsname{Data type}
+\expandafter\def\csname srslabel@resolution\endcsname{Resolution}
+\expandafter\def\csname srslabel@storage\endcsname{Storage}
+\expandafter\def\csname srslabel@senderEcu\endcsname{Sender ECU}
+\expandafter\def\csname srslabel@receiverEcu\endcsname{Receiver ECU}
+
+\newcommand{\srslabelof}[1]{%
+  \ifcsname srslabel@#1\endcsname\csname srslabel@#1\endcsname\else\texttt{#1}\fi
+}
+
+% ---- field VALUES styled like their on-screen counterparts -----------
+% Everything here is wrapped in \makeatletter: without it, `@` is not a letter
+% and `\def\srsasil@QM{QM}` silently defines \srsasil (with @QM as a delimiter)
+% rather than \srsasil@QM, which then collides with the real \srsasil below.
+\makeatletter
+
+\newcommand{\srschipbox}[3]{%
+  \colorbox{#1}{\textcolor{#2}{\sffamily\footnotesize\bfseries\,#3\,}}%
+}
+
+% ASIL renders as the same coloured chip the app shows.
+\def\srsasil@QM{QM}\def\srsasil@A{ASIL A}\def\srsasil@B{ASIL B}
+\def\srsasil@C{ASIL C}\def\srsasil@D{ASIL D}
+\newcommand{\srsasil}[1]{%
+  \def\srsasil@in{#1}%
+  \ifx\srsasil@in\srsasil@QM\srschipbox{asilQMbg}{asilQMfg}{#1}\else
+  \ifx\srsasil@in\srsasil@A\srschipbox{asilAbg}{asilAfg}{#1}\else
+  \ifx\srsasil@in\srsasil@B\srschipbox{asilBbg}{asilBfg}{#1}\else
+  \ifx\srsasil@in\srsasil@C\srschipbox{asilCbg}{asilCfg}{#1}\else
+  \ifx\srsasil@in\srsasil@D\srschipbox{asilDbg}{asilDfg}{#1}\else
+  #1\fi\fi\fi\fi\fi
+}
+
+% "Test; Analysis" renders as one chip per value, like the app.
+\newcommand{\srschips}[1]{\srschip@loop#1;\@nil}
+\def\srschip@loop#1;#2\@nil{%
+  \srschipbox{srschipbg}{srsink2}{\ignorespaces#1\unskip}\hspace{2pt}%
+  \def\srschip@rest{#2}%
+  \ifx\srschip@rest\@empty\else\srschip@loop#2\@nil\fi
+}
+
+% A reference to another item is a blue mono chip on screen; link it here.
+\newcommand{\srsrefval}[1]{\hyperref[srs:#1]{\textcolor{srsaccent}{\texttt{\small #1}}}}
+
+\def\srskey@asil{asil}
+\def\srskey@functionCode{functionCode}
+\def\srskey@uiImpact{uiImpact}
+\newcommand{\srsfieldvalue}[2]{%
+  \def\srsfield@key{#1}%
+  \ifx\srsfield@key\srskey@asil\srsasil{#2}\else
+  \ifx\srsfield@key\srskey@functionCode\srsrefval{#2}\else
+  \ifx\srsfield@key\srskey@uiImpact\srsbadge{srsuiux}{UI/UX}{}\else
+  #2\fi\fi\fi
+}
+\makeatother
+
+% ------------------------------------------------------------- type badge
+\def\srstypeinfo{information}
+\def\srstypefunc{function}
+\def\srstypedsgn{design}
+\def\srstypedvp{dvp}
+\def\srstypecal{calibration}
+\def\srstypeiface{interface}
+\def\srstypecomponent{component}
+
+\newcommand{\srsbadge}[3]{%
+  \colorbox{#1!12}{\textcolor{#1}{\sffamily\scriptsize\bfseries\,#2\,}}%
+}
+\newcommand{\srstypebadge}[1]{%
+  \def\srstmptype{#1}%
+  \ifx\srstmptype\srstypeinfo\srsbadge{srsinfo}{INFO}{}\else
+  \ifx\srstmptype\srstypefunc\srsbadge{srsfunc}{FUNC}{}\else
+  \ifx\srstmptype\srstypedsgn\srsbadge{srsdesign}{DSGN}{}\else
+  \ifx\srstmptype\srstypedvp\srsbadge{srsdvp}{DVP}{}\else
+  \ifx\srstmptype\srstypecal\srsbadge{srscal}{CAL}{}\else
+  \ifx\srstmptype\srstypeiface\srsbadge{srsiface}{IF}{}\else
+  \ifx\srstmptype\srstypecomponent\srsbadge{srscomp}{COMP}{}\else
+  \texttt{\scriptsize #1}\fi\fi\fi\fi\fi\fi\fi
+}
+
+% --------------------------------------------------------------- headings
+\newcounter{srsdepth}
+\setcounter{srsdepth}{0}
+
+\newcommand{\srsemitheading}[3]{%
+  \needspace{4\baselineskip}%
+  \ifcase\value{srsdepth}%
+    \or\section{#3}%
+    \or\subsection{#3}%
+    \or\subsubsection{#3}%
+    \or\paragraph{#3}%
+    \or\subparagraph{#3}%
+  \else\par\medskip\noindent{\bfseries\sffamily #3}\par\fi
+  \label{srs:#1}%
+  \par\nopagebreak\vspace{-4pt}%
+  {\srstypebadge{#2}\hspace{0.5em}\texttt{\footnotesize\textcolor{srsmuted}{#1}}}%
+  \par\nopagebreak\vspace{2pt}%
+}
+
+% ------------------------------------------------------- item body pieces
+\newcommand{\srsdesc}[1]{\par#1\par\smallskip}
+
+\newcommand{\srsrichblock}[2]{%
+  \par\smallskip
+  \noindent{\sffamily\footnotesize\bfseries\textcolor{srsmuted}{\srslabelof{#1}}}%
+  \par\nopagebreak\vspace{1pt}%
+  \begingroup\small #2\endgroup\par\smallskip
+}
+% ------------------------------------------- calibration symbol resolution
+%
+% data.tex stores only the item code in \calref{...}. The symbol lives on the
+% calibration item itself, so pass 1 harvests it into \calsym@<code> and pass 2
+% prints that. Nothing is duplicated in the file, and renaming a calibration
+% updates every mention at once.
+% \makeatletter is required: outside it, `\def\srskey@symbol{symbol}` defines
+% \srskey with "@symbol" as a delimiter instead of defining \srskey@symbol.
+\makeatletter
+\newcommand{\srsCurrentCode}{}
+\def\srskey@symbol{symbol}
+\newcommand{\harvestfield}[2]{%
+  \def\srsharvest@k{#1}%
+  \ifx\srsharvest@k\srskey@symbol
+    \expandafter\xdef\csname calsym@\srsCurrentCode\endcsname{#2}%
+  \fi
+}
+\newcommand{\calref}[1]{%
+  \ifcsname calsym@#1\endcsname
+    \hyperref[srs:#1]{\texttt{\small\textcolor{srscal}{\csname calsym@#1\endcsname}}}%
+  \else
+    \textcolor{srsdanger}{\texttt{\small[?#1]}}%
+  \fi
+}
+\makeatother
+
+% ---------------------------------------------- emitted by the rich editor
+% Internal cross-reference to another item.
+\newcommand{\srsref}[1]{\hyperref[srs:#1]{\texttt{\small #1}}}
+% Table header cell — marks the cell as a header so the parser can read it back.
+\newcommand{\srsth}[1]{\cellcolor{srsthbg}\textbf{\sffamily #1}}
+% PlantUML: the source is carried in #1 so the diagram is reviewable in a git
+% diff; the PDF uses the pre-rendered PNG in #2. If the render is missing the
+% source is printed instead of silently dropping the figure.
+\newcommand{\plantuml}[2]{%
+  \par\medskip
+  \begin{center}
+  \IfFileExists{#2}{\includegraphics[width=0.9\linewidth]{#2}}{%
+    \fbox{\parbox{0.9\linewidth}{\ttfamily\scriptsize
+      \textcolor{srsdanger}{[diagram not rendered]}\\ #1}}%
+  }
+  \end{center}
+  \par\medskip
+}
+% Sơ đồ EEA (kiến trúc điện/điện tử): #1 nguồn JSON (chỉ để git diff đọc
+% được, không in ra), #2 PNG xem trong app (không dùng ở đây), #3 PDF vector
+% dùng để in — XeLaTeX nhúng PDF trực tiếp qua \includegraphics y hệt PNG,
+% giữ nguyên chất lượng vector ở mọi mức zoom.
+\newcommand{\eeadiagram}[3]{%
+  \par\medskip
+  \begin{center}
+  \IfFileExists{#3}{\includegraphics[width=0.9\linewidth]{#3}}{%
+    \fbox{\parbox{0.9\linewidth}{\ttfamily\scriptsize
+      \textcolor{srsdanger}{[EEA diagram not rendered]}}}%
+  }
+  \end{center}
+  \par\medskip
+}
+% Snippet OBD-II: đầu nối 16 chân vẽ cố định bằng TikZ (không phải dữ liệu
+% người dùng nên không cần tham số) — bảng chức năng từng chân đi ngay sau,
+% dùng đúng bảng thường (tabularx) nên không cần macro riêng.
+\newcommand{\obdconnector}{%
+  \par\medskip
+  \begin{center}
+  \begin{tikzpicture}[x=1cm,y=1cm]
+    \draw[thick, fill=srsline] (0,1.6) -- (8,1.6) -- (7,-0.3) -- (1,-0.3) -- cycle;
+    \foreach \i in {0,...,7} {
+      \node[draw, circle, minimum size=0.5cm, inner sep=0pt, font=\tiny, fill=white] at (0.85+\i*0.9,1.0) {\the\numexpr\i+1\relax};
+    }
+    \foreach \i in {0,...,7} {
+      \node[draw, circle, minimum size=0.5cm, inner sep=0pt, font=\tiny, fill=white] at (1.1+\i*0.82,0.2) {\the\numexpr\i+9\relax};
+    }
+  \end{tikzpicture}
+  \end{center}
+  \par\medskip
+}
+
+% Interface signal referenced inline from prose, resolved like \calref.
+\newcommand{\ifref}[1]{%
+  \ifcsname calsym@#1\endcsname
+    \hyperref[srs:#1]{\texttt{\small\textcolor{srsiface}{\csname calsym@#1\endcsname}}}%
+  \else
+    \textcolor{srsdanger}{\texttt{\small[?#1]}}%
+  \fi
+}
+% Component referenced inline from prose ("@ mention"), resolved the same way.
+\newcommand{\compref}[1]{%
+  \ifcsname calsym@#1\endcsname
+    \hyperref[srs:#1]{\texttt{\small\textcolor{srscomp}{\csname calsym@#1\endcsname}}}%
+  \else
+    \textcolor{srsdanger}{\texttt{\small[?#1]}}%
+  \fi
+}
+% Cross-book "@" mention (Workspace tab). #1 book id, #2 code — neither is
+% resolvable at THIS book's compile time (the target item lives in a sibling
+% book's own data.tex), so #3 carries the display name inline instead of a
+% \hyperref/\calsym lookup. No link target in the PDF; just readable text in
+% the accent colour that marks it as a reference rather than plain prose.
+\newcommand{\xref}[3]{\textcolor{srsaccent}{\texttt{\small #3}}}
+
+% Horizontal rule inside rich text.
+\newcommand{\srshrule}{\par\vspace{3pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{3pt}}
+
+% ----------------------------------------------------------- test steps
+\newcounter{srsstep}
+% tabular, NOT tabularx: tabularx scans the token stream for \end{tabularx}
+% and cannot find it when \begin and \end live in two different macros — the
+% same trap already documented for itemprops. \strut in both wide columns keeps
+% their first baselines level.
+\newlength{\srsstepcol}
+\newcommand{\srsstepsbegin}{%
+  \par\smallskip
+  \setcounter{srsstep}{0}%
+  \setlength{\srsstepcol}{\dimexpr0.5\linewidth-1.1cm\relax}%
+  \begingroup\small\setlength{\parskip}{0pt}\renewcommand{\arraystretch}{1.3}%
+  \noindent\begin{tabular}{@{}>{\strut\centering\arraybackslash\color{srsmuted}}p{0.8cm}|>{\strut\raggedright\arraybackslash}p{\srsstepcol}|>{\strut\raggedright\arraybackslash}p{\srsstepcol}@{}}
+  \rowcolor{srsthbg}\textbf{\sffamily\footnotesize\#} &
+  \textbf{\sffamily\footnotesize Action} &
+  \textbf{\sffamily\footnotesize Expected result} \tabularnewline
+  \hline
+}
+\newcommand{\srsstepsend}{%
+  \end{tabular}%
+  \endgroup\par\smallskip
+}
+
+% ------------------------------------------------------ UI/UX impact
+%
+% Settings are a plain three-column table, laid out exactly like the test-step
+% table above.
+
+\newlength{\srssetcol}
+\newcommand{\srssetbegin}{%
+  \par\smallskip
+  \setlength{\srssetcol}{\dimexpr0.5\linewidth-2.3cm\relax}%
+  \begingroup\small\setlength{\parskip}{0pt}\renewcommand{\arraystretch}{1.3}%
+  \noindent\begin{tabular}{@{}>{\strut\raggedright\arraybackslash}p{\srssetcol}|>{\strut\raggedright\arraybackslash}p{\srssetcol}|>{\strut\raggedright\arraybackslash}p{4.2cm}@{}}
+  \rowcolor{srsthbg}\textbf{\sffamily\footnotesize Setting name} &
+  \textbf{\sffamily\footnotesize Values} &
+  \textbf{\sffamily\footnotesize Storage} \tabularnewline
+  \hline
+}
+\newcommand{\srssetend}{%
+  \end{tabular}%
+  \endgroup\par\smallskip
+}
+
+\makeatletter
+\def\srsscope@profile{profile}
+\def\srsscope@global{global}
+\def\srsscope@volatile{volatile}
+\newcommand{\srsscopelabel}[1]{%
+  \def\srsscope@x{#1}%
+  \ifx\srsscope@x\srsscope@profile Per driver profile\else
+  \ifx\srsscope@x\srsscope@global Global (whole vehicle)\else
+  \ifx\srsscope@x\srsscope@volatile Not persisted\else #1\fi\fi\fi
+}
+\makeatother
+
+% Warnings are a table too, built from \parbox rows like the interface table
+% below and for the identical reason: \uiwarning opens one warning record and
+% the \uiwarnrich call(s) that may follow attach conditions to it, so the row's
+% content is only complete once the NEXT \uiwarning (or \srswarnend) confirms
+% no more \uiwarnrich is coming for it — a real tabular's row cannot be held
+% open across those separate macro calls. So each record is harvested into
+% \warnval@* and flushed as one row at that point.
+\newlength{\srswarndesc}
+\newlength{\srswarngap}
+\newif\ifsrswarnpending
+\makeatletter
+\gdef\warnval@id{}\gdef\warnval@on{}\gdef\warnval@off{}
+\gdef\warnval@enter{}\gdef\warnval@exit{}
+\def\srskey@wenter{enterCondition}\def\srskey@wexit{exitCondition}
+\newcommand{\srswarnresetrow}{%
+  \gdef\warnval@id{}\gdef\warnval@on{}\gdef\warnval@off{}%
+  \gdef\warnval@enter{}\gdef\warnval@exit{}%
+}
+\newcommand{\srswarnsetup}{%
+  \setlength{\srswarngap}{5pt}%
+  % Fixed columns: 2.4cm (badge) + 1.6cm + 1.6cm = 5.6cm, plus 4 inter-column
+  % gaps; whatever is left splits evenly between the two condition columns.
+  \setlength{\srswarndesc}{\dimexpr(\linewidth-5.6cm-4\srswarngap)/2\relax}%
+}
+\newcommand{\srswarncells}[5]{%
+  \parbox[t]{2.4cm}{\raggedright\strut #1}\hspace{\srswarngap}%
+  \parbox[t]{1.6cm}{\raggedright\strut #2}\hspace{\srswarngap}%
+  \parbox[t]{1.6cm}{\raggedright\strut #3}\hspace{\srswarngap}%
+  \parbox[t]{\srswarndesc}{\raggedright\strut #4}\hspace{\srswarngap}%
+  \parbox[t]{\srswarndesc}{\raggedright\strut #5}%
+  \par
+}
+\newcommand{\srswarnflush}{%
+  \ifsrswarnpending
+    \srswarncells{\srsbadge{srsuiux}{\warnval@id}{}}{\warnval@on}{\warnval@off}%
+      {\warnval@enter}{\warnval@exit}%
+    \vspace{1pt}\noindent\textcolor{srsline}{\rule{\linewidth}{0.3pt}}\par\vspace{2pt}%
+  \fi
+}
+\newcommand{\srswarnbegin}{%
+  \par\smallskip
+  \begingroup\small\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+  \srswarnsetup
+  \noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{2pt}%
+  {\sffamily\footnotesize\bfseries\color{srsmuted}%
+   \srswarncells{Warning}{Turn-on delay}{Turn-off delay}{Shown when}{Cleared when}}%
+  \vspace{2pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{3pt}%
+  \srswarnresetrow\srswarnpendingfalse
+}
+\newcommand{\srswarnend}{%
+  \srswarnflush
+  \endgroup\par\smallskip
+}
+\newcommand{\srswarnhead}[3]{%
+  \srswarnflush
+  \srswarnresetrow
+  \gdef\warnval@id{#1}\gdef\warnval@on{#2}\gdef\warnval@off{#3}%
+  \srswarnpendingtrue
+}
+\newcommand{\srswarncond}[2]{%
+  \def\srswarn@k{#1}%
+  \ifx\srswarn@k\srskey@wenter\gdef\warnval@enter{#2}\else
+  \ifx\srswarn@k\srskey@wexit\gdef\warnval@exit{#2}\fi\fi
+}
+\makeatother
+
+% ------------------------------------------------------- interface table
+% A run of consecutive interface items is wrapped by the generator so it can be
+% laid out as one table instead of one block per signal.
+%
+% Built from \parbox rows rather than longtable/tabular ON PURPOSE. Each item is
+% a \begin{srsitem}...\end{srsitem} environment, and a LaTeX environment opens a
+% group; inside an alignment the row-ending \\ would then fire while that group
+% is still open, which TeX rejects with "Extra }, or forgotten \endgroup". Laying
+% the row out as boxes sidesteps alignment entirely.
+\newif\ifinifacegroup
+\newlength{\srsifdesc}
+\newlength{\srsifgap}
+
+\makeatletter
+\gdef\ifval@unit{}\gdef\ifval@defaultValue{}\gdef\ifval@senderEcu{}\gdef\ifval@receiverEcu{}\gdef\ifval@desc{}
+\gdef\ifval@values{}\gdef\ifval@physical{}
+\newcommand{\ifaceresetrow}{%
+  \gdef\ifval@unit{}\gdef\ifval@defaultValue{}%
+  \gdef\ifval@senderEcu{}\gdef\ifval@receiverEcu{}\gdef\ifval@desc{}%
+  \gdef\ifval@values{}\gdef\ifval@physical{}%
+}
+\def\srskey@unit{unit}\def\srskey@defaultValue{defaultValue}
+\def\srskey@senderEcu{senderEcu}\def\srskey@receiverEcu{receiverEcu}
+\def\srskey@values{values}\def\srskey@physical{physical}
+\newcommand{\ifacefield}[2]{%
+  \def\srsif@k{#1}%
+  \ifx\srsif@k\srskey@unit\gdef\ifval@unit{#2}\else
+  \ifx\srsif@k\srskey@defaultValue\gdef\ifval@defaultValue{#2}\else
+  \ifx\srsif@k\srskey@senderEcu\gdef\ifval@senderEcu{#2}\else
+  \ifx\srsif@k\srskey@receiverEcu\gdef\ifval@receiverEcu{#2}\else
+  \ifx\srsif@k\srskey@values\gdef\ifval@values{#2}\else
+  \ifx\srsif@k\srskey@physical\gdef\ifval@physical{#2}%
+  \fi\fi\fi\fi\fi\fi
+}
+
+% Column widths; the description takes whatever is left.
+\newcommand{\srsifsetup}{%
+  \setlength{\srsifgap}{5pt}%
+  % "RELEASED" does not fit 1.4cm and TeX cannot hyphenate it, so it used to
+  % spill into the next column. Widths below leave the description room.
+  \setlength{\srsifdesc}{\dimexpr\linewidth-13.0cm\relax}%
+}
+\newcommand{\ifacecells}[8]{%
+  \parbox[t]{1.7cm}{\raggedright\strut #1}\hspace{\srsifgap}%
+  \parbox[t]{2.8cm}{\raggedright\strut #2}\hspace{\srsifgap}%
+  \parbox[t]{\srsifdesc}{\raggedright\strut #3}\hspace{\srsifgap}%
+  \parbox[t]{1.5cm}{\raggedright\strut #4}\hspace{\srsifgap}%
+  \parbox[t]{1.0cm}{\raggedright\strut #5}\hspace{\srsifgap}%
+  \parbox[t]{1.9cm}{\raggedright\strut #6}\hspace{\srsifgap}%
+  \parbox[t]{1.4cm}{\raggedright\strut #7}\hspace{\srsifgap}%
+  \parbox[t]{1.4cm}{\raggedright\strut #8}%
+  \par
+}
+\newcommand{\srsifacebegin}{%
+  \inifacegrouptrue
+  \par\smallskip
+  \begingroup\small\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+  \srsifsetup
+  \noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{2pt}%
+  {\sffamily\footnotesize\bfseries\color{srsmuted}%
+   \ifacecells{Code}{Signal}{Description}{Physical layer}{Unit}{Default}{Sender ECU}{Receiver ECU}}%
+  \vspace{2pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{3pt}%
+  \ifaceresetrow
+}
+\newcommand{\srsifaceend}{%
+  \vspace{-1pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}%
+  \endgroup\inifacegroupfalse\par\smallskip
+}
+% An enum signal has no unit and no range. On screen the unit column reads
+% "enum" and the allowed values sit under the description; print the same here,
+% or the value list would be missing from the PDF entirely.
+\newcommand{\ifacedesccell}{%
+  \ifval@desc
+  \ifx\ifval@values\@empty\else
+    \par\vspace{1.5pt}{\scriptsize\ttfamily\textcolor{srsmuted}{\ifval@values}}%
+  \fi
+}
+\newcommand{\ifaceunitcell}{%
+  \ifx\ifval@values\@empty\ifval@unit\else
+    {\ttfamily\scriptsize\textcolor{srsmuted}{enum}}%
+  \fi
+}
+\newcommand{\ifaceflush}[2]{%
+  \label{srs:#1}%
+  \ifacecells
+    {\ttfamily\scriptsize\textcolor{srsmuted}{#1}}%
+    {\ttfamily\small #2}%
+    {\ifacedesccell}{\ifval@physical}{\ifaceunitcell}{\ifval@defaultValue}%
+    {\ifval@senderEcu}{\ifval@receiverEcu}%
+  \vspace{1pt}\noindent\textcolor{srsline}{\rule{\linewidth}{0.3pt}}\par\vspace{2pt}%
+  \ifaceresetrow
+}
+\makeatother
+
+% ------------------------------------------------------- component table
+% A run of consecutive Component items collapses into one table, exactly like
+% Interface above — same \parbox-row technique, for the same reason (an
+% environment cannot span an alignment row boundary, so a real tabular cannot
+% hold a nested \begin{srsitem}...\end{srsitem}).
+\newif\ifincompgroup
+\newlength{\srscompdesc}
+\newlength{\srscompgap}
+
+\makeatletter
+\newcommand{\compresetrow}{\gdef\ifval@desc{}}
+% Component has no fields of its own today (lib/itemTypes.js). \compfield is a
+% no-op — kept, not deleted, because a hand-edited data.tex or a project saved
+% before this field set shrank can still carry a foreign \itemfield for this
+% item (e.g. an old "team"/"contact"): foreignFieldKeys() keeps that data in
+% the file and shows it in the edit-form banner, but it has no table cell to
+% land in here, so it is silently not printed rather than erroring the build.
+\newcommand{\compfield}[2]{}
+
+\newcommand{\srscompsetup}{%
+  \setlength{\srscompgap}{5pt}%
+  \setlength{\srscompdesc}{\dimexpr\linewidth-4.5cm\relax}%
+}
+\newcommand{\compcells}[3]{%
+  \parbox[t]{1.7cm}{\raggedright\strut #1}\hspace{\srscompgap}%
+  \parbox[t]{2.8cm}{\raggedright\strut #2}\hspace{\srscompgap}%
+  \parbox[t]{\srscompdesc}{\raggedright\strut #3}%
+  \par
+}
+\newcommand{\srscompbegin}{%
+  \incompgrouptrue
+  \par\smallskip
+  \begingroup\small\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+  \srscompsetup
+  \noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{2pt}%
+  {\sffamily\footnotesize\bfseries\color{srsmuted}%
+   \compcells{Code}{Component name}{Description}}%
+  \vspace{2pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{3pt}%
+  \compresetrow
+}
+\newcommand{\srscompend}{%
+  \vspace{-1pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}%
+  \endgroup\incompgroupfalse\par\smallskip
+}
+\newcommand{\compflush}[2]{%
+  \label{srs:#1}%
+  \compcells
+    {\ttfamily\scriptsize\textcolor{srsmuted}{#1}}%
+    {\ttfamily\small #2}%
+    {\ifval@desc}%
+  \vspace{1pt}\noindent\textcolor{srsline}{\rule{\linewidth}{0.3pt}}\par\vspace{2pt}%
+  \compresetrow
+}
+\makeatother
+
+% ------------------------------------------------------- calibration table
+% A run of consecutive Calibration items collapses into one table too — same
+% \parbox-row technique as Interface/Component, same reason. \srsIfCode/
+% \srsIfName from the interface/component branch are reused here as well
+% (still safe: a run is never a mix of table kinds).
+\newif\ifincalgroup
+\newlength{\srscaldesc}
+\newlength{\srscalgap}
+
+\makeatletter
+\gdef\calval@unit{}\gdef\calval@defaultValue{}\gdef\calval@minValue{}\gdef\calval@maxValue{}
+\gdef\calval@values{}\gdef\calval@desc{}\gdef\calval@symbol{}
+\newcommand{\calresetrow}{%
+  \gdef\calval@unit{}\gdef\calval@defaultValue{}\gdef\calval@minValue{}\gdef\calval@maxValue{}%
+  \gdef\calval@values{}\gdef\calval@desc{}\gdef\calval@symbol{}%
+}
+\def\srskey@minValue{minValue}\def\srskey@maxValue{maxValue}\def\srskey@symbol{symbol}
+\newcommand{\calfield}[2]{%
+  \def\srscal@k{#1}%
+  \ifx\srscal@k\srskey@unit\gdef\calval@unit{#2}\else
+  \ifx\srscal@k\srskey@defaultValue\gdef\calval@defaultValue{#2}\else
+  \ifx\srscal@k\srskey@minValue\gdef\calval@minValue{#2}\else
+  \ifx\srscal@k\srskey@maxValue\gdef\calval@maxValue{#2}\else
+  \ifx\srscal@k\srskey@values\gdef\calval@values{#2}\else
+  \ifx\srscal@k\srskey@symbol\gdef\calval@symbol{#2}%
+  \fi\fi\fi\fi\fi\fi
+}
+
+\newcommand{\srscalsetup}{%
+  \setlength{\srscalgap}{5pt}%
+  \setlength{\srscaldesc}{\dimexpr\linewidth-13.0cm\relax}%
+}
+\newcommand{\calcells}[8]{%
+  \parbox[t]{1.4cm}{\raggedright\strut #1}\hspace{\srscalgap}%
+  \parbox[t]{2.4cm}{\raggedright\strut #2}\hspace{\srscalgap}%
+  \parbox[t]{2.6cm}{\raggedright\strut #3}\hspace{\srscalgap}%
+  \parbox[t]{1.0cm}{\raggedright\strut #4}\hspace{\srscalgap}%
+  \parbox[t]{1.2cm}{\raggedright\strut #5}\hspace{\srscalgap}%
+  \parbox[t]{0.8cm}{\raggedright\strut #6}\hspace{\srscalgap}%
+  \parbox[t]{0.8cm}{\raggedright\strut #7}\hspace{\srscalgap}%
+  \parbox[t]{\srscaldesc}{\raggedright\strut #8}%
+  \par
+}
+\newcommand{\srscalbegin}{%
+  \incalgrouptrue
+  \par\smallskip
+  \begingroup\small\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+  \srscalsetup
+  \noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{2pt}%
+  {\sffamily\footnotesize\bfseries\color{srsmuted}%
+   \calcells{Code}{Symbol}{Title}{Unit}{Default}{Min}{Max}{Description}}%
+  \vspace{2pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}\par\vspace{3pt}%
+  \calresetrow
+}
+\newcommand{\srscalend}{%
+  \vspace{-1pt}\noindent\textcolor{srsrule}{\rule{\linewidth}{0.6pt}}%
+  \endgroup\incalgroupfalse\par\smallskip
+}
+% Same enum treatment as the interface table: value list under the
+% description, "enum" where a unit would otherwise be shown.
+\newcommand{\caldesccell}{%
+  \calval@desc
+  \ifx\calval@values\@empty\else
+    \par\vspace{1.5pt}{\scriptsize\ttfamily\textcolor{srsmuted}{\calval@values}}%
+  \fi
+}
+\newcommand{\calunitcell}{%
+  \ifx\calval@values\@empty\calval@unit\else
+    {\ttfamily\scriptsize\textcolor{srsmuted}{enum}}%
+  \fi
+}
+% A calibration symbol is one long unbreakable \ttfamily token with no space
+% for \raggedright to break at — the box just overflows into the next column
+% instead of wrapping. Letting \_ carry a break point after it (safe: valid
+% only inside this \begingroup) fixes the realistic case, an
+% underscore-separated identifier, without touching \_ anywhere else in the
+% document.
+\newcommand{\calbreakablesymbol}[1]{%
+  \begingroup
+  \let\srs@origscore\_%
+  \def\_{\srs@origscore\allowbreak}%
+  #1%
+  \endgroup
+}
+\newcommand{\calflush}[2]{%
+  \label{srs:#1}%
+  \calcells
+    {\ttfamily\scriptsize\textcolor{srsmuted}{#1}}%
+    {\ttfamily\scriptsize\textcolor{srscal}{\calbreakablesymbol{\calval@symbol}}}%
+    {#2}%
+    {\calunitcell}{\calval@defaultValue}{\calval@minValue}{\calval@maxValue}%
+    {\caldesccell}%
+  \vspace{1pt}\noindent\textcolor{srsline}{\rule{\linewidth}{0.3pt}}\par\vspace{2pt}%
+  \calresetrow
+}
+\makeatother
+
+% ------------------------------------------------------------ title page
+\newcommand{\srsmaketitle}{%
+  \thispagestyle{empty}%
+  \vspace*{2.2cm}
+  \begin{center}
+    {\sffamily\Huge\bfseries \srsTitle}\\[10pt]
+    {\sffamily\large\textcolor{srsmuted}{\srsSubtitle}}\\[26pt]
+    \begin{tabular}{@{}>{\sffamily\bfseries\footnotesize\color{srsmuted}}r@{\hspace{1.4em}}l@{}}
+      \toprule
+      DOCUMENT NO   & \srsDocNo \\
+      REVISION      & \srsRevision \\
+      DATE          & \srsDate \\
+      CLASSIFICATION & \srsClass \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{center}
+    {\sffamily\footnotesize\textcolor{srsmuted}{%
+      Generated by ARIA — source of truth: \texttt{data.tex}}}
+  \end{center}
+  \clearpage
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\lhead{\sffamily\footnotesize\textcolor{srsmuted}{\srsTitle}}
+\rhead{\sffamily\footnotesize\textcolor{srsmuted}{\srsDocNo\ \ Rev \srsRevision}}
+\rfoot{\sffamily\footnotesize\thepage}
+
+% =====================================================================
+\begin{document}
+
+% ---- pass 1: harvest metadata and calibration symbols, typeset nothing --
+% Pass 1 records the display name of every calibration and interface so that
+% \calref / \ifref can print a name while data.tex stores only the code.
+\makeatletter
+\def\srstype@iface{interface}
+\def\srstype@component{component}
+\newenvironment{srsitem}[3]{%
+  \gdef\srsCurrentCode{#1}%
+  \def\srsp@type{#2}%
+  \ifx\srsp@type\srstype@iface
+    \expandafter\xdef\csname calsym@#1\endcsname{#3}%
+  \else
+    \ifx\srsp@type\srstype@component
+      \expandafter\xdef\csname calsym@#1\endcsname{#3}%
+    \fi
+  \fi
+}{}
+\makeatother
+\newenvironment{itemprops}{}{}
+\newenvironment{teststeps}{}{}
+\newenvironment{ifacegroup}{}{}
+\newenvironment{compgroup}{}{}
+\newenvironment{calgroup}{}{}
+\newenvironment{uisettings}{}{}
+\newenvironment{uiwarnings}{}{}
+\newcommand{\itemdesc}[1]{}
+\newcommand{\itemfield}[2]{\harvestfield{#1}{#2}}
+\newcommand{\itemrich}[2]{}
+\newcommand{\teststep}[2]{}
+\newcommand{\uisetting}[4]{}
+\newcommand{\uiwarning}[3]{}
+\newcommand{\uiwarnrich}[2]{}
+\input{data.tex}
+
+\srsmaketitle
+
+% Written fresh by the app on every compile from the real git log — see
+% writeHistoryTex() in main.js. Right after the title page (page 2) per an
+% explicit ask; absent (no repo yet, or nothing committed) means no appendix,
+% same \IfFileExists fallback as \eeadiagram/\plantuml.
+\IfFileExists{history.tex}{\input{history.tex}\clearpage}{}
+
+{\sffamily\large\bfseries Table of Contents}\vspace{6pt}
+\makeatletter\@starttoc{toc}\makeatother
+\clearpage
+
+% ---- pass 2: real definitions, body prints --------------------------
+%
+% Inside an ifacegroup an item becomes one table row instead of a heading, so
+% 200 CAN signals read as a table rather than 200 sections. The switch lives
+% here, in the presentation layer, and not in the data.
+\makeatletter
+% \srsIfCode/\srsIfName are shared by all three table kinds below — safe
+% because a run is either all-Interface, all-Component or all-Calibration
+% (groupRuns never mixes them), so only one of \ifinifacegroup /
+% \ifincompgroup / \ifincalgroup is ever true at a time.
+\renewenvironment{srsitem}[3]{%
+  \gdef\srsCurrentCode{#1}%
+  \ifinifacegroup
+    \ifaceresetrow
+    \gdef\srsIfCode{#1}\gdef\srsIfName{#3}%
+  \else\ifincompgroup
+    \compresetrow
+    \gdef\srsIfCode{#1}\gdef\srsIfName{#3}%
+  \else\ifincalgroup
+    \calresetrow
+    \gdef\srsIfCode{#1}\gdef\srsIfName{#3}%
+  \else
+    \stepcounter{srsdepth}%
+    \srsemitheading{#1}{#2}{#3}%
+  \fi\fi\fi
+}{%
+  \ifinifacegroup
+    \ifaceflush{\srsIfCode}{\srsIfName}%
+  \else\ifincompgroup
+    \compflush{\srsIfCode}{\srsIfName}%
+  \else\ifincalgroup
+    \calflush{\srsIfCode}{\srsIfName}%
+  \else
+    \addtocounter{srsdepth}{-1}%
+  \fi\fi\fi
+}
+\makeatother
+
+% Choose the branch BEFORE anything starts scanning. Leaving \begin{tabular}
+% between \else and \fi lets the tabular swallow the \fi into its body and
+% TeX reports "Incomplete \iftrue" far from the real cause.
+% \ifinitemprops tells \itemrich (below) whether the tabular from
+% \srsprops@open is currently the open one, so a compact rich field (Master/
+% Slave) knows to print its own row instead of a standalone rich block.
+\newif\ifinitemprops
+\makeatletter
+\newcommand{\srsprops@open}{%
+  \initempropstrue
+  \par\smallskip
+  % \strut in BOTH column preambles is load-bearing. Without it the two
+  % p-columns get first lines of different heights (sans has taller ascenders
+  % than serif at the same size), and since a p-column's baseline is its first
+  % line's baseline, label and value end up visibly out of line. tabularx would
+  % also fix it but cannot be used here: it scans for \end{tabularx} in the
+  % token stream, which fails when \begin/\end are split across an environment
+  % definition's two halves.
+  \begingroup\small\setlength{\parskip}{0pt}\renewcommand{\arraystretch}{1.2}%
+  \begin{tabular}{@{}>{\strut\sffamily\bfseries\color{srsmuted}\raggedright\arraybackslash}p{4.4cm}@{\hspace{1em}}>{\strut\raggedright\arraybackslash}p{\dimexpr\linewidth-5.4cm\relax}@{}}
+}
+\newcommand{\srsprops@close}{%
+  \end{tabular}%
+  \endgroup\par\smallskip
+  \initempropsfalse
+}
+\renewenvironment{itemprops}{%
+  \ifinifacegroup\let\srsprops@do\relax\else
+  \ifincompgroup\let\srsprops@do\relax\else
+  \ifincalgroup\let\srsprops@do\relax\else
+  \let\srsprops@do\srsprops@open\fi\fi\fi
+  \srsprops@do
+}{%
+  \ifinifacegroup\let\srsprops@do\relax\else
+  \ifincompgroup\let\srsprops@do\relax\else
+  \ifincalgroup\let\srsprops@do\relax\else
+  \let\srsprops@do\srsprops@close\fi\fi\fi
+  \srsprops@do
+}
+\makeatother
+
+\renewenvironment{teststeps}{\srsstepsbegin}{\srsstepsend}
+\renewcommand{\teststep}[2]{\stepcounter{srsstep}\thesrsstep & #1 & #2 \tabularnewline}
+\renewenvironment{ifacegroup}{\srsifacebegin}{\srsifaceend}
+\renewenvironment{compgroup}{\srscompbegin}{\srscompend}
+\renewenvironment{calgroup}{\srscalbegin}{\srscalend}
+\renewenvironment{uisettings}{\srssetbegin}{\srssetend}
+\renewcommand{\uisetting}[4]{%
+  #1 & #2\ifx\relax#3\relax\else\newline{\footnotesize\textcolor{srsmuted}{default: #3}}\fi
+  & \srsscopelabel{#4} \tabularnewline
+}
+\renewenvironment{uiwarnings}{\srswarnbegin}{\srswarnend}
+\renewcommand{\uiwarning}[3]{\srswarnhead{#1}{#2}{#3}}
+\renewcommand{\uiwarnrich}[2]{\srswarncond{#1}{#2}}
+
+\makeatletter
+\renewcommand{\itemdesc}[1]{%
+  \ifinifacegroup\gdef\ifval@desc{#1}\else
+  \ifincompgroup\gdef\ifval@desc{#1}\else
+  \ifincalgroup\gdef\calval@desc{#1}\else
+  \srsdesc{#1}\fi\fi\fi
+}
+\renewcommand{\itemfield}[2]{%
+  \ifinifacegroup\ifacefield{#1}{#2}\else
+  \ifincompgroup\compfield{#1}{#2}\else
+  \ifincalgroup\calfield{#1}{#2}\else
+  \srslabelof{#1} & \srsfieldvalue{#1}{#2} \tabularnewline\fi\fi\fi
+}
+% senderEcu/receiverEcu are rich (so they can hold an @ mention), but when the
+% interface is part of a table row those two values still have to land in the
+% same \ifval@senderEcu/\ifval@receiverEcu cells \ifacecells reads — \ifacefield
+% already knows those two keys and does not care whether the content it is
+% handed is escaped-plain or raw rich-subset, so it is reused as-is here.
+% \srspropsrichrow wraps "label & value \tabularnewline" in its own macro on
+% purpose: an \ifx/\if branch that is skipped (condition false) is scanned for
+% its matching \else/\fi by TeX's own token-level algorithm, and a BARE `&` or
+% `\tabularnewline` sitting in that skipped text — inside an open tabular —
+% confuses that scan into losing track of the \ifx nesting ("Incomplete \ifx"
+% far past the real line). Hiding those tokens inside a plain macro call
+% avoids the whole class of bug, which is why every other branch here
+% (\ifacefield, \compfield, \calfield, \srsrichblock) is already just a call.
+\newcommand{\srspropsrichrow}[2]{\srslabelof{#1} & #2 \tabularnewline}
+% Compact rich fields (Master/Slave) are now written by the generator INSIDE
+% \begin{itemprops}...\end{itemprops}, so outside a group this call is really
+% just another row of the properties tabular already open around it — render
+% it exactly like \itemfield's row, or it would open its own paragraph/table
+% and both the gap and the column alignment would come back.
+\renewcommand{\itemrich}[2]{%
+  \ifinifacegroup\ifacefield{#1}{#2}\else
+  \ifincompgroup\compfield{#1}{#2}\else
+  \ifincalgroup\calfield{#1}{#2}\else
+  \ifinitemprops\srspropsrichrow{#1}{#2}\else
+  \srsrichblock{#1}{#2}\fi\fi\fi\fi
+}
+\makeatother
+
+\input{data.tex}
+
+\end{document}

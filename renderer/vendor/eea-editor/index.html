@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sơ đồ EEA</title>
+<link rel="stylesheet" href="style.css" />
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="vendor/svg2pdf.umd.min.js"></script>
+<style>
+  /*
+   * This page is a trimmed embed of ev-architecture-editor's own index.html —
+   * copied wholesale (not rewritten) on purpose, see README.md in this
+   * folder. editor.js still expects every one of these elements to exist
+   * (it reads/writes them directly by id), so nothing below is deleted —
+   * only the project/git/variant chrome that lived in app.js (NOT loaded
+   * here — srs-studio's own project/git owns that instead) is hidden.
+   */
+  #variant-bar, #history-splitter, #history-panel,
+  .page-tab, #project-name, #project-status,
+  #btn-history, #btn-export-pdf, #btn-new-project,
+  #btn-save, #btn-load,
+  #page-revisions, #page-components, #page-obd {
+    display: none !important;
+  }
+  #page-tabs { justify-content: flex-end; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="variant-bar">
+    <span id="variant-bar-label" style="color:#9aa0a6;font-size:11px;margin-right:8px;">VARIANT</span>
+  </div>
+  <div id="page-tabs">
+    <button class="page-tab" data-page="revisions">1. Revision History</button>
+    <button class="page-tab active" data-page="diagram">2. Diagram</button>
+    <button class="page-tab" data-page="components">3. Components</button>
+    <button class="page-tab" data-page="obd">4. OBD Port</button>
+    <input id="project-name" type="text" value="Untitled Project" title="Project name (shown on the exported PDF)" />
+    <span id="project-status" class="fade" style="color:#9aa0a6;font-size:11px;margin-left:10px;"></span>
+    <div class="spacer"></div>
+    <button id="btn-history" title="Lịch sử git (Ctrl+H)">🕘 Lịch sử</button>
+    <button id="btn-export-pdf" title="Export all 4 pages as a PDF">📄 Export PDF</button>
+    <button id="btn-new-project" title="Start a new blank project">＋ New Project</button>
+  </div>
+  <div id="app-body">
+  <div id="app-main">
+
+  <!-- Page 1: Revision History — unused here, kept so editor.js's calls into it don't throw -->
+  <div id="page-revisions" class="page" hidden>
+    <div class="page-inner">
+      <h2>Revision History</h2>
+      <button id="btn-add-revision" class="primary-btn">+ Add revision</button>
+      <table class="data-table">
+        <thead><tr><th style="width:140px">Date</th><th style="width:180px">Author</th><th>Description of change</th><th style="width:70px"></th></tr></thead>
+        <tbody id="revisions-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Page 2: Diagram — the only page srs-studio actually shows -->
+  <div id="page-diagram" class="page">
+    <div id="toolbar">
+      <div class="toolbar-row">
+        <div class="group">
+          <button id="tool-select" class="tool active" data-tool="select" title="Select / Move (V)"><span class="ic">&#9995;</span>Select</button>
+        </div>
+        <div class="divider"></div>
+        <div class="group">
+          <button id="btn-undo" title="Undo (Ctrl+Z)"><span class="ic">&#8630;</span>Undo</button>
+          <button id="btn-redo" title="Redo (Ctrl+Y)"><span class="ic">&#8631;</span>Redo</button>
+        </div>
+        <div class="divider"></div>
+        <div class="group">
+          <button id="btn-delete" title="Delete (Del)"><span class="ic">🗑</span>Delete</button>
+          <button id="btn-delete-all" class="danger" title="Delete the entire diagram"><span class="ic">🗑</span>Delete All</button>
+        </div>
+        <div class="divider"></div>
+        <div class="group">
+          <button id="btn-zoom-reset" title="Reset zoom/pan">Reset view</button>
+          <label class="field-inline"><input id="grid-toggle" type="checkbox" checked /> Show grid</label>
+          <label class="field-inline">Grid: <input id="grid-size" type="number" min="5" max="100" value="20" style="width:52px" /> px</label>
+        </div>
+        <div class="divider" id="wire-context-divider" hidden></div>
+        <div class="group" id="wire-context-group" hidden>
+          <label>Size:</label>
+          <select id="wire-size">
+            <option value="">Default</option>
+            <option value="xs">XS (1.5px)</option>
+            <option value="s">S (2.5px)</option>
+            <option value="m">M (3.5px)</option>
+            <option value="l">L (5px)</option>
+            <option value="xl">XL (7px)</option>
+          </select>
+          <button id="wire-finish" class="primary" title="Finish wire (Enter)">Finish</button>
+          <button id="wire-cancel" title="Cancel (Esc)">Cancel</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="group">
+          <button id="btn-save" title="Save the project (.eeaproj file)"><span class="ic">💾</span>Save</button>
+          <button id="btn-load" title="Load a project (.eeaproj file)"><span class="ic">📂</span>Load</button>
+          <button id="btn-export-svg" title="Export as SVG image">Export SVG</button>
+          <button id="btn-export-png" title="Export as PNG image">Export PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="main">
+      <div id="shapes-panel">
+        <div class="shapes-section-title">Blocks <span class="shapes-hint">(drag to canvas)</span></div>
+        <div class="shape-item" id="shape-block-ecu" draggable="true" title="ECU block">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><rect x="1" y="1" width="22" height="14" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/></svg></span>
+          ECU
+        </div>
+        <div class="shape-item" id="shape-block-component" draggable="true" title="Component block">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><rect x="1" y="1" width="22" height="14" rx="2" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/></svg></span>
+          Component
+        </div>
+        <div class="shape-item" id="shape-block-custom" draggable="true" title="Custom block">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><rect x="1" y="1" width="22" height="14" rx="2" fill="#ffffff" stroke="#111827" stroke-width="1.5"/></svg></span>
+          Custom
+        </div>
+        <div class="shape-item" id="shape-text" draggable="true" title="Free text label">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><text x="2" y="12" font-size="11" fill="#374151">Aa</text></svg></span>
+          Text
+        </div>
+
+        <div class="shapes-section-title">Components <span class="shapes-hint">(drag to canvas)</span></div>
+        <div class="shape-item" id="shape-resistor" draggable="true" title="Termination Resistor (fixed 1x2 grid cells, vertical)">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><path d="M12 1 L12 5 M12 11 L12 15" fill="none" stroke="#111827" stroke-width="1.3"/><rect x="8.5" y="5" width="7" height="6" fill="#fff" stroke="#111827" stroke-width="1.3"/></svg></span>
+          Resistor
+        </div>
+        <div class="shape-item" id="shape-switch" draggable="true" title="Switch (fixed 2x2 grid cells, horizontal)">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><path d="M2 8 L8 8 M16 8 L22 8" stroke="#111827" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" fill="#111827"/><circle cx="16" cy="8" r="1.4" fill="#111827"/><line x1="8" y1="8" x2="16" y2="3" stroke="#111827" stroke-width="1.3"/></svg></span>
+          Switch
+        </div>
+        <div class="shape-item" id="shape-fuse" draggable="true" title="Fuse (fixed 2x2 grid cells, horizontal)">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><path d="M2 8 L8 8 M16 8 L22 8" stroke="#111827" stroke-width="1.3"/><rect x="8" y="4.5" width="8" height="7" fill="#fff" stroke="#111827" stroke-width="1.3"/><line x1="8" y1="8" x2="16" y2="8" stroke="#111827" stroke-width="1.3"/></svg></span>
+          Fuse
+        </div>
+        <div class="shape-item" id="shape-efuse" draggable="true" title="eFuse (fixed 2x2 grid cells, horizontal)">
+          <span class="shape-icon"><svg viewBox="0 0 24 16" width="24" height="16"><path d="M2 8 L8 8 M16 8 L22 8" stroke="#111827" stroke-width="1.3"/><rect x="8" y="4.5" width="8" height="7" fill="#fff" stroke="#111827" stroke-width="1.3"/><line x1="8" y1="8" x2="16" y2="8" stroke="#111827" stroke-width="1.3"/><path d="M12 15 L12 12 M10 13 L12 12 L14 13" fill="none" stroke="#111827" stroke-width="1.1"/></svg></span>
+          eFuse
+        </div>
+
+        <div class="shapes-section-title">Wires <span class="shapes-hint">(click, then draw)</span></div>
+        <div class="wire-item" data-type="PowerHV" title="HV Power">
+          <span class="wire-swatch" style="background:#ea580c;height:5px"></span>
+          HV Power
+        </div>
+        <div class="wire-item" data-type="PowerLV" title="LV Power">
+          <span class="wire-swatch" style="background:#dc2626;height:4px"></span>
+          LV Power
+        </div>
+        <div class="wire-item" data-type="CANFD" title="CAN-FD">
+          <span class="wire-swatch" style="background:#1a73e8;height:3px"></span>
+          CAN-FD
+        </div>
+        <div class="wire-item" data-type="Ethernet" title="Ethernet">
+          <span class="wire-swatch" style="background:#7c3aed;height:3px"></span>
+          Ethernet
+        </div>
+        <div class="wire-item active" data-type="CANHS" title="CAN-HS">
+          <span class="wire-swatch" style="background:#111827;height:2px"></span>
+          CAN-HS
+        </div>
+        <div class="wire-item" data-type="LIN" title="LIN">
+          <span class="wire-swatch" style="background:#16a34a;height:2px"></span>
+          LIN
+        </div>
+        <div class="wire-item" data-type="Custom" title="Custom">
+          <span class="wire-swatch" style="background:#6b7280;height:2px"></span>
+          Custom
+        </div>
+
+        <div class="shapes-section-title">Keyboard shortcuts</div>
+        <div class="hint" style="margin:0 14px 14px;">
+          V: Select · Esc: cancel / back to Select<br/>
+          Enter: finish wire<br/>
+          Del: delete selection<br/>
+          Ctrl+Z / Ctrl+Y: undo / redo<br/>
+          Drag on empty canvas: box-select<br/>
+          Middle-drag / hold Space: pan · Scroll: zoom
+        </div>
+      </div>
+      <div id="canvas-wrap">
+        <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div id="panel">
+        <h3>Properties</h3>
+        <div id="panel-content"><p class="hint">Select a block, wire, or text box to edit its properties.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages 3/4 — unused here, kept so editor.js's calls into them don't throw -->
+  <div id="page-components" class="page" hidden>
+    <div class="page-inner">
+      <h2>ECU / Component List</h2>
+      <table class="data-table">
+        <thead><tr><th style="width:220px">Block name</th><th>Description</th><th style="width:220px">Reference</th></tr></thead>
+        <tbody id="components-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="page-obd" class="page" hidden>
+    <div class="page-inner">
+      <h2>OBD Port</h2>
+      <div class="obd-connector">
+        <div class="obd-body">
+          <div class="obd-pin-row">
+            <div class="obd-pin">1</div><div class="obd-pin">2</div><div class="obd-pin">3</div><div class="obd-pin">4</div>
+            <div class="obd-pin">5</div><div class="obd-pin">6</div><div class="obd-pin">7</div><div class="obd-pin">8</div>
+          </div>
+          <div class="obd-divider"></div>
+          <div class="obd-pin-row">
+            <div class="obd-pin">9</div><div class="obd-pin">10</div><div class="obd-pin">11</div><div class="obd-pin">12</div>
+            <div class="obd-pin">13</div><div class="obd-pin">14</div><div class="obd-pin">15</div><div class="obd-pin">16</div>
+          </div>
+        </div>
+        <div class="obd-tab"></div>
+      </div>
+      <table class="data-table" style="max-width:640px; margin:20px auto 0;">
+        <thead><tr><th style="width:80px">Pin</th><th>Function</th></tr></thead>
+        <tbody id="obd-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  </div> <!-- /app-main -->
+
+  <div id="history-splitter" hidden></div>
+  <div id="history-panel" hidden>
+    <div class="hist-head">
+      <div class="hist-head-row">
+        <span class="hist-branch" id="hist-branch">—</span>
+        <button id="btn-hist-commit" disabled>Commit</button>
+      </div>
+      <textarea id="hist-commit-msg" class="modal-area" rows="2" placeholder="Mô tả thay đổi..." style="width:100%;margin-top:8px;box-sizing:border-box;"></textarea>
+    </div>
+    <div class="hist-list"></div>
+    <div id="hist-detail" style="padding:8px 12px;"></div>
+  </div>
+  </div> <!-- /app-body -->
+</div>
+<script src="modal.js"></script>
+<script src="editor.js"></script>
+<script src="bridge.js"></script>
+</body>
+</html>

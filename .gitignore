@@ -1,0 +1,26 @@
+node_modules/
+renderer/dist/
+.shots/
+.ks/
+npm-install.log
+resources/version.json
+dist/
+# VF9-SRS and EPB-Park-Brake are each their OWN git repo (per-project change
+# history is a real app feature — see docs/GIT-FEATURE.md). Git refuses to
+# track a repo-inside-a-repo except as a gitlink/submodule, which would ship
+# no actual content, so they are excluded entirely here and regenerated with
+# `npm run sample:workspace` / `npm run sample` instead of being versioned by
+# the app's own repo.
+projects/VF9-SRS/
+projects/EPB-Park-Brake/
+projects/_perf-big/
+projects/_archive/
+projects/**/template.tex
+projects/**/template.pdf
+projects/**/history.tex
+projects/**/*.aux
+projects/**/*.log
+projects/**/*.out
+projects/**/*.toc
+projects/**/build.log
+projects/**/.history/
