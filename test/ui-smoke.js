@@ -112,6 +112,13 @@ async function main() {
     await run('return !document.getElementById("emptyState").hidden'));
   await shot('01-empty-state');
 
+  // window.api.version() resolves async after the window finishes loading —
+  // give it a moment before asserting the footer picked it up.
+  await sleep(150);
+  check('thanh trạng thái hiện phiên bản app + commit id',
+    await run('return /^ARIA v\\d+\\.\\d+\\.\\d+ · \\S+$/.test(document.getElementById("appVersion").textContent);'),
+    await run('return document.getElementById("appVersion").textContent;'));
+
   // ---------------------------------------------------------------------
   group('Mở project');
   await run(`await window.__srs.openProject(${JSON.stringify(project)});`);
