@@ -36,7 +36,7 @@ function buildShell(titleText) {
  */
 export function askText(opts = {}) {
   const {
-    title = 'Nhập giá trị',
+    title = 'Enter a value',
     label = '',
     value = '',
     placeholder = '',
@@ -75,7 +75,7 @@ export function askText(opts = {}) {
 
     const btnCancel = document.createElement('button');
     btnCancel.className = 'btn';
-    btnCancel.textContent = 'Hủy';
+    btnCancel.textContent = 'Cancel';
 
     const btnOk = document.createElement('button');
     btnOk.className = 'btn primary';
@@ -144,7 +144,7 @@ export function askText(opts = {}) {
  * Resolves to the chosen value, or null when cancelled.
  */
 export function askChoice(opts = {}) {
-  const { title = 'Chọn', items = [], empty = 'Không có mục nào.' } = opts;
+  const { title = 'Choose', items = [], empty = 'No items.' } = opts;
   return new Promise((resolve) => {
     const { backdrop, body, foot } = buildShell(title);
 
@@ -176,7 +176,7 @@ export function askChoice(opts = {}) {
 
     const cancel = document.createElement('button');
     cancel.className = 'btn';
-    cancel.textContent = 'Đóng';
+    cancel.textContent = 'Close';
     foot.appendChild(cancel);
 
     let done = false;
@@ -212,7 +212,7 @@ export function showNotice(title, message) {
 
     const ok = document.createElement('button');
     ok.className = 'btn primary';
-    ok.textContent = 'Đã hiểu';
+    ok.textContent = 'Got it';
     foot.appendChild(ok);
 
     let done = false;

@@ -58,7 +58,7 @@ async function shot(name) {
   return p;
 }
 
-/** Type+UI/UX filter dropdown (shared by Lọc/Lọc tổng): open it if needed, tick the checkbox whose label matches. */
+/** Type+UI/UX filter dropdown (shared by Filter/Filter all): open it if needed, tick the checkbox whose label matches. */
 async function tickTypeFilter(containerSel, label) {
   const open = await run(`return !!document.querySelector('${containerSel} .fdrop-menu');`);
   if (!open) { await run(`document.querySelector('${containerSel} .fdrop button').click();`); await sleep(150); }
@@ -299,7 +299,7 @@ async function main() {
   `);
   check('tìm được theo nội dung mô tả kể cả ký tự đã escape, không chỉ tiêu đề/mã',
     byDesc.includes('BCM-0009'), JSON.stringify(byDesc));
-  check('gõ search thì tự bật cột Nội dung trong Lọc',
+  check('typing a search term auto-enables the Description column in Filter',
     await run('return window.__srs.state.filterCols.has("desc");'));
   await run('window.__srs.state.filterCols.delete("desc");');
   await run(`
@@ -307,7 +307,7 @@ async function main() {
     s.value = "f_tra"; s.dispatchEvent(new Event("input", { bubbles: true }));
   `);
   await sleep(150);
-  check('bỏ tick cột Nội dung thủ công thì search tiếp không tự bật lại',
+  check('manually unticking Description keeps it off on the next search',
     !(await run('return window.__srs.state.filterCols.has("desc");')));
 
   // Type-scope filter: narrow the TOC to one item type via the dropdown. Rows
@@ -362,22 +362,22 @@ async function main() {
   await resetTypeFilter('#tableFilters');
   await closeDropdowns();
 
-  group('Cột hiện/ẩn trong bảng Lọc');
-  // The earlier TOC search left "Nội dung" auto-enabled by design (it stays
+  group('Show/hide columns in the table filter');
+  // The earlier TOC search left "Description" auto-enabled by design (it stays
   // on until manually unticked) — reset to the plain default before checking it.
   await run('window.__srs.state.filterCols = null; window.__srs.setView("table");');
   await sleep(200);
-  check('bảng chưa hiện cột Nội dung theo mặc định',
-    !(await run(`return [...document.querySelectorAll('#itemTable thead th')].some(t => t.textContent === 'Nội dung');`)));
+  check('table does not show the Description column by default',
+    !(await run(`return [...document.querySelectorAll('#itemTable thead th')].some(t => t.textContent === 'Description');`)));
   await run(`document.querySelector('#tableFilters .fdrop:nth-child(2) button').click();`);
   await sleep(150);
   await run(`
-    const item = [...document.querySelectorAll('#tableFilters .fdrop-menu .fdrop-item')].find(el => el.textContent.trim() === 'Nội dung');
+    const item = [...document.querySelectorAll('#tableFilters .fdrop-menu .fdrop-item')].find(el => el.textContent.trim() === 'Description');
     item.querySelector('input').click();
   `);
   await sleep(200);
-  check('bật cột Nội dung thì bảng hiện cột đó',
-    await run(`return [...document.querySelectorAll('#itemTable thead th')].some(t => t.textContent === 'Nội dung');`));
+  check('enabling Description makes the table show that column',
+    await run(`return [...document.querySelectorAll('#itemTable thead th')].some(t => t.textContent === 'Description');`));
   await closeDropdowns();
 
   // ---------------------------------------------------------------------
@@ -393,19 +393,19 @@ async function main() {
     edges: document.querySelectorAll('#viewTrace .edge').length,
     warn: document.querySelectorAll('#viewTrace .gnode.warn').length,
   };`);
-  check('sơ đồ vẽ đủ node Function', g.fn === 3, JSON.stringify(g));
-  check('sơ đồ vẽ đủ node Design', g.ds === 3, JSON.stringify(g));
-  check('sơ đồ vẽ cột DVP', (await run('return document.querySelectorAll("#viewTrace .gnode.dvp").length')) === 3);
-  check('có cạnh cho cả hai chặng', g.edges >= 6, JSON.stringify(g));
-  check('Function chưa phủ được đánh dấu trên sơ đồ', g.warn === 1, JSON.stringify(g));
-  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Bảng').click();`);
+  check('diagram draws all Function nodes', g.fn === 3, JSON.stringify(g));
+  check('diagram draws all Design nodes', g.ds === 3, JSON.stringify(g));
+  check('diagram draws the DVP column', (await run('return document.querySelectorAll("#viewTrace .gnode.dvp").length')) === 3);
+  check('edges exist for both hops', g.edges >= 6, JSON.stringify(g));
+  check('an uncovered Function is flagged on the diagram', g.warn === 1, JSON.stringify(g));
+  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Table').click();`);
   await sleep(300);
-  check('chuyển sang dạng bảng được',
+  check('can switch to table view',
     await run('return document.querySelectorAll("#viewTrace .grid tbody tr").length >= 3'));
-  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Sơ đồ').click();`);
+  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Diagram').click();`);
   await sleep(300);
-  check('phát hiện Function chưa có Design phủ', await run(`
-    return [...document.querySelectorAll("#viewTrace .issue")].some(e => /gap|chưa có Design/.test(e.textContent));
+  check('detects a Function with no Design covering it', await run(`
+    return [...document.querySelectorAll("#viewTrace .issue")].some(e => /gap|no Design/.test(e.textContent));
   `));
   await shot('07-traceability');
 
@@ -416,11 +416,11 @@ async function main() {
   `);
   await run('window.__srs.setView("trace");');
   await sleep(300);
-  check('phát hiện liên kết trỏ tới mã không tồn tại', await run(`
+  check('detects a link pointing at a code that no longer exists', await run(`
     return [...document.querySelectorAll("#viewTrace .pill.broken")].length >= 1;
   `));
   // Calibration & Interface usage section
-  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Bảng').click();`);
+  await run(`[...document.querySelectorAll('#viewTrace .seg-btn')].find(b=>b.textContent==='Table').click();`);
   await sleep(200);
   const calIface = await run(`
     const heads = [...document.querySelectorAll('#viewTrace .trace-subhead')].map(e => e.textContent);
@@ -452,7 +452,7 @@ async function main() {
   await run(`document.querySelector('[data-latex-section="pdf"]').click();`);
   await run(`
     for (let i = 0; i < 100; i++) {
-      if (document.getElementById('pdfStatus').textContent !== 'Đang biên dịch…') break;
+      if (document.getElementById('pdfStatus').textContent !== 'Compiling…') break;
       await new Promise(r => setTimeout(r, 200));
     }
   `); // biên dịch xelatex thật — chờ tới khi xong thay vì đoán thời gian cố định
@@ -460,7 +460,7 @@ async function main() {
   const pdfSrc = await run(`return document.getElementById('pdfWebview').src;`);
   check('webview PDF trỏ vào file đã biên dịch', pdfSrc.startsWith('file://') && pdfSrc.includes('.pdf'), pdfSrc);
   const pdfStatus = await run(`return document.getElementById('pdfStatus').textContent;`);
-  check('biên dịch PDF preview thành công', pdfStatus.includes('Cập nhật lúc'), pdfStatus);
+  check('biên dịch PDF preview thành công', pdfStatus.includes('Updated at'), pdfStatus);
 
   // The preview used to be 1 xelatex pass — pass 1 is what WRITES the .toc,
   // so a fresh compile's own preview always showed an empty Table of
@@ -487,7 +487,7 @@ async function main() {
   await run(`document.getElementById('btnPdfRefresh').click();`);
   await run(`
     for (let i = 0; i < 100; i++) {
-      if (document.getElementById('pdfStatus').textContent !== 'Đang biên dịch…') break;
+      if (document.getElementById('pdfStatus').textContent !== 'Compiling…') break;
       await new Promise(r => setTimeout(r, 200));
     }
   `);
@@ -541,10 +541,10 @@ async function main() {
     readTex(project).includes(titleBefore) && !readTex(project).includes('BỊ PHÁ'));
 
   const outside = await run(`
-    try { await window.api.restore(window.__srs.state.projectDir, '/etc/passwd'); return 'KHÔNG CHẶN'; }
-    catch (e) { return 'chặn: ' + e.message; }
+    try { await window.api.restore(window.__srs.state.projectDir, '/etc/passwd'); return 'NOT BLOCKED'; }
+    catch (e) { return 'blocked: ' + e.message; }
   `);
-  check('không cho khôi phục từ file ngoài .history', /chặn:/.test(outside), outside);
+  check('restoring from a file outside .history is refused', /blocked:/.test(outside), outside);
 
   // ---------------------------------------------------------------------
   group('Lỗi runtime');

@@ -69,6 +69,35 @@ test('init on an existing repo is a no-op', async () => {
   assert.strictEqual(again.oid, first.oid);
 });
 
+// Regression: a new project created inside a folder that merely happens to
+// sit under some UNRELATED outer repo (this app's own checkout is exactly
+// this shape once it has its own git history) must still get its own repo.
+// init() used to reuse hasRepo(), which walks up to ANY ancestor's .git —
+// correct for "does a nested book belong to a workspace repo", wrong for
+// "should I create a new repo here" — so it silently believed the outer
+// repo WAS this project's repo, never created dir/.git, and every later
+// commitAll(dir, ...) committed into the outer repo instead.
+test('init inside a folder nested under an unrelated outer repo still creates its own repo', async () => {
+  const outer = scratch();
+  await R.init(outer, AUTHOR); // pretend this is some other git-tracked parent
+
+  const inner = path.join(outer, 'nested-project');
+  fs.mkdirSync(path.join(inner, 'images'), { recursive: true });
+  writeDoc(inner, seedDoc());
+
+  const { created } = await R.init(inner, AUTHOR);
+  assert.strictEqual(created, true, 'phải tạo repo riêng cho inner, không tưởng nhầm là outer');
+  assert.ok(fs.existsSync(path.join(inner, '.git', 'HEAD')), 'inner/.git phải tồn tại thật');
+
+  writeDoc(inner, (() => { const d = seedDoc(); d.items[0].desc = 'Đã sửa.'; return d; })());
+  await R.commitAll(inner, { message: 'sửa trong inner', author: AUTHOR });
+
+  const outerLog = await R.log(outer);
+  assert.strictEqual(outerLog.entries.length, 1, 'commit của inner không được lọt vào outer');
+  const innerLog = await R.log(inner);
+  assert.strictEqual(innerLog.entries.length, 2, 'inner phải có commit init + commit sửa của chính nó');
+});
+
 test('gitignore keeps build output and snapshots out of history', async () => {
   const dir = scratch();
   writeDoc(dir, seedDoc());
@@ -136,7 +165,7 @@ test('committing with nothing staged is refused', async () => {
   await R.init(dir, AUTHOR);
   await assert.rejects(
     () => R.commitAll(dir, { message: 'trống', author: AUTHOR }),
-    /Không có thay đổi/
+    /No changes to commit/
   );
 });
 
@@ -187,7 +216,7 @@ test('committing an unchanged tree is refused even after re-staging', async () =
   writeDoc(dir, doc);                    // rewrite identical bytes
   await assert.rejects(
     () => R.commitAll(dir, { message: 'không đổi gì', author: AUTHOR }),
-    /Không có thay đổi/
+    /No changes to commit/
   );
 });
 
@@ -258,7 +287,7 @@ test('log returns newest first with author and timestamp', async () => {
   const { entries, done, total } = await R.log(dir);
   assert.strictEqual(total, 2);
   assert.strictEqual(done, true);
-  assert.deepStrictEqual(entries.map((e) => e.message), ['Sửa mô tả', 'Khởi tạo project']);
+  assert.deepStrictEqual(entries.map((e) => e.message), ['Sửa mô tả', 'Initialize project']);
   assert.strictEqual(entries[0].author, 'Kiểm thử');
   assert.strictEqual(entries[0].short.length, 7);
   assert.ok(entries[0].ts > 0 && entries[0].ts <= Date.now() + 1000);
@@ -344,7 +373,7 @@ test('a duplicate baseline name is refused', async () => {
   await R.createTag(dir, { oid, name: 'rev-A', message: 'x', tagger: AUTHOR });
   await assert.rejects(
     () => R.createTag(dir, { oid, name: 'rev-A', message: 'y', tagger: AUTHOR }),
-    /đã tồn tại/
+    /already exists/
   );
 });
 

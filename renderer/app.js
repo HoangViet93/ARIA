@@ -28,17 +28,17 @@ const state = {
   draft: null,        // working copy while editing
   dirty: false,
   view: 'document',
-  latexSection: 'source', // tab "LaTeX/PDF": 'source' (mã nguồn) | 'pdf' (bản xem trước biên dịch)
+  latexSection: 'source', // tab "LaTeX/PDF": 'source' | 'pdf' (compiled preview)
   pdfSourceSnapshot: null, // data.tex content the current PDF preview was compiled from — recompile only when this goes stale
   query: '',
   collapsed: new Set(),
   filterTypes: new Set(),
-  filterUiux: false,   // Lọc: chỉ hiện item ảnh hưởng UI/UX
-  filterCols: null,    // Lọc: cột nào đang hiện — set lười ở lần renderTable() đầu (cần FILTER_COLUMNS)
-  filterDescAuto: false, // true khi cột Nội dung đang bật LÀ DO gõ search tự bật, không phải người dùng tự tick
-  filterMenu: null,    // Lọc: dropdown nào đang mở — 'type' | 'col' | null
-  compFilterCode: null, // tab Component: mã component đang được chọn để lọc
-  treeSearchTypes: new Set(), // TOC: giới hạn tìm kiếm theo loại item; rỗng = mọi loại
+  filterUiux: false,   // Filter: only show items with UI/UX impact
+  filterCols: null,    // Filter: which columns are shown — lazily set on the first renderTable() call (needs FILTER_COLUMNS)
+  filterDescAuto: false, // true when the Description column got enabled BY typing a search, not by the user ticking it
+  filterMenu: null,    // Filter: which dropdown is open — 'type' | 'col' | null
+  compFilterCode: null, // Component tab: which component code is selected to filter by
+  treeSearchTypes: new Set(), // TOC: restrict search to these item types; empty = all types
   richHandles: [],
   renderGen: 0,       // bumped on every document render; stale mounts are dropped
   traceMode: 'graph', // 'graph' | 'table'
@@ -47,7 +47,7 @@ const state = {
   zoom: 1,            // centre document zoom; ceiling is fit-width
 
   // Multi-book workspace (one git repo for a whole vehicle program, several
-  // books/sách inside). null when the open thing is a classic single-book
+  // books inside). null when the open thing is a classic single-book
   // project — everything above this line is unaffected either way.
   workspaceDir: null,
   workspaceName: null,
@@ -91,7 +91,7 @@ function h(tag, props = {}, ...children) {
  */
 function canEdit(action) {
   if (!state.viewing) return true;
-  setStatus(`Đang xem bản cũ ${state.viewing.entry.short} — ${action || 'không sửa được'}. Bấm "Quay lại bản hiện tại" để sửa.`, 'error');
+  setStatus(`Viewing old version ${state.viewing.entry.short} — ${action || 'cannot edit'}. Click "Back to current version" to edit.`, 'error');
   return false;
 }
 
@@ -118,10 +118,10 @@ async function save() {
     state.dirty = false;
     el('btnSave').disabled = true;
     el('dirtyDot').hidden = true;
-    setStatus(`Đã lưu data.tex (${res.bytes.toLocaleString('vi-VN')} bytes).`, 'ok');
+    setStatus(`Saved data.tex (${res.bytes.toLocaleString('en-US')} bytes).`, 'ok');
     History.invalidate();
   } catch (e) {
-    setStatus(`Lỗi khi lưu: ${e.message}`, 'error');
+    setStatus(`Error saving: ${e.message}`, 'error');
   }
 }
 
@@ -190,7 +190,7 @@ function renderSearchTypes() {
       renderTree();
     },
   },
-    h('option', { value: '', text: 'Tất cả loại' }),
+    h('option', { value: '', text: 'All types' }),
     ...TYPE_ORDER.map((t) => h('option', {
       value: t, text: typeDef(t).label, selected: t === current,
     }))
@@ -236,9 +236,9 @@ function renderTree() {
   const keep = visibleCodes(q, types);
 
   if (keep && keep.size === 0) {
-    const why = q ? `khớp “${state.query}”` : 'thuộc loại đã chọn';
-    tree.appendChild(h('div', { class: 'tree-empty' }, `Không có item nào ${why}.`));
-    el('treeCount').textContent = '0 kết quả';
+    const why = q ? `matching “${state.query}”` : 'of the selected type';
+    tree.appendChild(h('div', { class: 'tree-empty' }, `No item ${why}.`));
+    el('treeCount').textContent = '0 results';
     return;
   }
 
@@ -272,12 +272,12 @@ function renderTree() {
         caret,
         h('span', { class: `tbadge ${item.type}`, text: typeDef(item.type).icon, title: typeDef(item.type).label }),
         isFlagOn(item.fields.uiImpact)
-          ? h('span', { class: 'tui', text: '◈', title: 'Ảnh hưởng UI/UX' })
+          ? h('span', { class: 'tui', text: '◈', title: 'UI/UX impact' })
           : null,
         h('span', { class: 'tnum', text: num.join('.') }),
         h('span', {
           class: 'ttitle' + (item.title ? '' : ' empty'),
-          html: highlightHtml(item.title || '(chưa đặt tên)', q),
+          html: highlightHtml(item.title || '(untitled)', q),
           title: item.title || '',
         }),
         h('span', { class: 'tcode', text: item.code })
@@ -301,7 +301,7 @@ function renderTree() {
 
   const total = countItems(state.doc.items);
   el('treeCount').textContent = keep
-    ? `${keep.size} khớp / ${total} item`
+    ? `${keep.size} matched / ${total} item(s)`
     : `${total} item`;
 }
 
@@ -340,7 +340,7 @@ function attachDrag(row, code) {
   row.ondragleave = () => row.classList.remove('drop-inside', 'drop-before', 'drop-after');
   row.ondrop = (e) => {
     e.preventDefault();
-    if (!canEdit('không kéo thả được')) return;
+    if (!canEdit('cannot drag and drop')) return;
     const pos = dropZone(e, row);
     clearDropMarks();
     if (!dragCode || dragCode === code) return;
@@ -349,7 +349,7 @@ function attachDrag(row, code) {
     if (pos === 'inside') state.collapsed.delete(code);
     markDirty();
     renderAll();
-    setStatus('Đã di chuyển item.');
+    setStatus('Item moved.');
   };
 }
 
@@ -383,7 +383,7 @@ function selectItem(code, scroll) {
 
 function gotoItem(code) {
   if (!findItem(state.doc, code)) {
-    setStatus(`Không tìm thấy item ${code}.`, 'error');
+    setStatus(`Item ${code} not found.`, 'error');
     return;
   }
   // Reveal: expand every ancestor first.
@@ -438,14 +438,14 @@ function renderDocHeader() {
   head.innerHTML = '';
   head.append(
     h('div', {
-      class: 'doc-title', contenteditable: state.viewing ? 'false' : 'true', 'data-placeholder': 'Tiêu đề tài liệu',
+      class: 'doc-title', contenteditable: state.viewing ? 'false' : 'true', 'data-placeholder': 'Document title',
       text: state.doc.meta.title || '',
       oninput: (e) => { state.doc.meta.title = e.target.innerText.trim(); markDirty(); },
       onkeydown: (e) => { if (e.key === 'Enter') e.preventDefault(); },
       onpaste: pastePlain,
     }),
     h('div', {
-      class: 'doc-subtitle', contenteditable: state.viewing ? 'false' : 'true', 'data-placeholder': 'Tiêu đề phụ',
+      class: 'doc-subtitle', contenteditable: state.viewing ? 'false' : 'true', 'data-placeholder': 'Subtitle',
       text: state.doc.meta.subtitle || '',
       oninput: (e) => { state.doc.meta.subtitle = e.target.innerText.trim(); markDirty(); },
       onkeydown: (e) => { if (e.key === 'Enter') e.preventDefault(); },
@@ -456,7 +456,7 @@ function renderDocHeader() {
       metaCell('revision', 'Revision'),
       metaCell('date', 'Date'),
       metaCell('classification', 'Classification'),
-      metaCell('shortName', 'Mã tài liệu (prefix)')
+      metaCell('shortName', 'Document code (prefix)')
     )
   );
 }
@@ -552,31 +552,31 @@ const richOpts = () => ({ resolveSym });
 async function editDiagram(current) {
   const status = await window.api.diagram.status();
   const source = await askText({
-    title: current ? 'Sửa sơ đồ' : 'Chèn sơ đồ PlantUML',
-    label: 'Nguồn PlantUML',
+    title: current ? 'Edit diagram' : 'Insert PlantUML diagram',
+    label: 'PlantUML source',
     value: current || '@startuml\nAlice -> Bob: LockCmd\nBob --> Alice: Ack\n@enduml',
     multiline: true,
     mono: true,
     wide: true,
-    okLabel: current ? 'Cập nhật' : 'Chèn',
+    okLabel: current ? 'Update' : 'Insert',
     hint: status.available
-      ? 'Ctrl+Enter để lưu. Ảnh được render và lưu vào images/ của project.'
-      : 'CHƯA CÓ TRÌNH RENDER — nguồn vẫn được lưu, nhưng chưa vẽ ra ảnh. ' + status.hint,
+      ? 'Ctrl+Enter to save. The image is rendered and saved into the project\'s images/.'
+      : 'NO RENDERER AVAILABLE — the source is still saved, but no image is drawn. ' + status.hint,
   });
   if (source === null) return null;
 
   if (!status.available) {
-    showNotice('Chưa render được sơ đồ',
-      'Nguồn đã được lưu vào tài liệu nhưng chưa vẽ ra ảnh.\n\n' + status.hint);
+    showNotice('Diagram not rendered',
+      'The source was saved into the document but no image was drawn.\n\n' + status.hint);
     return { source, relPath: '', src: '' };
   }
   try {
-    setStatus('Đang render sơ đồ…');
+    setStatus('Rendering diagram…');
     const { relPath } = await window.api.diagram.render(state.projectDir, source);
-    setStatus('Đã render sơ đồ.', 'ok');
+    setStatus('Diagram rendered.', 'ok');
     return { source, relPath, src: `file://${state.projectDir}/${relPath}` };
   } catch (e) {
-    window.api.showError({ title: 'PlantUML báo lỗi', message: e.message });
+    window.api.showError({ title: 'PlantUML error', message: e.message });
     return { source, relPath: '', src: '' };
   }
 }
@@ -585,7 +585,7 @@ async function editDiagram(current) {
  * Open the EEA diagram popup — a real embedded copy of ev-architecture-
  * editor's drawing canvas running inside a <webview> (see
  * renderer/vendor/eea-editor/README.md), not a separate window. Host pulls
- * the diagram out via `webview.executeJavaScript()` when "Lưu" is clicked;
+ * the diagram out via `webview.executeJavaScript()` when "Save" is clicked;
  * the popup itself has no save/cancel button of its own.
  */
 async function editEea(currentSourceJson) {
@@ -616,7 +616,7 @@ async function editEea(currentSourceJson) {
     btnCancel.onclick = () => { cleanup(); resolve(null); };
     btnSave.onclick = async () => {
       btnSave.disabled = true;
-      status.textContent = 'Đang lưu…';
+      status.textContent = 'Saving…';
       try {
         const doc = await webview.executeJavaScript('window.__eeaBridge.getDoc();');
         const { relPng, relPdf } = await window.api.eea.render(state.projectDir, doc);
@@ -631,7 +631,7 @@ async function editEea(currentSourceJson) {
       } catch (e) {
         btnSave.disabled = false;
         status.textContent = '';
-        window.api.showError({ title: 'Không lưu được sơ đồ EEA', message: e.message });
+        window.api.showError({ title: 'Could not save the EEA diagram', message: e.message });
       }
     };
 
@@ -652,7 +652,7 @@ function refChip(code) {
   return h('span', {
     class: 'chip ref' + (exists ? '' : ' broken'),
     text: code,
-    title: exists ? `Mở ${code}` : `Không tồn tại: ${code}`,
+    title: exists ? `Open ${code}` : `Does not exist: ${code}`,
     onclick: (e) => { e.stopPropagation(); if (exists) gotoItem(code); },
   });
 }
@@ -661,9 +661,9 @@ function refChip(code) {
 function valueChips(item) {
   const def = String(item.fields.defaultValue || '').trim();
   return splitMulti(item.fields.values).map((v) =>
-    h('span', { class: 'vchip' + (v === def ? ' is-default' : ''), title: v === def ? 'Giá trị mặc định' : '' },
+    h('span', { class: 'vchip' + (v === def ? ' is-default' : ''), title: v === def ? 'Default value' : '' },
       h('span', { text: v }),
-      v === def ? h('span', { class: 'vchip-tag', text: 'mặc định' }) : null
+      v === def ? h('span', { class: 'vchip-tag', text: 'default' }) : null
     )
   );
 }
@@ -673,7 +673,7 @@ function listChips(values, def) {
   return splitMulti(values).map((v) =>
     h('span', { class: 'vchip' + (v === String(def || '').trim() ? ' is-default' : '') },
       h('span', { text: v }),
-      v === String(def || '').trim() ? h('span', { class: 'vchip-tag', text: 'mặc định' }) : null
+      v === String(def || '').trim() ? h('span', { class: 'vchip-tag', text: 'default' }) : null
     )
   );
 }
@@ -687,20 +687,20 @@ function renderUiRead(item) {
   if (settings.length) {
     const table = h('table', { class: 'set-table' });
     table.append(h('thead', {}, h('tr', {},
-      h('th', { text: 'Tên setting' }),
-      h('th', { text: 'Giá trị' }),
-      h('th', { text: 'Lưu theo' })
+      h('th', { text: 'Setting name' }),
+      h('th', { text: 'Values' }),
+      h('th', { text: 'Storage' })
     )));
     const tb = h('tbody', {});
     settings.forEach((st) => {
       tb.append(h('tr', {},
-        h('td', { class: 'set-name', text: st.name || '(chưa đặt tên)' }),
+        h('td', { class: 'set-name', text: st.name || '(untitled)' }),
         h('td', {}, h('div', { class: 'vchips' }, listChips(st.values, st.defaultValue))),
         h('td', { class: 'set-scope', text: scopeLabel(st.scope) })
       ));
     });
     table.append(tb);
-    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'Setting người dùng' }), table));
+    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'User settings' }), table));
   }
 
   if (warnings.length) {
@@ -708,25 +708,25 @@ function renderUiRead(item) {
     warnings.forEach((w) => {
       const card = h('div', { class: 'warn-card' },
         h('div', { class: 'warn-head' },
-          h('span', { class: 'warn-id', text: w.id || '(chưa có Warning ID)' })
+          h('span', { class: 'warn-id', text: w.id || '(no Warning ID)' })
         )
       );
-      // Delay bật/tắt (mature/demature time) get their own labeled rows, same
+      // Turn-on/off delay (mature/demature time) get their own labeled rows, same
       // layout as the conditions below — a muted 11px corner label was too
       // easy to miss.
       const enterDelay = String(w.enterDelay || '').trim();
       const exitDelay = String(w.exitDelay || '').trim();
       if (enterDelay || exitDelay) {
         card.append(h('div', { class: 'warn-cond' },
-          h('div', { class: 'warn-k', text: 'Độ trễ bật' }),
+          h('div', { class: 'warn-k', text: 'Turn-on delay' }),
           h('div', { class: 'warn-v', text: enterDelay || '—' })
         ));
         card.append(h('div', { class: 'warn-cond' },
-          h('div', { class: 'warn-k', text: 'Độ trễ tắt' }),
+          h('div', { class: 'warn-k', text: 'Turn-off delay' }),
           h('div', { class: 'warn-v', text: exitDelay || '—' })
         ));
       }
-      [['enterCondition', 'Hiện khi'], ['exitCondition', 'Tắt khi']].forEach(([key, label]) => {
+      [['enterCondition', 'Shown when'], ['exitCondition', 'Cleared when']].forEach(([key, label]) => {
         const v = String(w[key] || '').trim();
         if (!v) return;
         card.append(h('div', { class: 'warn-cond' },
@@ -736,7 +736,7 @@ function renderUiRead(item) {
       });
       cards.append(card);
     });
-    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'Cảnh báo' }), cards));
+    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'Warnings' }), cards));
   }
   return out;
 }
@@ -776,8 +776,8 @@ function renderStepsRead(item) {
   const table = h('table', { class: 'steps-table' });
   table.append(h('thead', {}, h('tr', {},
     h('th', { class: 'st-n', text: '#' }),
-    h('th', { text: 'Hành động' }),
-    h('th', { text: 'Kết quả mong đợi' })
+    h('th', { text: 'Action' }),
+    h('th', { text: 'Expected result' })
   )));
   const tb = h('tbody', {});
   steps.forEach((st, i) => {
@@ -789,7 +789,7 @@ function renderStepsRead(item) {
   });
   table.append(tb);
   return h('div', { class: 'rich-sub' },
-    h('div', { class: 'k', text: 'Các bước kiểm thử' }),
+    h('div', { class: 'k', text: 'Test steps' }),
     table
   );
 }
@@ -848,7 +848,7 @@ function usedByTable() {
         // Deliberately NOT scanning UI/UX warning conditions here: a warning
         // mentioning a calibration is real, but it is a different kind of use
         // from the item's own technical fields, and mixing the two made
-        // "Được dùng ở" noisy on items with several warnings. The render-cache
+        // "Used by" noisy on items with several warnings. The render-cache
         // signature (itemSig's REF_SCAN) and validate()'s broken-reference
         // check both still cover warnings — this list is display-only.
         const texts = [item.desc, ...Object.values(item.fields || {})];
@@ -890,8 +890,8 @@ function itemActions(item) {
   if (state.viewing) {
     return h('div', { class: 'item-actions' },
       h('button', {
-        class: 'act', text: 'Lấy lại item này',
-        title: 'Chép item ở bản cũ này sang tài liệu hiện tại',
+        class: 'act', text: 'Recover this item',
+        title: 'Copy this item from the old version into the current document',
         onclick: async (e) => {
           e.stopPropagation();
           const got = await History.restoreSingleItem(state.viewing.entry.oid, item.code);
@@ -900,11 +900,11 @@ function itemActions(item) {
       }));
   }
   return h('div', { class: 'item-actions' },
-    h('button', { class: 'act primary', text: 'Sửa', title: 'Ctrl+E', onclick: (e) => { e.stopPropagation(); startEdit(item.code); } }),
-    h('button', { class: 'act', text: '+ Con', title: 'Thêm item con', onclick: (e) => { e.stopPropagation(); addItem(item.code, 'inside'); } }),
-    h('button', { class: 'act', text: '+ Sau', title: 'Thêm item cùng cấp', onclick: (e) => { e.stopPropagation(); addItem(item.code, 'after'); } }),
-    h('button', { class: 'act', text: '⋯', title: 'Thêm hành động', onclick: (e) => { e.stopPropagation(); const r = e.target.getBoundingClientRect(); openItemMenu(r.left, r.bottom + 4, item.code); } }),
-    h('button', { class: 'act danger', text: 'Xóa', onclick: (e) => { e.stopPropagation(); deleteItem(item.code); } })
+    h('button', { class: 'act primary', text: 'Edit', title: 'Ctrl+E', onclick: (e) => { e.stopPropagation(); startEdit(item.code); } }),
+    h('button', { class: 'act', text: '+ Child', title: 'Add a child item', onclick: (e) => { e.stopPropagation(); addItem(item.code, 'inside'); } }),
+    h('button', { class: 'act', text: '+ After', title: 'Add a sibling item', onclick: (e) => { e.stopPropagation(); addItem(item.code, 'after'); } }),
+    h('button', { class: 'act', text: '⋯', title: 'More actions', onclick: (e) => { e.stopPropagation(); const r = e.target.getBoundingClientRect(); openItemMenu(r.left, r.bottom + 4, item.code); } }),
+    h('button', { class: 'act danger', text: 'Delete', onclick: (e) => { e.stopPropagation(); deleteItem(item.code); } })
   );
 }
 
@@ -920,10 +920,10 @@ function renderItemRead(item, num, depth) {
     itemActions(item),
     h('div', { class: 'item-head' },
       h('span', { class: 'item-num', text: num.join('.') }),
-      h('span', { class: 'item-title' + (item.title ? '' : ' empty'), text: item.title || '(chưa đặt tên)' }),
+      h('span', { class: 'item-title' + (item.title ? '' : ' empty'), text: item.title || '(untitled)' }),
       h('span', { class: `type-badge ${item.type}`, text: typeDef(item.type).short }),
       isFlagOn(item.fields.uiImpact)
-        ? h('span', { class: 'type-badge uiux', text: 'UI/UX', title: 'Yêu cầu này chạm tới giao diện người dùng' })
+        ? h('span', { class: 'type-badge uiux', text: 'UI/UX', title: 'This requirement touches the user interface' })
         : null,
       h('span', { class: 'item-code', text: item.code })
     )
@@ -933,7 +933,7 @@ function renderItemRead(item, num, depth) {
   box.append(
     desc
       ? h('div', { class: 'item-desc', html: latexToHtml(desc, state.projectDir, richOpts()) })
-      : h('div', { class: 'item-desc empty', text: 'Chưa có mô tả.' })
+      : h('div', { class: 'item-desc empty', text: 'No description yet.' })
   );
 
   const props = renderPropsRead(item);
@@ -943,15 +943,15 @@ function renderItemRead(item, num, depth) {
   renderRichRead(item).forEach((n) => box.append(n));
   renderUiRead(item).forEach((n) => box.append(n));
 
-  // Calibration dropped this in favour of Truy vết, which already tracks
+  // Calibration dropped this in favour of Traceability, which already tracks
   // usage — keeping it here too was the same information twice.
   if (item.type === 'interface' || item.type === 'component') {
     const used = calUsedBy(item.code);
     box.append(h('div', { class: 'rich-sub' },
-      h('div', { class: 'k', text: 'Được dùng ở' }),
+      h('div', { class: 'k', text: 'Used by' }),
       used.length
         ? h('div', { class: 'v' }, used.map((c) => refChip(c)))
-        : h('div', { class: 'v muted', text: 'Chưa item nào tham chiếu tới biến này.' })
+        : h('div', { class: 'v muted', text: 'No item references this variable yet.' })
     ));
   }
 
@@ -960,7 +960,7 @@ function renderItemRead(item, num, depth) {
     // component should call the exact same function this button calls.
     box.append(h('div', { class: 'rich-sub' },
       h('button', {
-        class: 'btn small', text: 'Lọc Design nhắc tới component này',
+        class: 'btn small', text: 'Filter Design items mentioning this component',
         onclick: () => openComponentFilter(item.code),
       })
     ));
@@ -980,7 +980,7 @@ function renderInterfaceRow(item, num) {
   },
     h('td', { class: 'if-num', text: num.join('.') }),
     h('td', { class: 'if-code' }, h('span', { class: 'item-code', text: item.code })),
-    h('td', { class: 'if-name', text: item.title || '(chưa đặt tên)' }),
+    h('td', { class: 'if-name', text: item.title || '(untitled)' }),
     h('td', { class: 'if-desc' },
       h('div', { html: latexToHtml(item.desc, state.projectDir, richOpts()) }),
       // The full value list lives here rather than in a column of its own: most
@@ -996,7 +996,7 @@ function renderInterfaceRow(item, num) {
     h('td', { class: 'if-ecu' }, h('div', { html: latexToHtml(f.receiverEcu || '', state.projectDir, richOpts()) })),
     h('td', { class: 'if-act' },
       state.viewing ? null : h('button', {
-        class: 'act', text: 'Sửa',
+        class: 'act', text: 'Edit',
         onclick: (e) => { e.stopPropagation(); startEdit(item.code); },
       })
     )
@@ -1007,14 +1007,14 @@ function renderInterfaceTable(items, prefix, startIndex) {
   const table = h('table', { class: 'iface-table' });
   table.append(h('thead', {}, h('tr', {},
     h('th', { class: 'if-num', text: '#' }),
-    h('th', { text: 'Mã' }),
-    h('th', { text: 'Tên tín hiệu' }),
-    h('th', { text: 'Mô tả' }),
-    h('th', { text: 'Lớp vật lý' }),
-    h('th', { text: 'Đơn vị' }),
-    h('th', { text: 'Mặc định' }),
-    h('th', { text: 'ECU gửi' }),
-    h('th', { text: 'ECU nhận' }),
+    h('th', { text: 'Code' }),
+    h('th', { text: 'Signal name' }),
+    h('th', { text: 'Description' }),
+    h('th', { text: 'Physical layer' }),
+    h('th', { text: 'Unit' }),
+    h('th', { text: 'Default' }),
+    h('th', { text: 'Sender ECU' }),
+    h('th', { text: 'Receiver ECU' }),
     h('th', { text: '' })
   )));
   const tb = h('tbody', {});
@@ -1033,11 +1033,11 @@ function renderComponentRow(item, num) {
   },
     h('td', { class: 'if-num', text: num.join('.') }),
     h('td', { class: 'if-code' }, h('span', { class: 'item-code', text: item.code })),
-    h('td', { class: 'if-name', text: item.title || '(chưa đặt tên)' }),
+    h('td', { class: 'if-name', text: item.title || '(untitled)' }),
     h('td', { class: 'if-desc' }, h('div', { html: latexToHtml(item.desc, state.projectDir, richOpts()) })),
     h('td', { class: 'if-act' },
       state.viewing ? null : h('button', {
-        class: 'act', text: 'Sửa',
+        class: 'act', text: 'Edit',
         onclick: (e) => { e.stopPropagation(); startEdit(item.code); },
       })
     )
@@ -1048,9 +1048,9 @@ function renderComponentTable(items, prefix, startIndex) {
   const table = h('table', { class: 'iface-table' });
   table.append(h('thead', {}, h('tr', {},
     h('th', { class: 'if-num', text: '#' }),
-    h('th', { text: 'Mã' }),
-    h('th', { text: 'Tên component' }),
-    h('th', { text: 'Mô tả' }),
+    h('th', { text: 'Code' }),
+    h('th', { text: 'Component name' }),
+    h('th', { text: 'Description' }),
     h('th', { text: '' })
   )));
   const tb = h('tbody', {});
@@ -1071,7 +1071,7 @@ function renderCalibrationRow(item, num) {
     h('td', { class: 'if-num', text: num.join('.') }),
     h('td', { class: 'if-code' }, h('span', { class: 'item-code', text: item.code })),
     h('td', { class: 'if-name' }, h('code', { class: 'cal-symbol', text: item.fields.symbol || '' })),
-    h('td', { class: 'if-name', text: item.title || '(chưa đặt tên)' }),
+    h('td', { class: 'if-name', text: item.title || '(untitled)' }),
     h('td', {}, isEnum ? h('div', { class: 'vchips' }, valueChips(item)) : h('span', { class: 'muted small', text: item.fields.unit || '' })),
     h('td', {}, isEnum ? '' : (item.fields.defaultValue || '')),
     h('td', {}, isEnum ? '' : (item.fields.minValue || '')),
@@ -1079,7 +1079,7 @@ function renderCalibrationRow(item, num) {
     h('td', { class: 'if-desc' }, h('div', { html: latexToHtml(item.desc, state.projectDir, richOpts()) })),
     h('td', { class: 'if-act' },
       state.viewing ? null : h('button', {
-        class: 'act', text: 'Sửa',
+        class: 'act', text: 'Edit',
         onclick: (e) => { e.stopPropagation(); startEdit(item.code); },
       })
     )
@@ -1090,14 +1090,14 @@ function renderCalibrationTable(items, prefix, startIndex) {
   const table = h('table', { class: 'iface-table' });
   table.append(h('thead', {}, h('tr', {},
     h('th', { class: 'if-num', text: '#' }),
-    h('th', { text: 'Mã' }),
-    h('th', { text: 'Ký hiệu' }),
-    h('th', { text: 'Tiêu đề' }),
-    h('th', { text: 'Giá trị / Đơn vị' }),
-    h('th', { text: 'Mặc định' }),
+    h('th', { text: 'Code' }),
+    h('th', { text: 'Symbol' }),
+    h('th', { text: 'Title' }),
+    h('th', { text: 'Values / Unit' }),
+    h('th', { text: 'Default' }),
     h('th', { text: 'Min' }),
     h('th', { text: 'Max' }),
-    h('th', { text: 'Mô tả' }),
+    h('th', { text: 'Description' }),
     h('th', { text: '' })
   )));
   const tb = h('tbody', {});
@@ -1170,7 +1170,7 @@ function itemSig(item, num, depth) {
   });
 
   // Cross-item: "used by" lists whoever mentions this signal/component —
-  // calibration no longer shows this (Truy vết covers it), so it's dropped here too.
+  // calibration no longer shows this (Traceability covers it), so it's dropped here too.
   if (item.type === 'interface' || item.type === 'component') {
     sig += `\u0001u:${calUsedBy(item.code).join(',')}`;
   }
@@ -1210,7 +1210,7 @@ function renderDocument() {
 
   if (!state.doc.items.length) {
     reconcile(body, state.viewing ? [] : [
-      h('div', { class: 'doc-add-row', text: '+ Thêm item đầu tiên', onclick: () => addItem(null, 'root') }),
+      h('div', { class: 'doc-add-row', text: '+ Add the first item', onclick: () => addItem(null, 'root') }),
     ]);
     invalidateSpy();
     return;
@@ -1280,7 +1280,7 @@ function renderDocument() {
 let addRowEl = null;
 function docAddRow() {
   if (!addRowEl) {
-    addRowEl = h('div', { class: 'doc-add-row', text: '+ Thêm item ở cấp gốc', onclick: () => addItem(null, 'root') });
+    addRowEl = h('div', { class: 'doc-add-row', text: '+ Add a root-level item', onclick: () => addItem(null, 'root') });
   }
   return addRowEl;
 }
@@ -1296,7 +1296,7 @@ function destroyRichFields() {
 }
 
 function startEdit(code, isNew) {
-  if (!canEdit('không sửa item')) return;
+  if (!canEdit('cannot edit item')) return;
   const item = findItem(state.doc, code);
   if (!item) return;
   // Remember items created *by* this edit session: cancelling must not leave a
@@ -1336,11 +1336,11 @@ function cancelEdit() {
     if (state.selected === code) state.selected = null;
     markDirty();
     renderAll();
-    setStatus('Đã hủy tạo item mới.');
+    setStatus('Cancelled creating the new item.');
     return;
   }
   renderDocument();
-  setStatus('Đã hủy chỉnh sửa.');
+  setStatus('Edit cancelled.');
 }
 
 function commitEdit() {
@@ -1375,7 +1375,7 @@ function commitEdit() {
   state.createdCode = null;
   markDirty();
   renderAll();
-  setStatus(`Đã cập nhật ${code}.`, 'ok');
+  setStatus(`Updated ${code}.`, 'ok');
 }
 
 function richOptions(getter, setter, placeholder) {
@@ -1480,18 +1480,18 @@ function valueListEditor({ get, set, getDefault, setDefault, onKindChange, hint,
         sync(); redraw();
       };
       box.append(h('div', { class: 'vrow' },
-        h('label', { class: 'vdef', title: 'Đặt làm giá trị mặc định' },
+        h('label', { class: 'vdef', title: 'Set as default value' },
           h('input', {
             type: 'radio', name: radioName, checked: i === defIdx,
             onchange: () => { defIdx = i; sync(); redraw(); },
           }),
-          h('span', { text: 'mặc định' })
+          h('span', { text: 'default' })
         ),
         input,
-        h('button', { class: 'row-del', text: '↑', title: 'Lên', disabled: i === 0, onclick: () => swap(i - 1) }),
-        h('button', { class: 'row-del', text: '↓', title: 'Xuống', disabled: i === list.length - 1, onclick: () => swap(i + 1) }),
+        h('button', { class: 'row-del', text: '↑', title: 'Move up', disabled: i === 0, onclick: () => swap(i - 1) }),
+        h('button', { class: 'row-del', text: '↓', title: 'Move down', disabled: i === list.length - 1, onclick: () => swap(i + 1) }),
         h('button', {
-          class: 'row-del', text: '✕', title: 'Xóa giá trị',
+          class: 'row-del', text: '✕', title: 'Remove value',
           onclick: () => {
             list.splice(i, 1);
             if (defIdx >= list.length) defIdx = list.length - 1;
@@ -1500,7 +1500,7 @@ function valueListEditor({ get, set, getDefault, setDefault, onKindChange, hint,
         })
       ));
     });
-    box.append(h('div', { class: 'add-row', text: '+ Thêm giá trị',
+    box.append(h('div', { class: 'add-row', text: '+ Add value',
       onclick: () => { list.push(''); if (defIdx < 0) defIdx = 0; redraw(list.length - 1); } }));
     if (hint) box.append(h('div', { class: 'field-hint', text: hint(list.filter((v) => v.trim()).length) }));
 
@@ -1561,9 +1561,9 @@ function buildFieldControl(f) {
         const bad = !target || (wanted && !wanted.includes(target.type));
         box.append(h('span', { class: 'refs-chip' + (bad ? ' bad' : '') },
           h('span', { class: 'code', text: code }),
-          h('span', { class: 'rc-title', text: target ? (target.title || '(chưa đặt tên)') : 'không tồn tại' }),
+          h('span', { class: 'rc-title', text: target ? (target.title || '(untitled)') : 'does not exist' }),
           h('button', {
-            class: 'rc-x', text: '✕', title: 'Bỏ liên kết',
+            class: 'rc-x', text: '✕', title: 'Remove link',
             onclick: () => {
               draft.fields[f.key] = joinMulti(splitMulti(draft.fields[f.key]).filter((c) => c !== code));
               redraw();
@@ -1572,7 +1572,7 @@ function buildFieldControl(f) {
         ));
       });
       box.append(h('button', {
-        class: 'btn small', text: '+ Thêm liên kết',
+        class: 'btn small', text: '+ Add link',
         onclick: async () => {
           const already = new Set(splitMulti(draft.fields[f.key] || ''));
           const items = flatten(state.doc)
@@ -1582,15 +1582,15 @@ function buildFieldControl(f) {
               (!wanted || wanted.includes(it.type)))
             .map((it) => ({
               value: it.code,
-              label: `${it.code} — ${it.title || '(chưa đặt tên)'}`,
+              label: `${it.code} — ${it.title || '(untitled)'}`,
               sub: typeDef(it.type).label,
             }));
           const picked = await askChoice({
             title: f.label,
             items,
             empty: wanted
-              ? `Không còn item ${wanted.join(' hoặc ')} nào để liên kết.`
-              : 'Không còn item nào để liên kết.',
+              ? `No more ${wanted.join(' or ')} item to link to.`
+              : 'No more item to link to.',
           });
           if (!picked) return;
           draft.fields[f.key] = joinMulti([...splitMulti(draft.fields[f.key] || ''), picked]);
@@ -1612,8 +1612,8 @@ function buildFieldControl(f) {
       // sense, so the whole form has to come back.
       onKindChange: () => rebuildForm(),
       hint: (n) => (n
-        ? 'Có danh sách giá trị nghĩa là tín hiệu dạng enum — đơn vị và khoảng min/max không còn áp dụng.'
-        : 'Để trống nếu đây là giá trị số. Thêm giá trị vào để biến nó thành enum.'),
+        ? 'Having a value list means the signal is an enum — unit and min/max range no longer apply.'
+        : 'Leave blank if this is a numeric value. Add values to turn it into an enum.'),
     });
   }
 
@@ -1651,21 +1651,21 @@ function buildFieldControl(f) {
           h('div', { class: 'sub-head' },
             h('span', { class: 'sub-n', text: `Setting ${i + 1}` }),
             h('span', { class: 'grow' }),
-            h('button', { class: 'row-del', text: '↑', title: 'Lên', disabled: i === 0, onclick: () => swap(i - 1) }),
-            h('button', { class: 'row-del', text: '↓', title: 'Xuống', disabled: i === draft.settings.length - 1, onclick: () => swap(i + 1) }),
-            h('button', { class: 'row-del', text: '✕', title: 'Xóa setting',
+            h('button', { class: 'row-del', text: '↑', title: 'Move up', disabled: i === 0, onclick: () => swap(i - 1) }),
+            h('button', { class: 'row-del', text: '↓', title: 'Move down', disabled: i === draft.settings.length - 1, onclick: () => swap(i + 1) }),
+            h('button', { class: 'row-del', text: '✕', title: 'Remove setting',
               onclick: () => { draft.settings.splice(i, 1); redraw(); } })
           ),
           h('div', { class: 'form-cols' },
             h('div', { class: 'form-row' },
-              h('label', { text: 'Tên setting' }),
+              h('label', { text: 'Setting name' }),
               h('input', {
-                class: 'input', type: 'text', value: st.name || '', placeholder: 'vd. Auto Hold',
+                class: 'input', type: 'text', value: st.name || '', placeholder: 'e.g. Auto Hold',
                 oninput: (e) => { st.name = e.target.value; },
               })
             ),
             h('div', { class: 'form-row' },
-              h('label', { text: 'Lưu theo' }),
+              h('label', { text: 'Storage' }),
               h('select', {
                 class: 'select',
                 onchange: (e) => { st.scope = e.target.value; },
@@ -1674,24 +1674,24 @@ function buildFieldControl(f) {
             )
           ),
           h('div', { class: 'form-row' },
-            h('label', { text: 'Các giá trị' }),
+            h('label', { text: 'Values' }),
             valueListEditor({
               get: () => st.values || '',
               set: (v) => { st.values = v; },
               getDefault: () => st.defaultValue || '',
               setDefault: (v) => { st.defaultValue = v; },
-              placeholder: 'vd. Bật',
+              placeholder: 'e.g. On',
             })
           )
         ));
       });
-      box.append(h('div', { class: 'add-row', text: '+ Thêm setting',
+      box.append(h('div', { class: 'add-row', text: '+ Add setting',
         onclick: () => {
           draft.settings.push({ name: '', values: '', defaultValue: '', scope: 'profile' });
           redraw();
         } }));
       if (!draft.settings.length) {
-        box.append(h('div', { class: 'field-hint', text: 'Yêu cầu này có sinh ra tùy chọn nào cho người lái không?' }));
+        box.append(h('div', { class: 'field-hint', text: 'Does this requirement produce any option for the driver?' }));
       }
     };
     if (!draft.settings) draft.settings = [];
@@ -1704,19 +1704,19 @@ function buildFieldControl(f) {
     // a time rather than redrawing the list: a full redraw would tear down and
     // rebuild every TipTap instance on every click.
     const box = h('div', { class: 'sub-list' });
-    const addRow = h('div', { class: 'add-row', text: '+ Thêm cảnh báo' });
+    const addRow = h('div', { class: 'add-row', text: '+ Add warning' });
 
     const card = (w) => {
       const node = h('div', { class: 'sub-card' });
       const renumber = () => {
-        [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Cảnh báo ${k + 1}`; });
+        [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Warning ${k + 1}`; });
       };
       node.append(
         h('div', { class: 'sub-head' },
-          h('span', { class: 'sub-n', text: 'Cảnh báo' }),
+          h('span', { class: 'sub-n', text: 'Warning' }),
           h('span', { class: 'grow' }),
           h('button', {
-            class: 'row-del', text: '✕', title: 'Xóa cảnh báo',
+            class: 'row-del', text: '✕', title: 'Remove warning',
             onclick: () => {
               const i = draft.warnings.indexOf(w);
               if (i >= 0) draft.warnings.splice(i, 1);
@@ -1729,25 +1729,25 @@ function buildFieldControl(f) {
           h('div', { class: 'form-row' },
             h('label', { text: 'Warning ID' }),
             h('input', {
-              class: 'input mono', type: 'text', value: w.id || '', placeholder: 'vd. WRN-EPB-012',
+              class: 'input mono', type: 'text', value: w.id || '', placeholder: 'e.g. WRN-EPB-012',
               oninput: (e) => { w.id = e.target.value; },
             }),
-            h('div', { class: 'field-hint', text: 'Mã trong tài liệu UI/UX. App không kiểm chứng được mã này.' })
+            h('div', { class: 'field-hint', text: 'The ID from the UI/UX document. The app cannot verify this code.' })
           ),
           h('div', { class: 'form-row' },
-            h('label', { text: 'Thời gian trễ (mature/demature time)' }),
+            h('label', { text: 'Delay (mature/demature time)' }),
             h('div', { class: 'delay-pair' },
               h('div', { class: 'delay-field' },
-                h('span', { class: 'delay-label', text: 'Độ trễ bật' }),
+                h('span', { class: 'delay-label', text: 'Turn-on delay' }),
                 h('input', {
-                  class: 'input', type: 'text', value: w.enterDelay || '', placeholder: 'vd. 500 ms',
+                  class: 'input', type: 'text', value: w.enterDelay || '', placeholder: 'e.g. 500 ms',
                   oninput: (e) => { w.enterDelay = e.target.value; },
                 })
               ),
               h('div', { class: 'delay-field' },
-                h('span', { class: 'delay-label', text: 'Độ trễ tắt' }),
+                h('span', { class: 'delay-label', text: 'Turn-off delay' }),
                 h('input', {
-                  class: 'input', type: 'text', value: w.exitDelay || '', placeholder: 'vd. 200 ms',
+                  class: 'input', type: 'text', value: w.exitDelay || '', placeholder: 'e.g. 200 ms',
                   oninput: (e) => { w.exitDelay = e.target.value; },
                 })
               )
@@ -1755,7 +1755,7 @@ function buildFieldControl(f) {
           )
         )
       );
-      [['enterCondition', 'Điều kiện hiện cảnh báo'], ['exitCondition', 'Điều kiện tắt cảnh báo']].forEach(([key, label]) => {
+      [['enterCondition', 'Warning enter condition'], ['exitCondition', 'Warning exit condition']].forEach(([key, label]) => {
         const holder = h('div', {});
         node.append(h('div', { class: 'form-row' }, h('label', { text: label }), holder));
         queueMicrotask(mountRich(holder, richOptions(
@@ -1773,10 +1773,10 @@ function buildFieldControl(f) {
       const w = { id: '', enterDelay: '', exitDelay: '', enterCondition: '', exitCondition: '' };
       draft.warnings.push(w);
       box.insertBefore(card(w), addRow);
-      [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Cảnh báo ${k + 1}`; });
+      [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Warning ${k + 1}`; });
     };
     box.append(addRow);
-    [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Cảnh báo ${k + 1}`; });
+    [...box.querySelectorAll('.sub-card .sub-n')].forEach((n, k) => { n.textContent = `Warning ${k + 1}`; });
     return box;
   }
 
@@ -1787,8 +1787,8 @@ function buildFieldControl(f) {
       const table = h('table', { class: 'steps-table edit' });
       table.append(h('thead', {}, h('tr', {},
         h('th', { class: 'st-n', text: '#' }),
-        h('th', { text: 'Hành động' }),
-        h('th', { text: 'Kết quả mong đợi' }),
+        h('th', { text: 'Action' }),
+        h('th', { text: 'Expected result' }),
         h('th', { class: 'st-x' })
       )));
       const tb = h('tbody', {});
@@ -1797,21 +1797,21 @@ function buildFieldControl(f) {
           h('td', { class: 'st-n', text: String(i + 1) }),
           h('td', {}, h('input', {
             class: 'input', type: 'text', value: st.action,
-            placeholder: 'Người kiểm thử làm gì',
+            placeholder: 'What the tester does',
             oninput: (e) => { st.action = e.target.value; },
           })),
           h('td', {}, h('input', {
             class: 'input', type: 'text', value: st.expected,
-            placeholder: 'Hệ thống phải phản hồi thế nào',
+            placeholder: 'How the system must respond',
             oninput: (e) => { st.expected = e.target.value; },
           })),
           h('td', { class: 'st-x' },
             h('button', {
-              class: 'row-del', text: '✕', title: 'Xóa bước',
+              class: 'row-del', text: '✕', title: 'Remove step',
               onclick: () => { draft.steps.splice(i, 1); redraw(); },
             }),
             h('button', {
-              class: 'row-del', text: '↑', title: 'Lên',
+              class: 'row-del', text: '↑', title: 'Move up',
               disabled: i === 0,
               onclick: () => {
                 [draft.steps[i - 1], draft.steps[i]] = [draft.steps[i], draft.steps[i - 1]];
@@ -1819,7 +1819,7 @@ function buildFieldControl(f) {
               },
             }),
             h('button', {
-              class: 'row-del', text: '↓', title: 'Xuống',
+              class: 'row-del', text: '↓', title: 'Move down',
               disabled: i === draft.steps.length - 1,
               onclick: () => {
                 [draft.steps[i + 1], draft.steps[i]] = [draft.steps[i], draft.steps[i + 1]];
@@ -1831,10 +1831,10 @@ function buildFieldControl(f) {
       });
       table.append(tb);
       box.append(table);
-      box.append(h('div', { class: 'add-row', text: '+ Thêm bước',
+      box.append(h('div', { class: 'add-row', text: '+ Add step',
         onclick: () => { draft.steps.push({ action: '', expected: '' }); redraw(); } }));
       if (!draft.steps.length) {
-        box.append(h('div', { class: 'field-hint', text: 'Chưa có bước nào — một DVP không bước thì không kiểm chứng được gì.' }));
+        box.append(h('div', { class: 'field-hint', text: 'No steps yet — a DVP with no steps verifies nothing.' }));
       }
     };
     redraw();
@@ -1847,7 +1847,7 @@ function buildFieldControl(f) {
       .map((n) => n.item)
       .filter((it) => (!f.refType || it.type === f.refType) && it.code !== state.editing);
     const dl = h('datalist', { id: listId },
-      candidates.map((it) => h('option', { value: it.code }, `${it.title || '(chưa đặt tên)'}`))
+      candidates.map((it) => h('option', { value: it.code }, `${it.title || '(untitled)'}`))
     );
     const hint = h('div', { class: 'field-hint' });
     const input = h('input', {
@@ -1857,20 +1857,20 @@ function buildFieldControl(f) {
     });
     function check() {
       const v = String(draft.fields[f.key] || '').trim();
-      if (!v) { input.classList.remove('invalid'); hint.className = 'field-hint'; hint.textContent = `Để trống nếu chưa liên kết.`; return; }
+      if (!v) { input.classList.remove('invalid'); hint.className = 'field-hint'; hint.textContent = `Leave blank if not linked yet.`; return; }
       const target = findItem(state.doc, v);
       if (!target) {
         input.classList.add('invalid');
         hint.className = 'field-hint error';
-        hint.textContent = `Không có item nào mang mã "${v}".`;
+        hint.textContent = `No item has code "${v}".`;
       } else if (f.refType && target.type !== f.refType) {
         input.classList.add('invalid');
         hint.className = 'field-hint error';
-        hint.textContent = `"${v}" là ${target.type}, trường này cần ${f.refType}.`;
+        hint.textContent = `"${v}" is ${target.type}, this field expects ${f.refType}.`;
       } else {
         input.classList.remove('invalid');
         hint.className = 'field-hint';
-        hint.textContent = `→ ${target.title || '(chưa đặt tên)'}`;
+        hint.textContent = `→ ${target.title || '(untitled)'}`;
       }
     }
     check();
@@ -1933,7 +1933,7 @@ function renderItemEdit(item, num, depth) {
 
   // type
   const typeRow = h('div', { class: 'form-row' },
-    h('div', { class: 'flabel', text: 'Loại item' })
+    h('div', { class: 'flabel', text: 'Item type' })
   );
   const sw = h('div', { class: 'type-switch' });
   TYPE_ORDER.forEach((t) => {
@@ -1954,30 +1954,30 @@ function renderItemEdit(item, num, depth) {
 
   // title
   form.append(h('div', { class: 'form-row' },
-    h('label', { text: 'Tiêu đề' }),
+    h('label', { text: 'Title' }),
     h('input', {
       class: 'input title-input', type: 'text', value: draft.title,
-      placeholder: 'Tên của item…',
+      placeholder: 'Item name…',
       oninput: (e) => { draft.title = e.target.value; },
     })
   ));
 
   // description
-  const descRow = h('div', { class: 'form-row' }, h('label', { text: 'Mô tả' }));
+  const descRow = h('div', { class: 'form-row' }, h('label', { text: 'Description' }));
   const descBox = h('div', {});
   descRow.append(descBox);
   form.append(descRow);
   const mountDesc = mountRich(descBox, richOptions(
     () => draft.desc,
     (v) => { draft.desc = v; },
-    'Mô tả nội dung item…'
+    'Describe the item…'
   ));
   queueMicrotask(mountDesc);
 
   // typed fields
   const defs = visibleFields(draft.type, draft.fields);
   if (defs.length) {
-    form.append(h('div', { class: 'form-sep', text: `Trường của ${typeDef(draft.type).label}` }));
+    form.append(h('div', { class: 'form-sep', text: `${typeDef(draft.type).label} fields` }));
     const WIDE = new Set(['refs', 'steps', 'valuelist', 'uisettings', 'uiwarnings']);
     const plain = defs.filter((f) => !WIDE.has(f.kind) && f.kind !== 'rich' && f.kind !== 'flag');
     const flags = defs.filter((f) => f.kind === 'flag');
@@ -2006,14 +2006,14 @@ function renderItemEdit(item, num, depth) {
   const foreign = foreignFieldKeys({ type: draft.type, fields: draft.fields });
   if (foreign.length) {
     const fb = h('div', { class: 'foreign-box' },
-      h('div', { text: `Item còn ${foreign.length} trường không thuộc loại ${typeDef(draft.type).label}. Chúng vẫn được giữ trong data.tex.` })
+      h('div', { text: `Item still has ${foreign.length} field(s) not part of type ${typeDef(draft.type).label}. They are kept in data.tex.` })
     );
     foreign.forEach((k) => {
       fb.append(h('div', { class: 'fitem' },
         h('code', { text: k }),
         h('span', { class: 'grow', text: String(draft.fields[k]).slice(0, 60) }),
         h('button', {
-          class: 'btn small danger', text: 'Bỏ',
+          class: 'btn small danger', text: 'Discard',
           onclick: () => { delete draft.fields[k]; rebuildForm(); },
         })
       ));
@@ -2022,10 +2022,10 @@ function renderItemEdit(item, num, depth) {
   }
 
   form.append(h('div', { class: 'form-actions' },
-    h('button', { class: 'btn primary', text: 'Lưu item', onclick: commitEdit }),
-    h('button', { class: 'btn', text: 'Hủy', onclick: cancelEdit }),
+    h('button', { class: 'btn primary', text: 'Save item', onclick: commitEdit }),
+    h('button', { class: 'btn', text: 'Cancel', onclick: cancelEdit }),
     h('span', { class: 'grow' }),
-    h('span', { class: 'muted', text: 'Ctrl+Enter để lưu · Esc để hủy' })
+    h('span', { class: 'muted', text: 'Ctrl+Enter to save · Esc to cancel' })
   ));
 
   box.append(form);
@@ -2042,7 +2042,7 @@ function rebuildForm() {
 // =====================================================================
 
 function addItem(targetCode, position) {
-  if (!canEdit('không thêm item')) return;
+  if (!canEdit('cannot add item')) return;
   if (!state.doc) return;
   const item = newItem(state.doc, targetCode ? findItem(state.doc, targetCode).type : 'information');
   if (position === 'root' || !targetCode) state.doc.items.push(item);
@@ -2051,21 +2051,21 @@ function addItem(targetCode, position) {
   markDirty();
   renderTree();
   startEdit(item.code, true);
-  setStatus(`Đã tạo ${item.code}.`);
+  setStatus(`Created ${item.code}.`);
 }
 
 async function deleteItem(code) {
-  if (!canEdit('không xóa item')) return;
+  if (!canEdit('cannot delete item')) return;
   const node = locate(state.doc, code);
   if (!node) return;
   const n = subtreeCodes(node.item).length;
   const ok = await window.api.confirm({
-    title: 'Xóa item',
-    message: n > 1 ? `Xóa ${code} và ${n - 1} item con?` : `Xóa ${code}?`,
+    title: 'Delete item',
+    message: n > 1 ? `Delete ${code} and ${n - 1} child item(s)?` : `Delete ${code}?`,
     detail: n > 1
-      ? `Toàn bộ nhánh sẽ bị xóa: ${subtreeCodes(node.item).join(', ')}.\nMã đã cấp sẽ không được tái sử dụng.`
-      : `"${node.item.title || '(chưa đặt tên)'}"\nMã đã cấp sẽ không được tái sử dụng.`,
-    confirmLabel: 'Xóa',
+      ? `The whole subtree will be deleted: ${subtreeCodes(node.item).join(', ')}.\nOnce issued, a code is never reused.`
+      : `"${node.item.title || '(untitled)'}"\nOnce issued, a code is never reused.`,
+    confirmLabel: 'Delete',
     danger: true,
   });
   if (!ok) return;
@@ -2074,11 +2074,11 @@ async function deleteItem(code) {
   if (state.editing === code) { state.editing = null; state.draft = null; }
   markDirty();
   renderAll();
-  setStatus(`Đã xóa ${code}${n > 1 ? ` và ${n - 1} item con` : ''}.`);
+  setStatus(`Deleted ${code}${n > 1 ? ` and ${n - 1} child item(s)` : ''}.`);
 }
 
 function applyTreeOp(fn, code, okMsg) {
-  if (!code || !canEdit('không di chuyển item')) return;
+  if (!code || !canEdit('cannot move item')) return;
   if (fn(state.doc, code)) {
     markDirty();
     renderAll();
@@ -2105,19 +2105,19 @@ function openItemMenu(x, y, code) {
   };
   const sep = () => menu.append(h('div', { class: 'ctx-sep' }));
 
-  add('Sửa item', 'Ctrl+E', () => startEdit(code));
+  add('Edit item', 'Ctrl+E', () => startEdit(code));
   sep();
-  add('Thêm item con', '', () => addItem(code, 'inside'));
-  add('Thêm item phía trên', '', () => addItem(code, 'before'));
-  add('Thêm item phía dưới', '', () => addItem(code, 'after'));
+  add('Add child item', '', () => addItem(code, 'inside'));
+  add('Add item above', '', () => addItem(code, 'before'));
+  add('Add item below', '', () => addItem(code, 'after'));
   sep();
-  add('Lên', 'Alt+↑', () => applyTreeOp(moveUp, code, 'Đã chuyển lên.'), { disabled: node.index === 0 });
-  add('Xuống', 'Alt+↓', () => applyTreeOp(moveDown, code, 'Đã chuyển xuống.'), { disabled: node.index >= node.siblings.length - 1 });
-  add('Thụt vào', 'Tab', () => applyTreeOp(indentItem, code, 'Đã thụt vào.'), { disabled: node.index === 0 });
-  add('Thụt ra', 'Shift+Tab', () => applyTreeOp(outdentItem, code, 'Đã thụt ra.'), { disabled: !node.parent });
+  add('Move up', 'Alt+↑', () => applyTreeOp(moveUp, code, 'Moved up.'), { disabled: node.index === 0 });
+  add('Move down', 'Alt+↓', () => applyTreeOp(moveDown, code, 'Moved down.'), { disabled: node.index >= node.siblings.length - 1 });
+  add('Indent', 'Tab', () => applyTreeOp(indentItem, code, 'Indented.'), { disabled: node.index === 0 });
+  add('Outdent', 'Shift+Tab', () => applyTreeOp(outdentItem, code, 'Outdented.'), { disabled: !node.parent });
   sep();
-  add('Sao chép mã', '', () => navigator.clipboard.writeText(code));
-  add('Xóa item', 'Del', () => deleteItem(code), { danger: true });
+  add('Copy code', '', () => navigator.clipboard.writeText(code));
+  add('Delete item', 'Del', () => deleteItem(code), { danger: true });
 
   menu.hidden = false;
   const r = menu.getBoundingClientRect();
@@ -2139,7 +2139,7 @@ function escapeHtmlText(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** First occurrence of `query` in `text`, wrapped in <mark> — used by both the TOC tree and the Lọc/Lọc tổng tables. */
+/** First occurrence of `query` in `text`, wrapped in <mark> — used by both the TOC tree and the Filter/Filter-all tables. */
 function highlightHtml(text, query) {
   const t = String(text || '');
   const q = String(query || '').trim();
@@ -2152,20 +2152,20 @@ function highlightHtml(text, query) {
 }
 
 /**
- * Every column Lọc/Lọc tổng know how to show, in table order. Lọc tổng never
- * adds a "Sách" column — see `groupByBook` on fillFilterTable below.
+ * Every column Filter/Filter-all know how to show, in table order. Filter-all
+ * never adds a "Book" column — see `groupByBook` on fillFilterTable below.
  */
 const FILTER_COLUMNS = [
   { key: 'num', label: '#' },
-  { key: 'code', label: 'Mã' },
-  { key: 'type', label: 'Loại' },
-  { key: 'title', label: 'Tiêu đề' },
-  { key: 'desc', label: 'Nội dung' },
+  { key: 'code', label: 'Code' },
+  { key: 'type', label: 'Type' },
+  { key: 'title', label: 'Title' },
+  { key: 'desc', label: 'Description' },
   { key: 'asil', label: 'ASIL' },
   { key: 'verification', label: 'Verification' },
-  { key: 'link', label: 'Liên kết' },
+  { key: 'link', label: 'Link' },
 ];
-/** Content ("Nội dung") stays opt-in — it's the one column that can get long. */
+/** Content ("Description") stays opt-in — it's the one column that can get long. */
 const DEFAULT_FILTER_COLS = new Set(['num', 'code', 'type', 'title', 'asil', 'verification', 'link']);
 
 /** Strip the rich-text LaTeX subset down to readable plain text for a table cell — same idea as the xlsx export's own `plain()` in main.js. */
@@ -2177,7 +2177,7 @@ function plainPreview(s) {
     .trim();
 }
 
-/** A short window of `text` around the first match of `query`, so a long "Nội dung" cell doesn't dump the whole item body. */
+/** A short window of `text` around the first match of `query`, so a long "Description" cell doesn't dump the whole item body. */
 function contentSnippet(text, query, maxLen = 160) {
   const t = String(text || '');
   const q = String(query || '').trim();
@@ -2190,7 +2190,7 @@ function contentSnippet(text, query, maxLen = 160) {
 }
 
 /**
- * One dropdown, reused by both Lọc and Lọc tổng, for "which types + UI/UX
+ * One dropdown, reused by both Filter and Filter-all, for "which types + UI/UX
  * flag to show" — a single tick-list with an "all" reset, not a row of
  * standalone buttons. `menu` is the caller's own open/close state (`'type'`
  * to show this one) so re-render can keep it open across ticks.
@@ -2199,8 +2199,8 @@ function typeUiuxDropdown({ types, uiOnly, onToggleType, onToggleUiOnly, onReset
   const open = menu.get() === 'type';
   const active = types.size > 0 || uiOnly;
   const label = active
-    ? `Lọc theo loại (${types.size}${uiOnly ? '+UI/UX' : ''}) ▾`
-    : 'Lọc theo loại ▾';
+    ? `Filter by type (${types.size}${uiOnly ? '+UI/UX' : ''}) ▾`
+    : 'Filter by type ▾';
   const btn = h('button', {
     class: 'btn small ghost' + (active ? ' active' : ''),
     text: label,
@@ -2211,7 +2211,7 @@ function typeUiuxDropdown({ types, uiOnly, onToggleType, onToggleUiOnly, onReset
     h('div', {
       class: 'fdrop-item fdrop-all',
       onclick: () => { onReset(); setMenu('type'); },
-    }, h('b', { text: 'Tất cả (bỏ lọc)' })),
+    }, h('b', { text: 'All (clear filter)' })),
     h('div', { class: 'fdrop-sep' }),
     ...TYPE_ORDER.map((t) => h('label', { class: 'fdrop-item' },
       h('input', { type: 'checkbox', checked: types.has(t), onchange: () => { onToggleType(t); setMenu('type'); } }),
@@ -2220,18 +2220,18 @@ function typeUiuxDropdown({ types, uiOnly, onToggleType, onToggleUiOnly, onReset
     h('div', { class: 'fdrop-sep' }),
     h('label', { class: 'fdrop-item' },
       h('input', { type: 'checkbox', checked: uiOnly, onchange: () => { onToggleUiOnly(); setMenu('type'); } }),
-      h('span', { text: 'Chỉ hiện ảnh hưởng UI/UX' })
+      h('span', { text: 'Only show UI/UX impact' })
     )
   );
   return h('div', { class: 'fdrop open' }, btn, menuEl);
 }
 
-/** The matching column-visibility dropdown — tick which of FILTER_COLUMNS to show, plus "chọn tất cả". */
+/** The matching column-visibility dropdown — tick which of FILTER_COLUMNS to show, plus "select all". */
 function columnDropdown({ cols, onToggleCol, onSelectAll, menu, setMenu }) {
   const open = menu.get() === 'col';
   const btn = h('button', {
     class: 'btn small ghost',
-    text: `Cột (${cols.size}) ▾`,
+    text: `Columns (${cols.size}) ▾`,
     onclick: (e) => { e.stopPropagation(); setMenu(open ? null : 'col'); },
   });
   if (!open) return h('div', { class: 'fdrop' }, btn);
@@ -2239,7 +2239,7 @@ function columnDropdown({ cols, onToggleCol, onSelectAll, menu, setMenu }) {
     h('div', {
       class: 'fdrop-item fdrop-all',
       onclick: () => { onSelectAll(); setMenu('col'); },
-    }, h('b', { text: 'Chọn tất cả' })),
+    }, h('b', { text: 'Select all' })),
     h('div', { class: 'fdrop-sep' }),
     ...FILTER_COLUMNS.map((c) => h('label', { class: 'fdrop-item' },
       h('input', { type: 'checkbox', checked: cols.has(c.key), onchange: () => { onToggleCol(c.key); setMenu('col'); } }),
@@ -2250,7 +2250,7 @@ function columnDropdown({ cols, onToggleCol, onSelectAll, menu, setMenu }) {
 }
 
 // Any dropdown click closes on an outside mousedown — one listener for both
-// Lọc and Lọc tổng, since only one of the two menus is ever relevant/open.
+// Filter and Filter-all, since only one of the two menus is ever relevant/open.
 document.addEventListener('mousedown', (e) => {
   if (e.target.closest('.fdrop')) return;
   let changed = false;
@@ -2261,13 +2261,13 @@ document.addEventListener('mousedown', (e) => {
 });
 
 /**
- * The one table both "Lọc" (1 sách) and "Lọc tổng" (nhiều sách) render —
+ * The one table both "Filter" (1 book) and "Filter-all" (multiple books) render —
  * built once here instead of twice, per the explicit ask not to re-code
  * a second table. Rows are `{item, path, depth, book?}`. `cols` picks which
  * of FILTER_COLUMNS to render — same dropdown/state shape for both callers.
- * `groupByBook` (Lọc tổng) doesn't add a "Sách" column: it inserts one
+ * `groupByBook` (Filter-all) doesn't add a "Book" column: it inserts one
  * full-width header row per book, ahead of that book's own rows, inside this
- * SAME table/tbody — a "sách là cha" layout, still one table overall.
+ * SAME table/tbody — a "book as parent" layout, still one table overall.
  */
 function fillFilterTable(table, rows, { groupByBook, query, cols, onRowClick }) {
   table.innerHTML = '';
@@ -2296,7 +2296,7 @@ function fillFilterTable(table, rows, { groupByBook, query, cols, onRowClick }) 
       ));
       else if (c.key === 'title') cells.push(h('td', { class: 'c-title' },
         h('span', { class: 'indent', style: `width:${(depth - 1) * 14}px` }),
-        h('span', { html: highlightHtml(item.title || '(chưa đặt tên)', query) })
+        h('span', { html: highlightHtml(item.title || '(untitled)', query) })
       ));
       else if (c.key === 'desc') cells.push(h('td', { class: 'c-desc',
         html: highlightHtml(contentSnippet(plainPreview(item.desc), query), query) }));
@@ -2325,16 +2325,16 @@ function filterRowToExportRecord(row) {
 
 async function exportFilterRowsExcel(defaultDir, rows, showBook) {
   const columns = [
-    ...(showBook ? [{ key: 'book', label: 'Sách' }] : []),
-    { key: 'num', label: '#' }, { key: 'code', label: 'Mã' }, { key: 'type', label: 'Loại' },
-    { key: 'title', label: 'Tiêu đề' }, { key: 'desc', label: 'Nội dung' }, { key: 'asil', label: 'ASIL' },
-    { key: 'verification', label: 'Verification' }, { key: 'link', label: 'Liên kết' },
+    ...(showBook ? [{ key: 'book', label: 'Book' }] : []),
+    { key: 'num', label: '#' }, { key: 'code', label: 'Code' }, { key: 'type', label: 'Type' },
+    { key: 'title', label: 'Title' }, { key: 'desc', label: 'Description' }, { key: 'asil', label: 'ASIL' },
+    { key: 'verification', label: 'Verification' }, { key: 'link', label: 'Link' },
   ];
   try {
     const res = await window.api.table.exportExcel(defaultDir, columns, rows.map(filterRowToExportRecord));
-    if (res) setStatus(`Đã xuất ${res.rows} dòng ra ${res.path}.`, 'ok');
+    if (res) setStatus(`Exported ${res.rows} row(s) to ${res.path}.`, 'ok');
   } catch (e) {
-    window.api.showError({ title: 'Không xuất được Excel', message: e.message });
+    window.api.showError({ title: 'Could not export to Excel', message: e.message });
   }
 }
 
@@ -2369,7 +2369,7 @@ function renderTable() {
   }));
   filters.append(h('span', { class: 'grow' }));
   filters.append(h('button', {
-    class: 'btn small ghost', text: 'Xuất Excel',
+    class: 'btn small ghost', text: 'Export to Excel',
     onclick: () => exportFilterRowsExcel(state.projectDir, rows, false),
   }));
 
@@ -2384,7 +2384,7 @@ function renderTable() {
   table.innerHTML = '';
   if (!rows.length) {
     table.append(h('tbody', {}, h('tr', {}, h('td', {},
-      h('div', { class: 'empty-note', text: 'Không có item nào khớp bộ lọc.' })))));
+      h('div', { class: 'empty-note', text: 'No item matches the filter.' })))));
     return;
   }
   fillFilterTable(table, rows, { query: state.query, cols: state.filterCols, onRowClick: (r) => gotoItem(r.item.code) });
@@ -2480,7 +2480,7 @@ function layoutTrace(t) {
     nodes.push({
       kind: 'design', item: r.design, x: midX, y,
       bad: r.status === 'broken', warn: r.status === 'unlinked',
-      note: r.status === 'broken' ? `→ ${r.functionCode} (không tồn tại)` : 'chưa liên kết Function',
+      note: r.status === 'broken' ? `→ ${r.functionCode} (does not exist)` : 'not linked to a Function',
     });
     for (let i = 0; i < nDvp; i++) {
       edges.push({
@@ -2496,7 +2496,7 @@ function layoutTrace(t) {
     nodes.push({
       kind: 'dvp', item: r.dvp, x: rightX, y,
       bad: r.status === 'broken', warn: r.status === 'unlinked',
-      note: r.status === 'broken' ? `→ ${r.targetCode} (không tồn tại)` : 'chưa gắn vào đâu',
+      note: r.status === 'broken' ? `→ ${r.targetCode} (does not exist)` : 'not linked to anything',
     });
     y += G.NODE_H + G.V_GAP;
   });
@@ -2514,7 +2514,7 @@ function traceNodeEl(n) {
   const el = h('div', {
     class: cls,
     style: `left:${n.x}px; top:${n.y}px; width:${G.NODE_W}px; height:${G.NODE_H}px`,
-    title: `${it.code} — ${it.title || '(chưa đặt tên)'}`,
+    title: `${it.code} — ${it.title || '(untitled)'}`,
     onclick: () => gotoItem(it.code),
   },
     h('div', { class: 'gnode-top' },
@@ -2522,10 +2522,10 @@ function traceNodeEl(n) {
       it.fields && it.fields.asil
         ? h('span', { class: asilClass(it.fields.asil), text: it.fields.asil.replace('ASIL ', '') })
         : null,
-      n.warn && n.kind === 'function' ? h('span', { class: 'gflag warn', text: 'chưa phủ' }) : null,
-      n.bad ? h('span', { class: 'gflag bad', text: 'link hỏng' }) : null
+      n.warn && n.kind === 'function' ? h('span', { class: 'gflag warn', text: 'not covered' }) : null,
+      n.bad ? h('span', { class: 'gflag bad', text: 'broken link' }) : null
     ),
-    h('div', { class: 'gtitle', text: it.title || '(chưa đặt tên)' }),
+    h('div', { class: 'gtitle', text: it.title || '(untitled)' }),
     n.note ? h('div', { class: 'gnote', text: n.note }) : null
   );
   return el;
@@ -2565,7 +2565,7 @@ function buildTraceGraph(t) {
   wrap.appendChild(canvas);
 
   if (!t.functions.length && !t.designs.length) {
-    return h('div', { class: 'empty-note', text: 'Chưa có item Function hoặc Design nào để vẽ.' });
+    return h('div', { class: 'empty-note', text: 'No Function or Design item yet to draw.' });
   }
   return wrap;
 }
@@ -2574,19 +2574,19 @@ let H_TRACE = { coverage: new Map() };
 
 function buildTraceTable(t) {
   H_TRACE = t;
-  if (!t.rows.length) return h('div', { class: 'empty-note', text: 'Chưa có item Design nào.' });
-  const LABEL = { ok: 'Liên kết OK', broken: 'Mã không tồn tại', unlinked: 'Chưa liên kết' };
+  if (!t.rows.length) return h('div', { class: 'empty-note', text: 'No Design item yet.' });
+  const LABEL = { ok: 'Linked OK', broken: 'Code does not exist', unlinked: 'Not linked' };
   const table = h('table', { class: 'grid' });
   table.append(h('thead', {}, h('tr', {},
-    h('th', { text: 'Design' }), h('th', { text: 'Tiêu đề' }),
+    h('th', { text: 'Design' }), h('th', { text: 'Title' }),
     h('th', { text: 'ASIL' }), h('th', { text: 'Function' }),
-    h('th', { text: 'Tiêu đề Function' }), h('th', { text: 'DVP phủ' }), h('th', { text: 'Trạng thái' })
+    h('th', { text: 'Function title' }), h('th', { text: 'DVP coverage' }), h('th', { text: 'Status' })
   )));
   const tb = h('tbody', {});
   t.rows.forEach((r) => {
     tb.append(h('tr', { onclick: () => gotoItem(r.design.code) },
       h('td', { class: 'c-code', text: r.design.code }),
-      h('td', { class: 'c-title', text: r.design.title || '(chưa đặt tên)' }),
+      h('td', { class: 'c-title', text: r.design.title || '(untitled)' }),
       h('td', {}, r.design.fields.asil ? h('span', { class: asilClass(r.design.fields.asil), text: r.design.fields.asil }) : ''),
       h('td', { class: 'c-code', text: r.functionCode || '—' }),
       h('td', { text: r.functionItem ? r.functionItem.title : '—' }),
@@ -2618,13 +2618,13 @@ function renderUiuxTab() {
   });
 
   box.append(h('div', { class: 'trace-grid' },
-    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(marked.length) }), h('div', { class: 'l', text: 'Item ảnh hưởng UI/UX' })),
+    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(marked.length) }), h('div', { class: 'l', text: 'Item(s) with UI/UX impact' })),
     h('div', { class: 'stat' }, h('div', { class: 'n', text: String(settings.length) }), h('div', { class: 'l', text: 'Setting' })),
-    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(warnings.length) }), h('div', { class: 'l', text: 'Cảnh báo' }))
+    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(warnings.length) }), h('div', { class: 'l', text: 'Warnings' }))
   ));
 
   if (!marked.length && !settings.length && !warnings.length) {
-    box.append(h('div', { class: 'trace-empty', text: 'Chưa item nào được đánh dấu ảnh hưởng UI/UX. Mở một Function hoặc Design, bấm Sửa rồi tick "Ảnh hưởng UI/UX".' }));
+    box.append(h('div', { class: 'trace-empty', text: 'No item is marked UI/UX impact yet. Open a Function or Design, click Edit, then tick "UI/UX impact".' }));
     return;
   }
 
@@ -2636,7 +2636,7 @@ function renderUiuxTab() {
   const section = (title, count, head, rows) => {
     box.append(h('h3', { class: 'uiux-h', text: `${title} (${count})` }));
     if (!count) {
-      box.append(h('div', { class: 'trace-empty small', text: 'Chưa có.' }));
+      box.append(h('div', { class: 'trace-empty small', text: 'None yet.' }));
       return;
     }
     const table = h('table', { class: 'grid' });
@@ -2647,19 +2647,19 @@ function renderUiuxTab() {
     box.append(h('div', { class: 'table-scroll' }, table));
   };
 
-  section('Setting người dùng', settings.length,
-    ['Tên setting', 'Giá trị', 'Lưu theo', 'Khai ở'],
+  section('User settings', settings.length,
+    ['Setting name', 'Values', 'Storage', 'Declared at'],
     settings.map((row) => h('tr', {},
-      h('td', { class: 'set-name', text: row.st.name || '(chưa đặt tên)' }),
+      h('td', { class: 'set-name', text: row.st.name || '(untitled)' }),
       h('td', {}, h('div', { class: 'vchips' }, listChips(row.st.values, row.st.defaultValue))),
       h('td', { class: 'set-scope', text: scopeLabel(row.st.scope) }),
       source(row)
     )));
 
-  section('Cảnh báo', warnings.length,
-    ['Warning ID', 'Trễ bật', 'Trễ tắt', 'Điều kiện hiện', 'Khai ở'],
+  section('Warnings', warnings.length,
+    ['Warning ID', 'Turn-on delay', 'Turn-off delay', 'Enter condition', 'Declared at'],
     warnings.map((row) => h('tr', {},
-      h('td', {}, h('code', { class: 'warn-id', text: row.w.id || '(thiếu ID)' })),
+      h('td', {}, h('code', { class: 'warn-id', text: row.w.id || '(missing ID)' })),
       h('td', { class: 'set-scope', text: row.w.enterDelay || '—' }),
       h('td', { class: 'set-scope', text: row.w.exitDelay || '—' }),
       h('td', { html: latexToHtml(row.w.enterCondition || '', state.projectDir, richOpts()) }),
@@ -2668,7 +2668,7 @@ function renderUiuxTab() {
 
   const noDetail = marked.filter((m) => !(m.item.settings || []).length && !(m.item.warnings || []).length);
   if (noDetail.length) {
-    box.append(h('h3', { class: 'uiux-h', text: `Đã tick nhưng chưa khai chi tiết (${noDetail.length})` }));
+    box.append(h('h3', { class: 'uiux-h', text: `Ticked but no detail declared yet (${noDetail.length})` }));
     box.append(h('div', { class: 'chip-row' },
       noDetail.map((m) => h('span', { class: 'chip ref', text: m.item.code, onclick: () => gotoItem(m.item.code) }))));
   }
@@ -2702,7 +2702,7 @@ function renderComponentFilterTab() {
   const components = flatten(state.doc).map((n) => n.item).filter((it) => it.type === 'component');
   if (!components.length) {
     box.append(h('div', { class: 'trace-empty',
-      text: 'Chưa có Component nào trong tài liệu. Thêm một item kiểu Component rồi quay lại đây.' }));
+      text: 'No Component in the document yet. Add a Component item, then come back here.' }));
     return;
   }
   if (!state.compFilterCode || !components.some((c) => c.code === state.compFilterCode)) {
@@ -2711,7 +2711,7 @@ function renderComponentFilterTab() {
   const target = components.find((c) => c.code === state.compFilterCode);
 
   box.append(h('div', { class: 'comp-filter-bar' },
-    h('label', { text: 'Lọc Design theo component:' }),
+    h('label', { text: 'Filter Design by component:' }),
     h('select', {
       class: 'select',
       onchange: (e) => { state.compFilterCode = e.target.value; renderComponentFilterTab(); },
@@ -2724,14 +2724,14 @@ function renderComponentFilterTab() {
 
   box.append(h('div', { class: 'comp-filter-head' },
     h('span', { class: 'type-badge component', text: 'COMP' }),
-    h('b', { text: target.title || '(chưa đặt tên)' }),
+    h('b', { text: target.title || '(untitled)' }),
     target.fields.team ? h('span', { class: 'muted', text: ` · ${target.fields.team}` }) : null
   ));
 
   // Every rich field a Design carries: its own description plus whatever the
   // type declares as kind 'rich' (enter/exit condition today).
   const scanFields = [
-    { key: 'desc', label: 'Mô tả' },
+    { key: 'desc', label: 'Description' },
     ...fieldsOf('design').filter((f) => f.kind === 'rich').map((f) => ({ key: f.key, label: f.label })),
   ];
 
@@ -2751,13 +2751,13 @@ function renderComponentFilterTab() {
   box.append(h('div', { class: 'trace-grid' },
     h('div', { class: 'stat' },
       h('div', { class: 'n', text: String(new Set(hits.map((x) => x.item.code)).size) }),
-      h('div', { class: 'l', text: 'Design nhắc tới' })),
-    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(hits.length) }), h('div', { class: 'l', text: 'Đoạn trích' }))
+      h('div', { class: 'l', text: 'Design(s) mentioning it' })),
+    h('div', { class: 'stat' }, h('div', { class: 'n', text: String(hits.length) }), h('div', { class: 'l', text: 'Excerpt(s)' }))
   ));
 
   if (!hits.length) {
     box.append(h('div', { class: 'trace-empty',
-      text: `Chưa Design nào gõ @${target.title} trong mô tả hay điều kiện vào/ra.` }));
+      text: `No Design mentions @${target.title} yet in its description or enter/exit conditions.` }));
     return;
   }
 
@@ -2798,18 +2798,18 @@ function renderTrace() {
     h('div', { class: 'stat' }, h('div', { class: 'n', text: String(t.dvps.length) }), h('div', { class: 'l', text: 'DVP' })),
     h('div', { class: 'stat' + (t.gaps.length ? ' warn' : ' good') },
       h('div', { class: 'n', text: String(t.gaps.length) }),
-      h('div', { class: 'l', text: 'Function chưa có Design' })),
+      h('div', { class: 'l', text: 'Function(s) without a Design' })),
     h('div', { class: 'stat' + (t.dvpGaps.length ? ' warn' : ' good') },
       h('div', { class: 'n', text: String(t.dvpGaps.length) }),
-      h('div', { class: 'l', text: 'Design chưa có DVP' })),
+      h('div', { class: 'l', text: 'Design(s) without a DVP' })),
     h('div', { class: 'stat' + (errors.length ? ' bad' : ' good') },
       h('div', { class: 'n', text: String(errors.length) }),
-      h('div', { class: 'l', text: 'Lỗi cần sửa' }))
+      h('div', { class: 'l', text: 'Issue(s) to fix' }))
   ));
 
-  const head = h('div', { class: 'section-title' }, 'Chuỗi truy vết Function → Design → DVP');
+  const head = h('div', { class: 'section-title' }, 'Function → Design → DVP traceability chain');
   const seg = h('div', { class: 'seg' });
-  [['graph', 'Sơ đồ'], ['table', 'Bảng']].forEach(([mode, label]) => {
+  [['graph', 'Diagram'], ['table', 'Table']].forEach(([mode, label]) => {
     seg.append(h('button', {
       class: 'seg-btn' + (state.traceMode === mode ? ' on' : ''),
       text: label,
@@ -2831,45 +2831,45 @@ function renderTrace() {
         list.append(h('div', { class: 'issue', onclick: () => gotoItem(g.code) },
           h('span', { class: 'lv warn', text: 'gap' }),
           h('span', { class: 'code', text: g.code }),
-          h('span', { text: g.title || '(chưa đặt tên)' })
+          h('span', { text: g.title || '(untitled)' })
         ))
       );
       box.append(list);
     };
-    gapList('Function chưa được Design nào phủ', t.gaps,
-      'Mọi Function đều đã có ít nhất một Design.');
-    gapList('Design chưa được DVP nào kiểm chứng', t.dvpGaps,
-      'Mọi Design đều đã có ít nhất một DVP.');
+    gapList('Function(s) with no Design covering them', t.gaps,
+      'Every Function already has at least one Design.');
+    gapList('Design(s) with no DVP verifying them', t.dvpGaps,
+      'Every Design already has at least one DVP.');
   }
 
   if (t.calibrations.length || t.interfaces.length) {
-    box.append(h('div', { class: 'section-title' }, 'Calibration & Interface — được dùng ở đâu'));
+    box.append(h('div', { class: 'section-title' }, 'Calibration & Interface — where they are used'));
     const usageTable = (rows, nameOf, emptyMsg) => {
       if (!rows.length) return h('div', { class: 'empty-note', text: emptyMsg });
       const table = h('table', { class: 'grid' });
-      table.append(h('thead', {}, h('tr', {}, h('th', { text: 'Tên' }), h('th', { text: 'Được dùng ở' }))));
+      table.append(h('thead', {}, h('tr', {}, h('th', { text: 'Name' }), h('th', { text: 'Used by' }))));
       const tb = h('tbody', {});
       rows.forEach((r) => tb.append(h('tr', {},
         h('td', {}, h('span', { class: 'chip ref', text: nameOf(r.item), onclick: () => gotoItem(r.item.code) })),
         h('td', {},
           r.usedBy.length
             ? h('div', { class: 'chip-row' }, r.usedBy.map((c) => refChip(c)))
-            : h('span', { class: 'muted', text: 'Chưa item nào dùng' })
+            : h('span', { class: 'muted', text: 'Not used by any item yet' })
         )
       )));
       table.append(tb);
       return h('div', { class: 'table-scroll' }, table);
     };
     box.append(h('div', { class: 'trace-subhead', text: `Calibration (${t.calibrations.length})` }));
-    box.append(usageTable(t.calUsage, (it) => it.fields.symbol || it.title, 'Chưa có Calibration nào.'));
+    box.append(usageTable(t.calUsage, (it) => it.fields.symbol || it.title, 'No Calibration yet.'));
     box.append(h('div', { class: 'trace-subhead', text: `Interface (${t.interfaces.length})` }));
-    box.append(usageTable(t.ifaceUsage, (it) => it.title, 'Chưa có Interface nào.'));
+    box.append(usageTable(t.ifaceUsage, (it) => it.title, 'No Interface yet.'));
   }
 
-  box.append(h('div', { class: 'section-title' }, 'Kiểm tra chất lượng',
-    h('span', { class: 'pill ' + (errors.length ? 'broken' : warns.length ? 'unlinked' : 'ok'), text: `${errors.length} lỗi · ${warns.length} cảnh báo` })));
+  box.append(h('div', { class: 'section-title' }, 'Quality checks',
+    h('span', { class: 'pill ' + (errors.length ? 'broken' : warns.length ? 'unlinked' : 'ok'), text: `${errors.length} error(s) · ${warns.length} warning(s)` })));
   if (!issues.length) {
-    box.append(h('div', { class: 'empty-note', text: 'Không phát hiện vấn đề nào.' }));
+    box.append(h('div', { class: 'empty-note', text: 'No issue detected.' }));
   } else {
     const list = h('div', { class: 'issue-list' });
     issues.forEach((i) =>
@@ -2904,7 +2904,7 @@ function refreshLatexView() {
 /**
  * Recompiles only when something could actually look different: the document
  * content changed since the last compile, or the caller forces it (the
- * "Biên dịch lại" button — also the only way to pick up a git action like a
+ * "Recompile" button — also the only way to pick up a git action like a
  * commit/restore, which changes the Change History appendix without
  * changing data.tex itself). Otherwise switching to the PDF sub-tab and back
  * just re-shows what's already loaded in the webview, instead of paying for
@@ -2916,7 +2916,7 @@ async function loadPdfPreview(force) {
   if (!force && state.pdfSourceSnapshot === currentTex && el('pdfWebview').src) return;
 
   const status = el('pdfStatus');
-  status.textContent = 'Đang biên dịch…';
+  status.textContent = 'Compiling…';
   el('btnPdfRefresh').disabled = true;
   try {
     await save();
@@ -2924,11 +2924,11 @@ async function loadPdfPreview(force) {
     // Cache-busting query string: the webview would otherwise keep showing a
     // stale render for the exact same file path after a recompile.
     el('pdfWebview').src = 'file://' + pdf + '?t=' + Date.now();
-    status.textContent = `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN')}.`;
+    status.textContent = `Updated at ${new Date().toLocaleTimeString('en-US')}.`;
     state.pdfSourceSnapshot = currentTex;
   } catch (e) {
-    status.textContent = 'Biên dịch thất bại — xem chi tiết trong hộp thoại.';
-    window.api.showError({ title: 'Lỗi biên dịch LaTeX', message: e.message });
+    status.textContent = 'Compile failed — see the dialog for details.';
+    window.api.showError({ title: 'LaTeX compile error', message: e.message });
   } finally {
     el('btnPdfRefresh').disabled = false;
   }
@@ -2986,7 +2986,7 @@ function renderIssueChip() {
   if (!errors && !warns) { chip.hidden = true; return; }
   chip.hidden = false;
   chip.className = 'issue-chip' + (errors ? ' err' : '');
-  chip.textContent = errors ? `${errors} lỗi · ${warns} cảnh báo` : `${warns} cảnh báo`;
+  chip.textContent = errors ? `${errors} error(s) · ${warns} warning(s)` : `${warns} warning(s)`;
   chip.onclick = () => setView('trace');
 }
 
@@ -3044,13 +3044,13 @@ async function openBook(dir) {
     renderAll();
     History.hideRestoreUndo();
     History.invalidate();
-    History.toggle(true); // Lịch sử hiện mặc định mỗi khi mở project/sách — bấm nút để ẩn nếu không cần
+    History.toggle(true); // History shows by default whenever a project/book opens — click the button to hide if not needed
     renderWorkspaceBar();
     refreshWorkspaceMentionCache();
-    setStatus(`Đã mở ${projectDir}`, 'ok');
+    setStatus(`Opened ${projectDir}`, 'ok');
   } catch (e) {
-    setStatus(`Không mở được project: ${e.message}`, 'error');
-    window.api.showError({ title: 'Không mở được project', message: e.message });
+    setStatus(`Could not open project: ${e.message}`, 'error');
+    window.api.showError({ title: 'Could not open project', message: e.message });
   }
 }
 
@@ -3069,13 +3069,13 @@ async function openWorkspace(dir, info) {
   state.workspaceBooks = info.books || [];
   if (!state.workspaceBooks.length) {
     renderWorkspaceBar();
-    setStatus(`Đã mở workspace "${info.name}" — chưa có sách nào.`, 'ok');
+    setStatus(`Opened workspace "${info.name}" — no books yet.`, 'ok');
     return;
   }
   await openBook(state.workspaceBooks[0].dir);
 }
 
-/** Entry point for both "Mở project" and after creating a new project/workspace. */
+/** Entry point for both "Open project" and after creating a new project/workspace. */
 async function openPath(dir) {
   try {
     const info = await window.api.workspace.open(dir);
@@ -3083,13 +3083,13 @@ async function openPath(dir) {
     if (info.isWorkspace) await openWorkspace(dir, info);
     else await openBook(dir);
   } catch (e) {
-    setStatus(`Không mở được: ${e.message}`, 'error');
-    window.api.showError({ title: 'Không mở được', message: e.message });
+    setStatus(`Could not open: ${e.message}`, 'error');
+    window.api.showError({ title: 'Could not open', message: e.message });
   }
 }
 
 // =====================================================================
-// book switcher — dropdown at the top of the sidebar: which sách is open,
+// book switcher — dropdown at the top of the sidebar: which book is open,
 // which git branch, cross-book Excel export
 // =====================================================================
 
@@ -3114,7 +3114,7 @@ function renderWorkspaceBar() {
     },
       h('span', { class: 'bsm-book-check', text: '✓' }),
       h('span', { class: 'bsm-book-name', text: b.name }),
-      h('span', { class: 'bsm-book-dirty', title: 'Có thay đổi chưa commit' }),
+      h('span', { class: 'bsm-book-dirty', title: 'Has uncommitted changes' }),
       h('span', { class: 'bsm-book-id', text: b.id })
     ));
   });
@@ -3172,12 +3172,12 @@ function cycleBook(direction) {
 /** Shared by createBookFlow/addBookFlow — resolves to 'blank'|'srs'|'eea', or null if cancelled. */
 async function askTemplate() {
   return askChoice({
-    title: 'Chọn mẫu khởi tạo',
+    title: 'Choose a starting template',
     items: [
-      { value: 'blank', label: 'Trống', sub: 'Không có item nào — tự xây từ đầu.' },
+      { value: 'blank', label: 'Blank', sub: 'No items — build it up from scratch.' },
       {
         value: 'srs', label: 'System Requirement',
-        sub: 'Sẵn mẫu đủ 7 loại item (Function, Design, DVP, Calibration, Interface…), mỗi item kèm hướng dẫn ngay trong mô tả.',
+        sub: 'A ready-made sample with all 7 item types (Function, Design, DVP, Calibration, Interface…), each item guided by its own description.',
       },
     ],
   });
@@ -3186,20 +3186,20 @@ async function askTemplate() {
 async function addBookFlow() {
   if (!state.workspaceDir) return;
   const id = await askText({
-    title: 'Thêm sách mới',
-    label: 'Mã sách (prefix cho mã item, cũng là tên thư mục)',
-    placeholder: 'vd. EPB, BCM, ADAS',
-    okLabel: 'Tiếp tục',
+    title: 'Add a new book',
+    label: 'Book code (item code prefix, also the folder name)',
+    placeholder: 'e.g. EPB, BCM, ADAS',
+    okLabel: 'Continue',
     validate: (v) => (/^[A-Za-z][A-Za-z0-9_-]{0,11}$/.test(v)
-      ? '' : 'Bắt đầu bằng chữ cái; chỉ dùng chữ, số, - và _; tối đa 12 ký tự.'),
+      ? '' : 'Start with a letter; letters, digits, - and _ only; 12 characters max.'),
   });
   if (id === null) return;
   const name = await askText({
-    title: 'Tên đầy đủ của sách',
-    label: 'Tên hiển thị',
+    title: 'Full name of the book',
+    label: 'Display name',
     value: id.toUpperCase(),
-    placeholder: 'vd. Electric Park Brake',
-    okLabel: 'Tiếp tục',
+    placeholder: 'e.g. Electric Park Brake',
+    okLabel: 'Continue',
     allowEmpty: true,
   });
   if (name === null) return;
@@ -3209,9 +3209,9 @@ async function addBookFlow() {
     const book = await window.api.workspace.addBook(state.workspaceDir, id.toUpperCase(), name || id.toUpperCase(), template);
     state.workspaceBooks.push(book);
     await openBook(book.dir);
-    setStatus(`Đã thêm sách ${book.name}.`, 'ok');
+    setStatus(`Added book ${book.name}.`, 'ok');
   } catch (e) {
-    window.api.showError({ title: 'Không thêm được sách', message: e.message });
+    window.api.showError({ title: 'Could not add the book', message: e.message });
   }
 }
 
@@ -3233,28 +3233,28 @@ async function checkoutFlow() {
   const remoteOnly = remote.filter((r) => !local.includes(r));
   const items = [
     ...local.map((b) => ({
-      value: b, label: b === current ? `${b}  (đang ở đây)` : b,
-      sub: 'Nhánh local',
+      value: b, label: b === current ? `${b}  (current)` : b,
+      sub: 'Local branch',
     })),
     ...remoteOnly.map((r) => ({
       value: r, label: r,
-      sub: 'Nhánh trên remote — checkout sẽ tạo bản theo dõi local',
+      sub: 'Remote branch — checkout creates a local tracking branch',
     })),
   ];
   const ref = await askChoice({
-    title: 'Chuyển nhánh (checkout)',
+    title: 'Switch branch (checkout)',
     items,
-    empty: 'Chưa có nhánh nào khác. Tạo/merge nhánh làm trên Gerrit, ngoài app.',
+    empty: 'No other branch yet. Create/merge branches on Gerrit, outside the app.',
   });
   if (!ref || ref === current) return;
 
   if (state.dirty) await save();
   try {
     await window.api.git.checkout(state.workspaceDir, ref);
-    setStatus(`Đã chuyển sang nhánh ${ref}.`, 'ok');
+    setStatus(`Switched to branch ${ref}.`, 'ok');
     await reopenAfterCheckout();
   } catch (e) {
-    window.api.showError({ title: 'Không chuyển được nhánh', message: e.message });
+    window.api.showError({ title: 'Could not switch branch', message: e.message });
   }
 }
 
@@ -3269,8 +3269,8 @@ async function reopenAfterCheckout() {
 }
 
 // =====================================================================
-// "Lọc tổng" — same table as "Lọc" (buildFilterTable above), just fed by
-// every book in the workspace instead of one. One flat table with a "Sách"
+// "Filter all" — same table as "Filter" (buildFilterTable above), just fed by
+// every book in the workspace instead of one. One flat table with a "Book"
 // column, not one table per book — plus a book picker so a big workspace
 // can be narrowed down before scrolling through everything.
 // =====================================================================
@@ -3293,12 +3293,12 @@ async function globalFilterFlow() {
   if (!state.lt.cols) state.lt.cols = new Set(DEFAULT_FILTER_COLS);
   el('globalFilter').hidden = false;
   el('gfBody').innerHTML = '';
-  el('gfCount').textContent = 'Đang tải…';
+  el('gfCount').textContent = 'Loading…';
   try {
     state.lt.rawRows = ltNormalizeRows(await window.api.workspace.listAllItems(state.workspaceDir));
   } catch (e) {
     el('globalFilter').hidden = true;
-    window.api.showError({ title: 'Không tải được dữ liệu workspace', message: e.message });
+    window.api.showError({ title: 'Could not load workspace data', message: e.message });
     return;
   }
   renderGlobalFilter();
@@ -3327,7 +3327,7 @@ function bookFilterDropdown({ books, onToggleBook, onReset, menu, setMenu }) {
   const active = books.size > 0;
   const btn = h('button', {
     class: 'btn small ghost' + (active ? ' active' : ''),
-    text: active ? `Sách (${books.size}) ▾` : 'Sách ▾',
+    text: active ? `Books (${books.size}) ▾` : 'Books ▾',
     onclick: (e) => { e.stopPropagation(); setMenu(open ? null : 'book'); },
   });
   if (!open) return h('div', { class: 'fdrop' }, btn);
@@ -3335,7 +3335,7 @@ function bookFilterDropdown({ books, onToggleBook, onReset, menu, setMenu }) {
     h('div', {
       class: 'fdrop-item fdrop-all',
       onclick: () => { onReset(); setMenu('book'); },
-    }, h('b', { text: 'Tất cả (bỏ lọc)' })),
+    }, h('b', { text: 'All (clear filter)' })),
     h('div', { class: 'fdrop-sep' }),
     ...state.workspaceBooks.map((b) => h('label', { class: 'fdrop-item' },
       h('input', { type: 'checkbox', checked: books.has(b.id), onchange: () => { onToggleBook(b.id); setMenu('book'); } }),
@@ -3381,7 +3381,7 @@ function renderGlobalFilter() {
   const body = el('gfBody');
   body.innerHTML = '';
   if (!rows.length) {
-    body.append(h('div', { class: 'empty-note', text: 'Không có item nào khớp bộ lọc.' }));
+    body.append(h('div', { class: 'empty-note', text: 'No item matches the filter.' }));
     return;
   }
   const table = h('table', {});
@@ -3434,14 +3434,14 @@ document.addEventListener('keydown', (e) => {
 
 async function createBookFlow() {
   const shortName = await askText({
-    title: 'Tạo project mới',
-    label: 'Mã tài liệu (prefix cho mã item)',
+    title: 'Create a new project',
+    label: 'Document code (item code prefix)',
     value: 'DOC',
-    placeholder: 'vd. BCM, EPB',
-    okLabel: 'Tiếp tục',
-    hint: 'Mã item sẽ có dạng <prefix>-0001. Bước sau sẽ chọn thư mục lưu.',
+    placeholder: 'e.g. BCM, EPB',
+    okLabel: 'Continue',
+    hint: 'Item codes will look like <prefix>-0001. The next step picks a folder to save into.',
     validate: (v) => (/^[A-Za-z][A-Za-z0-9_-]{0,11}$/.test(v)
-      ? '' : 'Bắt đầu bằng chữ cái; chỉ dùng chữ, số, - và _; tối đa 12 ký tự.'),
+      ? '' : 'Start with a letter; letters, digits, - and _ only; 12 characters max.'),
   });
   if (shortName === null) return;
   const template = await askTemplate();
@@ -3450,19 +3450,19 @@ async function createBookFlow() {
     const dir = await window.api.newProjectDialog(shortName.toUpperCase(), template);
     if (dir) openPath(dir);
   } catch (e) {
-    window.api.showError({ title: 'Không tạo được project', message: e.message });
+    window.api.showError({ title: 'Could not create the project', message: e.message });
   }
 }
 
 async function createWorkspaceFlow() {
   const name = await askText({
-    title: 'Tạo workspace mới',
-    label: 'Tên workspace (thường là tên xe)',
+    title: 'Create a new workspace',
+    label: 'Workspace name (usually the vehicle name)',
     value: 'VF9-SRS',
-    placeholder: 'vd. VF9-SRS',
-    okLabel: 'Tiếp tục',
-    hint: 'Một repo git cho cả xe, gồm nhiều sách bên trong. Bước sau sẽ chọn thư mục lưu.',
-    validate: (v) => (v.trim().length ? '' : 'Nhập tên workspace.'),
+    placeholder: 'e.g. VF9-SRS',
+    okLabel: 'Continue',
+    hint: 'One git repo for the whole vehicle, holding several books inside. The next step picks a folder to save into.',
+    validate: (v) => (v.trim().length ? '' : 'Enter a workspace name.'),
   });
   if (name === null) return;
   try {
@@ -3471,21 +3471,21 @@ async function createWorkspaceFlow() {
     await openPath(dir);
     await addBookFlow();
   } catch (e) {
-    window.api.showError({ title: 'Không tạo được workspace', message: e.message });
+    window.api.showError({ title: 'Could not create the workspace', message: e.message });
   }
 }
 
 async function newFlow() {
   const kind = await askChoice({
-    title: 'Tạo mới',
+    title: 'New',
     items: [
       {
-        value: 'book', label: 'Một sách (project đơn)',
-        sub: 'Một data.tex, một repo git riêng — như trước giờ.',
+        value: 'book', label: 'A single book (standalone project)',
+        sub: 'One data.tex, its own git repo — the classic layout.',
       },
       {
-        value: 'workspace', label: 'Workspace nhiều sách',
-        sub: 'Một repo git cho cả xe, gồm nhiều sách bên trong (vd. VF9-SRS).',
+        value: 'workspace', label: 'Multi-book workspace',
+        sub: 'One git repo for the whole vehicle, holding several books inside (e.g. VF9-SRS).',
       },
     ],
   });
@@ -3502,8 +3502,8 @@ el('btnSnapshots').onclick = async () => {
   const snaps = await window.api.history(state.projectDir);
   const fmt = (ms) => new Date(ms).toLocaleString('vi-VN');
   const file = await askChoice({
-    title: 'Khôi phục bản trước',
-    empty: 'Chưa có bản lưu nào. Bản đầu tiên được tạo ở lần lưu tiếp theo có thay đổi.',
+    title: 'Restore a previous snapshot',
+    empty: 'No snapshot yet. The first one is created the next time you save a change.',
     items: snaps.map((s) => ({
       value: s.file,
       label: fmt(s.mtime),
@@ -3512,10 +3512,10 @@ el('btnSnapshots').onclick = async () => {
   });
   if (!file) return;
   const ok = await window.api.confirm({
-    title: 'Khôi phục',
-    message: 'Ghi đè data.tex bằng bản đã chọn?',
-    detail: 'Nội dung hiện tại sẽ được lưu thành một bản mới trong .history trước khi ghi đè.',
-    confirmLabel: 'Khôi phục',
+    title: 'Restore',
+    message: 'Overwrite data.tex with the selected snapshot?',
+    detail: 'The current content will be saved as a new snapshot in .history before being overwritten.',
+    confirmLabel: 'Restore',
     danger: true,
   });
   if (!ok) return;
@@ -3529,22 +3529,22 @@ el('btnSnapshots').onclick = async () => {
     el('dirtyDot').hidden = true;
     el('btnSave').disabled = true;
     renderAll();
-    setStatus('Đã khôi phục từ bản lưu.', 'ok');
+    setStatus('Restored from snapshot.', 'ok');
   } catch (e) {
-    window.api.showError({ title: 'Không khôi phục được', message: e.message });
+    window.api.showError({ title: 'Could not restore', message: e.message });
   }
 };
 
 el('btnExport').onclick = async () => {
   el('btnExport').disabled = true;
-  setStatus('Đang xuất PDF (2 lượt biên dịch)…');
+  setStatus('Exporting PDF (2 compile passes)…');
   try {
     await save();
     const pdf = await window.api.exportPdf(state.projectDir);
-    setStatus(`Xuất PDF thành công: ${pdf}`, 'ok');
+    setStatus(`Exported PDF: ${pdf}`, 'ok');
   } catch (e) {
-    setStatus('Xuất PDF thất bại — xem chi tiết trong hộp thoại.', 'error');
-    window.api.showError({ title: 'Lỗi biên dịch LaTeX', message: e.message });
+    setStatus('PDF export failed — see the dialog for details.', 'error');
+    window.api.showError({ title: 'LaTeX compile error', message: e.message });
   } finally {
     el('btnExport').disabled = false;
   }
@@ -3566,7 +3566,7 @@ el('search').oninput = (e) => {
   state.query = e.target.value;
   const isEmpty = !state.query.trim();
   renderTree();
-  // Turning a search on auto-shows the "Nội dung" column so a match inside
+  // Turning a search on auto-shows the "Description" column so a match inside
   // the body is visible, not just title/code. `filterDescAuto` tracks whether
   // WE turned it on, so clearing the search un-ticks it again — but only if
   // the user didn't touch the tick themselves in between (their own explicit
@@ -3594,7 +3594,7 @@ el('btnCollapseAll').onclick = () => {
 
 el('btnCopyTex').onclick = async () => {
   await navigator.clipboard.writeText(generateDataTex(plainDoc(state.doc)));
-  setStatus('Đã copy nội dung data.tex vào clipboard.', 'ok');
+  setStatus('Copied data.tex content to clipboard.', 'ok');
 };
 el('btnOpenTex').onclick = async () => {
   await save();
@@ -3634,10 +3634,10 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 'e' && state.selected) { e.preventDefault(); startEdit(state.selected); return; }
   if (inField || !state.selected) return;
 
-  if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); applyTreeOp(moveUp, state.selected, 'Đã chuyển lên.'); }
-  else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); applyTreeOp(moveDown, state.selected, 'Đã chuyển xuống.'); }
-  else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); applyTreeOp(indentItem, state.selected, 'Đã thụt vào.'); }
-  else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); applyTreeOp(outdentItem, state.selected, 'Đã thụt ra.'); }
+  if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); applyTreeOp(moveUp, state.selected, 'Moved up.'); }
+  else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); applyTreeOp(moveDown, state.selected, 'Moved down.'); }
+  else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); applyTreeOp(indentItem, state.selected, 'Indented.'); }
+  else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); applyTreeOp(outdentItem, state.selected, 'Outdented.'); }
   else if (e.key === 'Delete') { e.preventDefault(); deleteItem(state.selected); }
   else if (e.key === 'Enter') { e.preventDefault(); startEdit(state.selected); }
 });
@@ -3781,7 +3781,7 @@ function renderZoomBar(max) {
   el('zoomOut').disabled = state.zoom <= ZOOM_MIN + 1e-6;
   el('zoomIn').disabled = state.zoom >= max - 1e-6;
   el('zoomFit').classList.toggle('on', Math.abs(state.zoom - max) < 1e-6);
-  el('zoomFit').title = `Vừa bề rộng trang (${Math.round(max * 100)}%)`;
+  el('zoomFit').title = `Fit page width (${Math.round(max * 100)}%)`;
 }
 
 /** Step to the next/previous stop, clamped to the fit-width ceiling. */
@@ -3921,10 +3921,10 @@ window.api.onRequestClose(async () => {
     await save();
     if (state.dirty) {
       const ok = await window.api.confirm({
-        title: 'Thoát khi chưa lưu được',
-        message: 'Không lưu được data.tex. Vẫn thoát?',
-        detail: 'Các thay đổi chưa lưu sẽ mất.',
-        confirmLabel: 'Vẫn thoát',
+        title: 'Quit while unsaved',
+        message: 'Could not save data.tex. Quit anyway?',
+        detail: 'Unsaved changes will be lost.',
+        confirmLabel: 'Quit anyway',
         danger: true,
       });
       if (!ok) return;
@@ -3972,7 +3972,7 @@ function renderViewingBar() {
   bar.append(
     h('span', { class: 'vb-icon', text: '🕘' }),
     h('div', { class: 'vb-text' },
-      h('b', { text: `Đang xem bản ${e.short}` }),
+      h('b', { text: `Viewing version ${e.short}` }),
       h('span', { text: ` — ${e.message.split('\n')[0]}` }),
       h('span', { class: 'muted', text: ` · ${e.author}` }),
       e.tags && e.tags.length
@@ -3980,8 +3980,8 @@ function renderViewingBar() {
         : null
     ),
     h('span', { class: 'grow' }),
-    h('button', { class: 'btn small', text: 'So sánh với hiện tại', onclick: () => History.openCompare(e.oid, 'WORKING') }),
-    h('button', { class: 'btn small primary', text: 'Quay lại bản hiện tại', onclick: () => exitViewing() })
+    h('button', { class: 'btn small', text: 'Compare with current', onclick: () => History.openCompare(e.oid, 'WORKING') }),
+    h('button', { class: 'btn small primary', text: 'Back to current version', onclick: () => exitViewing() })
   );
 }
 
@@ -3995,7 +3995,7 @@ function enterViewing(entry, doc) {
   document.body.classList.add('is-viewing');
   renderViewingBar();
   renderAll();
-  setStatus(`Đang xem bản ${entry.short} (chỉ đọc).`);
+  setStatus(`Viewing version ${entry.short} (read-only).`);
 }
 
 function exitViewing(silent) {
@@ -4006,7 +4006,7 @@ function exitViewing(silent) {
   document.body.classList.remove('is-viewing');
   renderViewingBar();
   renderAll();
-  if (!silent) setStatus('Đã quay lại bản hiện tại.');
+  if (!silent) setStatus('Back to the current version.');
 }
 
 /** Copy an item recovered from an old revision into the live document. */
@@ -4015,10 +4015,10 @@ async function recoverItem(item) {
   const exists = findItem(live, item.code);
   if (exists) {
     const ok = await window.api.confirm({
-      title: 'Mã item đã tồn tại',
-      message: `Tài liệu hiện tại đã có ${item.code} — "${exists.title || '(chưa đặt tên)'}".`,
-      detail: 'Ghi đè item hiện tại bằng nội dung bản cũ?',
-      confirmLabel: 'Ghi đè',
+      title: 'Item code already exists',
+      message: `The current document already has ${item.code} — "${exists.title || '(untitled)'}".`,
+      detail: 'Overwrite the current item with the old version\'s content?',
+      confirmLabel: 'Overwrite',
       danger: true,
     });
     if (!ok) return;
@@ -4034,7 +4034,7 @@ async function recoverItem(item) {
   if (state.viewing) exitViewing(true);
   markDirty();
   renderAll();
-  setStatus(`Đã lấy lại ${item.code} vào tài liệu hiện tại.`, 'ok');
+  setStatus(`Recovered ${item.code} into the current document.`, 'ok');
 }
 
 History.init({
@@ -4063,7 +4063,7 @@ History.init({
   onItemRecovered: recoverItem,
 });
 
-setStatus('Sẵn sàng. Mở một project để bắt đầu.');
+setStatus('Ready. Open a project to get started.');
 
 // Restore the reading zoom from the previous session.
 window.api.settings.get().then((cfg) => {

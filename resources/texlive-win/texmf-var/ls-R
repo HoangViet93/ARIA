@@ -1,0 +1,22 @@
+% ls-R -- filename database for kpathsea; do not change this line.
+./:
+.:
+ls-R
+tex
+web2c
+
+
+./tex:
+generic
+
+./tex/generic:
+config
+
+./tex/generic/config:
+language.dat
+
+./web2c:
+xetex
+
+./web2c/xetex:
+xelatex.fmt

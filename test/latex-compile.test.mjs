@@ -30,12 +30,22 @@ function pdfText(pdf) {
 
 const SKIP = !xelatexAvailable();
 
+/** Writes resources/template.tex into `dir`, substituting __SRS_FONTPATH__
+ *  the same way main.js's compile() does — otherwise fontspec fails to find
+ *  the DejaVu files by their literal, unsubstituted token path. */
+function writeTemplate(dir) {
+  const fontPath = path.join(ROOT, 'resources', 'fonts').split(path.sep).join('/') + '/';
+  const templateText = fs.readFileSync(path.join(ROOT, 'resources', 'template.tex'), 'utf8')
+    .split('__SRS_FONTPATH__').join(fontPath);
+  fs.writeFileSync(path.join(dir, 'template.tex'), templateText, 'utf8');
+}
+
 /** Compile a doc through the real template and return the PDF path. */
 function compile(doc, name) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `srs-tex-${name}-`));
   fs.mkdirSync(path.join(dir, 'images'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'data.tex'), M.generateDataTex(doc), 'utf8');
-  fs.copyFileSync(path.join(ROOT, 'resources', 'template.tex'), path.join(dir, 'template.tex'));
+  writeTemplate(dir);
   try {
     execFileSync('xelatex', ['-interaction=nonstopmode', '-halt-on-error', 'template.tex'],
       { cwd: dir, stdio: 'pipe', timeout: 120000 });
@@ -445,7 +455,7 @@ test('history.tex, when present, compiles into a "Lịch sử thay đổi" appen
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srs-tex-history-'));
   fs.mkdirSync(path.join(dir, 'images'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'data.tex'), M.generateDataTex(doc), 'utf8');
-  fs.copyFileSync(path.join(ROOT, 'resources', 'template.tex'), path.join(dir, 'template.tex'));
+  writeTemplate(dir);
 
   // Same shape main.js's writeHistoryTex() writes — a commit id/message/author/
   // baseline row per commit, message/author/baseline run through the plain-text

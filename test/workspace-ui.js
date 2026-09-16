@@ -69,7 +69,7 @@ app.whenReady().then(async () => {
   await run(`document.getElementById('btnOpen').click();`);
   await sleep(500);
   check('topbarActions hiện sau khi mở project', !(await run(`return document.getElementById('topbarActions').hidden;`)));
-  check('nút Bản lưu đổi tên rõ hơn', (await run(`return document.getElementById('btnSnapshots').textContent;`)) === 'Bản lưu tự động');
+  check('nút Bản lưu đổi tên rõ hơn', (await run(`return document.getElementById('btnSnapshots').textContent;`)) === 'Snapshots');
   check('book switcher hiện ra', await run(`return !document.getElementById('bookSwitcher').hidden;`));
   check('tên sách hiện đúng trên nút', (await run(`return document.getElementById('bswBookName').textContent;`)) === 'Vehicle E/E Architecture');
 
@@ -158,16 +158,16 @@ app.whenReady().then(async () => {
     (await run(`return document.querySelector('#gfBody table thead tr').textContent.includes('Sách');`)) === false &&
     (await run(`return document.querySelectorAll('#gfBody table tr.row-book-group').length;`)) > 0);
   check('bảng chưa hiện cột Nội dung theo mặc định',
-    !(await run(`return document.querySelector('#gfBody table thead tr').textContent.includes('Nội dung');`)));
+    !(await run(`return document.querySelector('#gfBody table thead tr').textContent.includes('Description');`)));
   await run(`document.querySelector('#gfDropdowns .fdrop:nth-child(2) button').click();`);
   await sleep(150);
   await run(`
-    const item = [...document.querySelectorAll('#gfDropdowns .fdrop-menu .fdrop-item')].find(el => el.textContent.trim() === 'Nội dung');
+    const item = [...document.querySelectorAll('#gfDropdowns .fdrop-menu .fdrop-item')].find(el => el.textContent.trim() === 'Description');
     item.querySelector('input').click();
   `);
   await sleep(200);
   check('bật cột Nội dung ở Lọc tổng thì bảng hiện cột đó',
-    await run(`return document.querySelector('#gfBody table thead tr').textContent.includes('Nội dung');`));
+    await run(`return document.querySelector('#gfBody table thead tr').textContent.includes('Description');`));
   await run(`document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));`); // đóng dropdown cột
   await sleep(150);
   await tickTypeFilter('#gfDropdowns', 'Function'); // bỏ lọc loại lại để test book picker trên toàn bộ dữ liệu
@@ -235,7 +235,7 @@ app.whenReady().then(async () => {
     document.querySelector('.modal-foot .btn.primary').click();
   `);
   await sleep(400);
-  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Trống')).click();`);
+  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Blank')).click();`);
   await sleep(1000);
   check('đã tự mở sách mới', (await run(`return document.getElementById('projectPath').textContent;`)).includes('TCU'));
   await openSwitcher();
@@ -278,7 +278,7 @@ app.whenReady().then(async () => {
   await sleep(300);
   await run(`document.querySelector('.hact-more .btn').click();`); // "Thêm ▾"
   await sleep(200);
-  await run(`[...document.querySelectorAll('.hact-menu-item')].find(b => b.textContent === 'Khôi phục…').click();`);
+  await run(`[...document.querySelectorAll('.hact-menu-item')].find(b => b.textContent === 'Restore…').click();`);
   await sleep(1200);
   check('bản trên đĩa đã đổi (đã khôi phục)', await run(`return window.__srs.state.doc.items[0].title !== 'Tiêu đề đã sửa để test undo restore';`));
   check('banner hoàn tác xuất hiện', await run(`return !document.getElementById('restoreUndoBar').hidden;`));
@@ -368,4 +368,4 @@ app.whenReady().then(async () => {
   console.log(`\n${results.length - fails.length}/${results.length} PASS`);
   fs.rmSync(WORK, { recursive: true, force: true });
   app.exit(fails.length ? 1 : 0);
-});
+}).catch((e) => { console.error('TEST HARNESS ERROR:', e && e.stack ? e.stack : e); app.exit(2); });

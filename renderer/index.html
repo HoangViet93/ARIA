@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>ARIA</title>
@@ -16,17 +16,17 @@
   </div>
 
   <div class="topbar-project">
-    <button id="btnNew" class="btn ghost">Tạo mới ▾</button>
-    <button id="btnOpen" class="btn ghost">Mở project</button>
-    <span id="projectPath" class="project-path muted">Chưa mở project nào</span>
-    <span id="dirtyDot" class="dirty-dot" hidden title="Có thay đổi chưa lưu"></span>
+    <button id="btnNew" class="btn ghost">New ▾</button>
+    <button id="btnOpen" class="btn ghost">Open project</button>
+    <span id="projectPath" class="project-path muted">No project open</span>
+    <span id="dirtyDot" class="dirty-dot" hidden title="Unsaved changes"></span>
   </div>
 
   <div id="topbarActions" class="topbar-actions" hidden>
-    <button id="btnSave" class="btn" disabled>Lưu</button>
-    <button id="btnSnapshots" class="btn ghost" title="Bản lưu tự động (không phải git)">Bản lưu tự động</button>
-    <button id="btnHistory" class="btn ghost" title="Bảng lịch sử git">Lịch sử</button>
-    <button id="btnExport" class="btn primary" disabled>Xuất PDF</button>
+    <button id="btnSave" class="btn" disabled>Save</button>
+    <button id="btnSnapshots" class="btn ghost" title="Automatic snapshots (not git)">Snapshots</button>
+    <button id="btnHistory" class="btn ghost" title="Git history panel">History</button>
+    <button id="btnExport" class="btn primary" disabled>Export PDF</button>
   </div>
 </header>
 
@@ -34,7 +34,7 @@
 
   <aside id="sidebar">
     <div id="bookSwitcher" class="book-switcher" hidden>
-      <button id="bookSwitcherBtn" class="book-switcher-btn" title="Chuyển sách (Ctrl+K) — Ctrl+Tab / Ctrl+Shift+Tab để lướt nhanh">
+      <button id="bookSwitcherBtn" class="book-switcher-btn" title="Switch book (Ctrl+K) — Ctrl+Tab / Ctrl+Shift+Tab to cycle">
         <svg viewBox="0 0 24 24" class="bsw-icon"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         <span class="bsw-text">
           <span id="bswBookName" class="bsw-book">—</span>
@@ -43,31 +43,31 @@
         <svg viewBox="0 0 24 24" class="bsw-chevron"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div id="bookSwitcherMenu" class="book-switcher-menu" hidden>
-        <button id="wsBranch" class="bsm-branch" title="Chuyển nhánh (checkout). Tạo nhánh / merge làm trên Gerrit, ngoài app.">
+        <button id="wsBranch" class="bsm-branch" title="Switch branch (checkout). Create/merge branches on Gerrit, outside the app.">
           <svg viewBox="0 0 24 24" class="ic"><circle cx="6" cy="6" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="18" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 8.2v7.6M8.2 6.4c4 .6 6 1 7.2 1.4M18 10.2c0 4-4 4.4-8.6 5.4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-          <span class="bsm-branch-label">Nhánh:</span>
+          <span class="bsm-branch-label">Branch:</span>
           <span id="wsBranchName">—</span>
           <span class="grow"></span>
-          <span class="bsm-branch-action">Đổi…</span>
+          <span class="bsm-branch-action">Change…</span>
         </button>
         <div class="bsm-sep"></div>
         <div id="wsBooks" class="bsm-books"></div>
         <div class="bsm-sep"></div>
-        <button id="btnAddBook" class="bsm-action">+ Thêm sách</button>
-        <button id="btnGlobalFilter" class="bsm-action" title="Tìm/lọc item theo loại, theo sách trong toàn workspace, xuất Excel nếu cần">Lọc tổng…</button>
+        <button id="btnAddBook" class="bsm-action">+ Add book</button>
+        <button id="btnGlobalFilter" class="bsm-action" title="Search/filter items by type, across every book in the workspace, export to Excel if needed">Filter all…</button>
       </div>
     </div>
     <div class="side-head">
       <div class="search-wrap">
         <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="search" type="search" placeholder="Tìm mã, tiêu đề, mô tả, trường…" autocomplete="off" />
+        <input id="search" type="search" placeholder="Search code, title, description, field…" autocomplete="off" />
       </div>
       <div id="searchTypes" class="search-types"></div>
       <div class="side-tools">
-        <button id="btnAddRoot" class="tool" title="Thêm item ở cấp gốc">+ Item</button>
+        <button id="btnAddRoot" class="tool" title="Add a root-level item">+ Item</button>
         <span class="grow"></span>
-        <button id="btnExpandAll" class="tool icon" title="Mở tất cả">⊞</button>
-        <button id="btnCollapseAll" class="tool icon" title="Thu tất cả">⊟</button>
+        <button id="btnExpandAll" class="tool icon" title="Expand all">⊞</button>
+        <button id="btnCollapseAll" class="tool icon" title="Collapse all">⊟</button>
       </div>
     </div>
     <nav id="tree" class="tree" tabindex="0"></nav>
@@ -76,29 +76,29 @@
     </div>
   </aside>
 
-  <div id="splitter" title="Kéo để đổi độ rộng"></div>
+  <div id="splitter" title="Drag to resize"></div>
 
   <section id="content">
     <div id="tabs" class="tabs" role="tablist">
-      <button class="tab active" data-view="document" role="tab">Tài liệu</button>
-      <button class="tab" data-view="table" role="tab">Lọc</button>
-      <button class="tab" data-view-group="trace" data-view="trace" role="tab">Truy vết</button>
+      <button class="tab active" data-view="document" role="tab">Document</button>
+      <button class="tab" data-view="table" role="tab">Filter</button>
+      <button class="tab" data-view-group="trace" data-view="trace" role="tab">Traceability</button>
       <button class="tab" data-view="latex" role="tab">LaTeX/PDF</button>
       <span class="grow"></span>
       <div id="traceSubNav" class="seg" hidden>
-        <button class="seg-btn" data-trace-section="trace">Chuỗi truy vết</button>
+        <button class="seg-btn" data-trace-section="trace">Traceability chain</button>
         <button class="seg-btn" data-trace-section="uiux">UI/UX</button>
         <button class="seg-btn" data-trace-section="component">Component</button>
       </div>
       <div id="latexSubNav" class="seg" hidden>
-        <button class="seg-btn" data-latex-section="source">Mã nguồn</button>
+        <button class="seg-btn" data-latex-section="source">Source</button>
         <button class="seg-btn" data-latex-section="pdf">PDF</button>
       </div>
       <div id="zoomBar" class="zoombar" hidden>
-        <button id="zoomOut" class="zbtn" title="Thu nhỏ (Ctrl+-)">&minus;</button>
-        <button id="zoomLevel" class="zlevel" title="Về 100% (Ctrl+0)">100%</button>
-        <button id="zoomIn" class="zbtn" title="Phóng to (Ctrl+=)">+</button>
-        <button id="zoomFit" class="zfit" title="Phóng tối đa: vừa bề rộng trang">Vừa bề rộng</button>
+        <button id="zoomOut" class="zbtn" title="Zoom out (Ctrl+-)">&minus;</button>
+        <button id="zoomLevel" class="zlevel" title="Reset to 100% (Ctrl+0)">100%</button>
+        <button id="zoomIn" class="zbtn" title="Zoom in (Ctrl+=)">+</button>
+        <button id="zoomFit" class="zfit" title="Zoom to fit page width">Fit width</button>
       </div>
       <span id="issueChip" class="issue-chip" hidden></span>
     </div>
@@ -108,12 +108,12 @@
         <div class="empty-card">
           <img class="empty-logo" src="icon.svg" alt="" width="56" height="56" />
           <h1>ARIA</h1>
-          <p>Quản lý System / Component Requirements cho automotive.
-             Dữ liệu lưu thẳng trong <code>data.tex</code> — versioning bằng git,
-             không có database trung gian.</p>
+          <p>System / Component Requirements management for automotive.
+             Data lives straight in <code>data.tex</code> — versioned with git,
+             no database in between.</p>
           <div class="empty-actions">
-            <button id="btnOpen2" class="btn primary">Mở project</button>
-            <button id="btnNew2" class="btn">Tạo mới…</button>
+            <button id="btnOpen2" class="btn primary">Open project</button>
+            <button id="btnNew2" class="btn">New…</button>
           </div>
         </div>
       </div>
@@ -152,18 +152,18 @@
       <div id="viewLatex" class="view" hidden>
         <div id="latexSourcePane" class="view-pad">
           <div class="latex-bar">
-            <span class="muted">Nguồn dữ liệu sinh ra từ model — đây chính là nội dung sẽ ghi vào <code>data.tex</code>.</span>
+            <span class="muted">Source generated from the model — this is exactly what gets written to <code>data.tex</code>.</span>
             <span class="grow"></span>
             <button id="btnCopyTex" class="btn small">Copy</button>
-            <button id="btnOpenTex" class="btn small">Mở bằng editor ngoài</button>
+            <button id="btnOpenTex" class="btn small">Open in external editor</button>
           </div>
           <pre id="latexOut" class="latex-out"></pre>
         </div>
         <div id="latexPdfPane" class="pdf-pane" hidden>
           <div class="latex-bar">
-            <span id="pdfStatus" class="muted">Chưa biên dịch.</span>
+            <span id="pdfStatus" class="muted">Not compiled yet.</span>
             <span class="grow"></span>
-            <button id="btnPdfRefresh" class="btn small">Biên dịch lại</button>
+            <button id="btnPdfRefresh" class="btn small">Recompile</button>
           </div>
           <webview id="pdfWebview" class="pdf-webview" webpreferences="plugins"></webview>
         </div>
@@ -171,7 +171,7 @@
     </div>
   </section>
 
-  <div id="histSplitter" class="vsplit" title="Kéo để đổi độ rộng"></div>
+  <div id="histSplitter" class="vsplit" title="Drag to resize"></div>
 
   <aside id="histPanel" hidden>
     <div class="hist-head">
@@ -180,18 +180,18 @@
         <span id="histBranch">—</span>
       </div>
       <span class="grow"></span>
-      <button id="btnHistClose" class="tool icon" title="Đóng bảng lịch sử">✕</button>
+      <button id="btnHistClose" class="tool icon" title="Close the history panel">✕</button>
     </div>
 
     <div class="hist-actions">
       <button id="btnCommit" class="btn primary small" disabled>Commit</button>
-      <button id="btnCompareOpen" class="btn small">So sánh…</button>
+      <button id="btnCompareOpen" class="btn small">Compare…</button>
     </div>
 
     <div class="hist-filter">
-      <input id="histSearch" type="search" placeholder="Lọc theo nội dung, tác giả, mã…" autocomplete="off" />
+      <input id="histSearch" type="search" placeholder="Filter by content, author, code…" autocomplete="off" />
       <div class="seg">
-        <button class="seg-btn on" data-histmode="all">Tất cả</button>
+        <button class="seg-btn on" data-histmode="all">All</button>
         <button class="seg-btn" data-histmode="tags">Baseline</button>
       </div>
     </div>
@@ -206,19 +206,19 @@
 
 <div id="compare" class="overlay" hidden>
   <div class="cmp-head">
-    <div class="cmp-title">So sánh phiên bản</div>
+    <div class="cmp-title">Compare versions</div>
     <div class="cmp-picks">
       <button id="cmpA" class="pick"></button>
       <span class="cmp-arrow">→</span>
       <button id="cmpB" class="pick"></button>
-      <button id="cmpSwap" class="tool icon" title="Đảo chiều">⇄</button>
+      <button id="cmpSwap" class="tool icon" title="Swap sides">⇄</button>
     </div>
     <span class="grow"></span>
     <div class="seg">
-      <button class="seg-btn on" data-cmpmode="items">Theo item</button>
-      <button class="seg-btn" data-cmpmode="raw">LaTeX thô</button>
+      <button class="seg-btn on" data-cmpmode="items">By item</button>
+      <button class="seg-btn" data-cmpmode="raw">Raw LaTeX</button>
     </div>
-    <button id="cmpClose" class="tool icon" title="Đóng (Esc)">✕</button>
+    <button id="cmpClose" class="tool icon" title="Close (Esc)">✕</button>
   </div>
   <div id="cmpSafety" class="cmp-safety" hidden></div>
   <div id="cmpStats" class="cmp-stats"></div>
@@ -231,35 +231,35 @@
 
 <div id="eeaEditor" class="overlay" hidden>
   <div class="cmp-head">
-    <div class="cmp-title">Sơ đồ EEA</div>
+    <div class="cmp-title">EEA Diagram</div>
     <span class="grow"></span>
     <span id="eeaStatus" class="muted small"></span>
-    <button id="eeaCancel" class="btn">Hủy</button>
-    <button id="eeaSave" class="btn primary">Lưu</button>
+    <button id="eeaCancel" class="btn">Cancel</button>
+    <button id="eeaSave" class="btn primary">Save</button>
   </div>
   <webview id="eeaWebview" src="vendor/eea-editor/index.html"></webview>
 </div>
 
 <div id="globalFilter" class="overlay" hidden>
   <div class="cmp-head">
-    <div class="cmp-title">Lọc tổng — toàn workspace</div>
+    <div class="cmp-title">Filter all — whole workspace</div>
     <span class="grow"></span>
     <span id="gfCount" class="muted small"></span>
-    <button id="gfExport" class="btn small">Xuất Excel</button>
-    <button id="gfClose" class="tool icon" title="Đóng (Esc)">✕</button>
+    <button id="gfExport" class="btn small">Export to Excel</button>
+    <button id="gfClose" class="tool icon" title="Close (Esc)">✕</button>
   </div>
   <div class="gf-bar">
-    <input id="gfSearch" type="search" placeholder="Tìm theo mã, tiêu đề, mô tả, nội dung…" autocomplete="off" />
+    <input id="gfSearch" type="search" placeholder="Search code, title, description, content…" autocomplete="off" />
     <div id="gfDropdowns" class="gf-types"></div>
   </div>
   <div id="gfBody" class="gf-body"></div>
 </div>
 
 <footer id="statusbar">
-  <span id="statusMsg">Sẵn sàng.</span>
+  <span id="statusMsg">Ready.</span>
   <span class="grow"></span>
   <span id="statusRight" class="muted"></span>
-  <span id="appVersion" class="muted" title="Phiên bản ứng dụng"></span>
+  <span id="appVersion" class="muted" title="App version"></span>
 </footer>
 
 <div id="ctxMenu" class="ctx-menu" hidden></div>

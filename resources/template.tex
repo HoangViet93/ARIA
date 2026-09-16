@@ -16,11 +16,41 @@
 \documentclass[10.5pt,a4paper]{article}
 
 % The on-screen document view is sans-serif end to end, so the export is too —
-% "Xuất PDF giống hiển thị trên app" only holds if the type matches.
+% matching the app's UI only holds if the type matches.
 \usepackage{fontspec}
-\setmainfont{DejaVu Sans}[Scale=0.96]
-\setsansfont{DejaVu Sans}[Scale=0.96]
-\setmonofont{DejaVu Sans Mono}[Scale=0.84]
+% __SRS_FONTPATH__ is replaced by compile() in main.js with the absolute path
+% to resources/fonts/ (trailing slash, forward slashes even on Windows — XeTeX
+% accepts them) before every compile; on a dev checkout where main.js never
+% substitutes it, the literal token is not a valid path and fontspec falls
+% through to its normal by-name OS lookup (fontconfig on Linux/macOS,
+% DirectWrite on Windows) with only a harmless warning in the log. Loading the
+% same three weights from a bundled file, by exact filename, means a packaged
+% app never depends on DejaVu being installed on the machine it runs on.
+\setmainfont{DejaVuSans}[
+  Path = __SRS_FONTPATH__,
+  Extension = .ttf,
+  UprightFont = *,
+  BoldFont = *-Bold,
+  ItalicFont = *-Oblique,
+  BoldItalicFont = *-BoldOblique,
+  Scale = 0.96,
+]
+\setsansfont{DejaVuSans}[
+  Path = __SRS_FONTPATH__,
+  Extension = .ttf,
+  UprightFont = *,
+  BoldFont = *-Bold,
+  ItalicFont = *-Oblique,
+  BoldItalicFont = *-BoldOblique,
+  Scale = 0.96,
+]
+\setmonofont{DejaVuSansMono}[
+  Path = __SRS_FONTPATH__,
+  Extension = .ttf,
+  UprightFont = *,
+  BoldFont = *-Bold,
+  Scale = 0.84,
+]
 \linespread{1.16}
 
 \usepackage[margin=2.2cm,headheight=15pt]{geometry}

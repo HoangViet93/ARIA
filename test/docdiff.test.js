@@ -82,7 +82,7 @@ test('identical documents produce an empty diff', () => {
   const d = diffDocs(doc, clone(doc));
   assert.strictEqual(d.empty, true);
   assert.deepStrictEqual(d.stats, { added: 0, deleted: 0, modified: 0, moved: 0, meta: 0 });
-  assert.strictEqual(summaryLine(d), 'Không có thay đổi');
+  assert.strictEqual(summaryLine(d), 'No changes');
 });
 
 test('added item is reported with its section number', () => {
@@ -106,7 +106,7 @@ test('deleted item is reported and flagged for code retirement', () => {
   const d = diffDocs(doc, b);
   assert.strictEqual(d.stats.deleted, 1);
   assert.strictEqual(d.deleted[0].code, d2.code);
-  assert.ok(d.safety.some((f) => /không bao giờ được cấp lại/.test(f.message)));
+  assert.ok(d.safety.some((f) => /will never be reissued/.test(f.message)));
 });
 
 test('field changes are listed with human labels', () => {
@@ -189,12 +189,12 @@ test('raising ASIL warns, lowering ASIL is an error', () => {
   M.findItem(b, d1.code).fields.asil = 'ASIL D';   // C -> D
   M.findItem(b, d2.code).fields.asil = 'QM';        // unchanged
   let d = diffDocs(doc, b);
-  assert.ok(d.safety.some((f) => f.level === 'warn' && /ASIL tăng/.test(f.message)));
+  assert.ok(d.safety.some((f) => f.level === 'warn' && /ASIL level increased/.test(f.message)));
 
   const c = clone(doc);
   M.findItem(c, d1.code).fields.asil = 'ASIL A';    // C -> A
   d = diffDocs(doc, c);
-  assert.ok(d.safety.some((f) => f.level === 'error' && /ASIL GIẢM/.test(f.message)));
+  assert.ok(d.safety.some((f) => f.level === 'error' && /ASIL level DECREASED/.test(f.message)));
 });
 
 test('removing a verification method is an error', () => {
@@ -203,7 +203,7 @@ test('removing a verification method is an error', () => {
   M.findItem(b, d1.code).fields.verification = 'Test';   // Analysis dropped
 
   const d = diffDocs(doc, b);
-  const flag = d.safety.find((f) => /Bỏ phương pháp kiểm chứng/.test(f.message));
+  const flag = d.safety.find((f) => /Verification method\(s\) removed/.test(f.message));
   assert.ok(flag, JSON.stringify(d.safety));
   assert.strictEqual(flag.level, 'error');
   assert.match(flag.message, /Analysis/);
@@ -214,7 +214,7 @@ test('adding a verification method is not flagged', () => {
   const b = clone(doc);
   M.findItem(b, d1.code).fields.verification = 'Test; Analysis; Review';
   const d = diffDocs(doc, b);
-  assert.ok(!d.safety.some((f) => /Bỏ phương pháp/.test(f.message)));
+  assert.ok(!d.safety.some((f) => /Verification method\(s\) removed/.test(f.message)));
 });
 
 test('deleting an item that others still reference is an error', () => {
@@ -226,7 +226,7 @@ test('deleting an item that others still reference is an error', () => {
   M.removeItem(b, fn.code);
 
   const d = diffDocs(doc, b);
-  const flags = d.safety.filter((f) => /Còn trỏ tới item vừa bị xóa/.test(f.message));
+  const flags = d.safety.filter((f) => /Still points at just-deleted item/.test(f.message));
   assert.strictEqual(flags.length, 2, JSON.stringify(d.safety, null, 1));
   assert.ok(flags.every((f) => f.level === 'error'));
 });
@@ -238,7 +238,7 @@ test('an inline \\srsref to a deleted item is caught too', () => {
   M.removeItem(b, d2.code);
 
   const d = diffDocs(doc, b);
-  assert.ok(d.safety.some((f) => /Còn trỏ tới item vừa bị xóa/.test(f.message)));
+  assert.ok(d.safety.some((f) => /Still points at just-deleted item/.test(f.message)));
 });
 
 test('a design losing its function link is an error', () => {
@@ -247,7 +247,7 @@ test('a design losing its function link is an error', () => {
   delete M.findItem(b, d1.code).fields.functionCode;
 
   const d = diffDocs(doc, b);
-  assert.ok(d.safety.some((f) => /mất liên kết tới Function/.test(f.message)));
+  assert.ok(d.safety.some((f) => /lost its link to Function/.test(f.message)));
 });
 
 // -------------------------------------------------------------- summary
@@ -261,6 +261,6 @@ test('summaryLine describes the change set', () => {
   M.findItem(b, d2.code).title = 'Đổi tên';
 
   const line = summaryLine(diffDocs(doc, b));
-  assert.match(line, /1 item mới/);
-  assert.match(line, /1 item sửa/);
+  assert.match(line, /1 new item\(s\)/);
+  assert.match(line, /1 item\(s\) modified/);
 });

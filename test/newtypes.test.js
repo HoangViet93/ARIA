@@ -270,7 +270,7 @@ test('a calibration without a symbol is an error', () => {
     const c = mk('calibration'); c.title = 'Không ký hiệu'; c.desc = 'x';
     doc.items.push(c);
   });
-  assert.ok(has(issues, /Ký hiệu biến là bắt buộc/, 'error'), JSON.stringify(issues));
+  assert.ok(has(issues, /is required for a Calibration item/, 'error'), JSON.stringify(issues));
 });
 
 test('a symbol that is not an identifier is an error', () => {
@@ -279,7 +279,7 @@ test('a symbol that is not an identifier is an error', () => {
     c.fields.symbol = '2 sai tên';
     doc.items.push(c);
   });
-  assert.ok(has(issues, /sai định dạng/, 'error'));
+  assert.ok(has(issues, /has the wrong format/, 'error'));
 });
 
 test('two calibrations sharing a symbol is an error', () => {
@@ -288,7 +288,7 @@ test('two calibrations sharing a symbol is an error', () => {
     const b = mk('calibration'); b.title = 'B'; b.desc = 'x'; b.fields.symbol = 'K_gain';
     doc.items.push(a, b);
   });
-  assert.ok(has(issues, /Ký hiệu "K_gain" đã dùng/, 'error'));
+  assert.ok(has(issues, /Symbol "K_gain" is already used/, 'error'));
 });
 
 test('a default value outside min..max is an error', () => {
@@ -297,7 +297,7 @@ test('a default value outside min..max is an error', () => {
     Object.assign(c.fields, { symbol: 'K', minValue: '0', maxValue: '10', defaultValue: '25' });
     doc.items.push(c);
   });
-  assert.ok(has(issues, /nằm ngoài dải/, 'error'));
+  assert.ok(has(issues, /is outside the range/, 'error'));
 });
 
 test('a non-numeric default is left alone', () => {
@@ -306,7 +306,7 @@ test('a non-numeric default is left alone', () => {
     Object.assign(c.fields, { symbol: 'MODE', defaultValue: 'AUTO' });
     doc.items.push(c);
   });
-  assert.ok(!has(issues, /nằm ngoài dải/));
+  assert.ok(!has(issues, /is outside the range/));
 });
 
 test('@ tag pointing at a non-calibration item is an error', () => {
@@ -316,7 +316,7 @@ test('@ tag pointing at a non-calibration item is an error', () => {
     d.desc = `Dùng \\calref{${fn.code}} ở đây.`;
     doc.items.push(fn, d);
   });
-  assert.ok(has(issues, /không phải calibration/, 'error'), JSON.stringify(issues));
+  assert.ok(has(issues, /not calibration/, 'error'), JSON.stringify(issues));
 });
 
 test('@ tag pointing at a real calibration passes', () => {
@@ -326,7 +326,7 @@ test('@ tag pointing at a real calibration passes', () => {
     d.fields.asil = 'QM';
     doc.items.push(c, d);
   });
-  assert.ok(!has(issues, /không phải calibration|không tồn tại/));
+  assert.ok(!has(issues, /not calibration|does not exist/));
 });
 
 test('a refs field validates every code it lists', () => {
@@ -337,7 +337,7 @@ test('a refs field validates every code it lists', () => {
     v.fields.verifies = `${d.code}; V-9999`;
     doc.items.push(d, v);
   });
-  assert.ok(has(issues, /trỏ tới mã "V-9999" không tồn tại/, 'error'));
+  assert.ok(has(issues, /points at code "V-9999", which does not exist/, 'error'));
 });
 
 test('a DVP verifying an information item is rejected by refType', () => {
@@ -348,7 +348,7 @@ test('a DVP verifying an information item is rejected by refType', () => {
     v.fields.verifies = info.code;
     doc.items.push(info, v);
   });
-  assert.ok(has(issues, /cần design hoặc function/, 'error'), JSON.stringify(issues));
+  assert.ok(has(issues, /expected design or function/, 'error'), JSON.stringify(issues));
 });
 
 test('a DVP with no steps warns', () => {
@@ -356,7 +356,7 @@ test('a DVP with no steps warns', () => {
     const v = mk('dvp'); v.title = 'V'; v.desc = 'x';
     doc.items.push(v);
   });
-  assert.ok(has(issues, /chưa có bước kiểm thử/, 'warn'));
+  assert.ok(has(issues, /no test steps yet/, 'warn'));
 });
 
 test('a design with no DVP warns, and stops warning once covered', () => {
@@ -364,7 +364,7 @@ test('a design with no DVP warns, and stops warning once covered', () => {
     const d = mk('design'); d.title = 'D'; d.desc = 'x'; d.fields.asil = 'QM';
     doc.items.push(d);
   });
-  assert.ok(has(issues, /chưa có DVP nào kiểm chứng/, 'warn'));
+  assert.ok(has(issues, /no DVP verifying it/, 'warn'));
 
   issues = withItems((doc, mk) => {
     const d = mk('design'); d.title = 'D'; d.desc = 'x'; d.fields.asil = 'QM';
@@ -374,7 +374,7 @@ test('a design with no DVP warns, and stops warning once covered', () => {
     v.fields.testLevel = 'HIL';
     doc.items.push(d, v);
   });
-  assert.ok(!has(issues, /chưa có DVP nào kiểm chứng/));
+  assert.ok(!has(issues, /no DVP verifying it/));
 });
 
 test('claiming Test but only having SIL-level DVPs warns', () => {
@@ -388,7 +388,7 @@ test('claiming Test but only having SIL-level DVPs warns', () => {
     v.fields.testLevel = 'SIL';
     doc.items.push(d, v);
   });
-  assert.ok(has(issues, /không có phần cứng thật/, 'warn'), JSON.stringify(issues));
+  assert.ok(has(issues, /no real hardware/, 'warn'), JSON.stringify(issues));
 });
 
 test('ASIL D with only simulation-level DVPs warns', () => {
@@ -401,7 +401,7 @@ test('ASIL D with only simulation-level DVPs warns', () => {
     v.fields.testLevel = 'MIL';
     doc.items.push(d, v);
   });
-  assert.ok(has(issues, /ASIL D nhưng chưa có DVP nào chạy trên phần cứng thật/, 'warn'));
+  assert.ok(has(issues, /ASIL D but no DVP runs on real hardware/, 'warn'));
 });
 
 test('an interface with the same ECU on both ends warns', () => {
@@ -411,7 +411,7 @@ test('an interface with the same ECU on both ends warns', () => {
     i.fields.receiverEcu = 'EPB';
     doc.items.push(i);
   });
-  assert.ok(has(issues, /cùng là "EPB"/, 'warn'));
+  assert.ok(has(issues, /both "EPB"/, 'warn'));
 });
 
 test('deleting a DVP is flagged as lost verification coverage', () => {
@@ -425,8 +425,8 @@ test('deleting a DVP is flagged as lost verification coverage', () => {
   const after = clone(doc);
   M.removeItem(after, v.code);
   const flags = diffDocs(doc, after).safety;
-  assert.ok(flags.some((f) => /Xóa DVP/.test(f.message) && f.level === 'error'), JSON.stringify(flags));
-  assert.ok(flags.some((f) => /phủ kiểm chứng bị giảm/.test(f.message)));
+  assert.ok(flags.some((f) => /DVP deleted/.test(f.message) && f.level === 'error'), JSON.stringify(flags));
+  assert.ok(flags.some((f) => /verification coverage decreased/.test(f.message)));
 });
 
 test('changing a calibration default is flagged for review', () => {
@@ -439,5 +439,5 @@ test('changing a calibration default is flagged for review', () => {
   const after = clone(doc);
   M.findItem(after, c.code).fields.defaultValue = '2.5';
   const flags = diffDocs(doc, after).safety;
-  assert.ok(flags.some((f) => /Giá trị mặc định đổi 1\.0 → 2\.5/.test(f.message)), JSON.stringify(flags));
+  assert.ok(flags.some((f) => /Default value changed 1\.0 → 2\.5/.test(f.message)), JSON.stringify(flags));
 });

@@ -28,9 +28,9 @@ export { askText, showNotice, askChoice };
 
 export const HIGHLIGHT_COLORS = ['#fde68a', '#bbf7d0', '#fecdd3', '#bfdbfe'];
 export const IMAGE_WIDTHS = [
-  { label: 'Nhỏ', value: 0.3 },
-  { label: 'Vừa', value: 0.55 },
-  { label: 'Lớn', value: 0.9 },
+  { label: 'Small', value: 0.3 },
+  { label: 'Medium', value: 0.55 },
+  { label: 'Large', value: 0.9 },
 ];
 
 // ===================================================== custom nodes
@@ -65,7 +65,7 @@ const MathInline = Node.create({
     return ({ node, getPos, editor }) => {
       const dom = document.createElement('span');
       dom.className = 'rt-math';
-      dom.title = 'Click để sửa công thức';
+      dom.title = 'Click to edit the formula';
       try {
         katex.render(node.attrs.latex || '\\text{?}', dom, { throwOnError: false });
       } catch {
@@ -73,12 +73,12 @@ const MathInline = Node.create({
       }
       dom.addEventListener('click', async () => {
         const next = await askText({
-          title: 'Sửa công thức',
-          label: 'LaTeX (không cần dấu $)',
+          title: 'Edit formula',
+          label: 'LaTeX (no need for $ signs)',
           value: node.attrs.latex || '',
-          placeholder: 'vd. F = m \\cdot a',
-          hint: 'Cú pháp KaTeX. Để trống rồi bấm Xóa công thức để bỏ hẳn.',
-          emptyLabel: 'Xóa công thức',
+          placeholder: 'e.g. F = m \\cdot a',
+          hint: 'KaTeX syntax. Leave blank and click Remove formula to delete it.',
+          emptyLabel: 'Remove formula',
           allowEmpty: true,
         });
         if (next === null) return;
@@ -125,7 +125,7 @@ const ItemRef = Node.create({
       const dom = document.createElement('span');
       dom.className = 'rt-itemref';
       dom.textContent = node.attrs.code;
-      dom.title = 'Mở item ' + node.attrs.code;
+      dom.title = 'Open item ' + node.attrs.code;
       dom.addEventListener('click', () => {
         const nav = editor.options.editorProps.onNavigate;
         if (nav) nav(node.attrs.code);
@@ -249,11 +249,11 @@ const UmlDiagram = Node.create({
         } else {
           const pre = document.createElement('pre');
           pre.className = 'rt-uml-src';
-          pre.textContent = node.attrs.source || '(sơ đồ trống)';
+          pre.textContent = node.attrs.source || '(empty diagram)';
           dom.appendChild(pre);
         }
         const cap = document.createElement('figcaption');
-        cap.textContent = node.attrs.src ? 'Sơ đồ PlantUML — click để sửa' : 'Chưa render được — click để sửa';
+        cap.textContent = node.attrs.src ? 'PlantUML diagram — click to edit' : 'Not rendered yet — click to edit';
         dom.appendChild(cap);
       };
       paint();
@@ -310,11 +310,11 @@ const EeaDiagram = Node.create({
         } else {
           const empty = document.createElement('div');
           empty.className = 'rt-eea-empty';
-          empty.textContent = 'Sơ đồ EEA trống — click để vẽ';
+          empty.textContent = 'Empty EEA diagram — click to draw';
           dom.appendChild(empty);
         }
         const cap = document.createElement('figcaption');
-        cap.textContent = node.attrs.pngSrc ? 'Sơ đồ EEA — click để sửa' : 'Chưa vẽ — click để bắt đầu';
+        cap.textContent = node.attrs.pngSrc ? 'EEA diagram — click to edit' : 'Not drawn yet — click to start';
         dom.appendChild(cap);
       };
       paint();
@@ -371,7 +371,7 @@ const ObdSnippet = Node.create({
     return () => {
       const dom = document.createElement('figure');
       dom.className = 'rt-obd';
-      dom.innerHTML = `${obdConnectorSvgMarkup()}<figcaption>Đầu nối OBD-II (16 chân)</figcaption>`;
+      dom.innerHTML = `${obdConnectorSvgMarkup()}<figcaption>OBD-II connector (16 pins)</figcaption>`;
       return { dom };
     };
   },
@@ -380,7 +380,7 @@ const ObdSnippet = Node.create({
 /** header row + 16 pin rows, pre-numbered — the table a user actually needs after the connector snippet. */
 function obdPinTableContent() {
   const cell = (tag, text) => ({ type: tag, content: [{ type: 'paragraph', content: text ? [{ type: 'text', text }] : [] }] });
-  const rows = [{ type: 'tableRow', content: [cell('tableHeader', 'Chân'), cell('tableHeader', 'Chức năng')] }];
+  const rows = [{ type: 'tableRow', content: [cell('tableHeader', 'Pin'), cell('tableHeader', 'Function')] }];
   for (let pin = 1; pin <= 16; pin++) {
     rows.push({ type: 'tableRow', content: [cell('tableCell', String(pin)), cell('tableCell', '')] });
   }
@@ -1069,22 +1069,22 @@ function blockToHtml(node) {
       return inlineToHtml([node]);
     case 'umlDiagram': {
       if (node.attrs.src) {
-        return `<figure class="rt-uml"><img src="${escHtml(node.attrs.src)}" alt="Sơ đồ">`
-          + '<figcaption>Sơ đồ PlantUML</figcaption></figure>';
+        return `<figure class="rt-uml"><img src="${escHtml(node.attrs.src)}" alt="Diagram">`
+          + '<figcaption>PlantUML diagram</figcaption></figure>';
       }
       return `<figure class="rt-uml"><pre class="rt-uml-src">${escHtml(node.attrs.source)}</pre>`
-        + '<figcaption>Sơ đồ chưa render</figcaption></figure>';
+        + '<figcaption>Diagram not rendered</figcaption></figure>';
     }
     case 'eeaDiagram': {
       if (node.attrs.pngSrc) {
-        return `<figure class="rt-eea"><img src="${escHtml(node.attrs.pngSrc)}" alt="Sơ đồ EEA">`
-          + '<figcaption>Sơ đồ EEA</figcaption></figure>';
+        return `<figure class="rt-eea"><img src="${escHtml(node.attrs.pngSrc)}" alt="EEA diagram">`
+          + '<figcaption>EEA diagram</figcaption></figure>';
       }
-      return '<figure class="rt-eea"><div class="rt-eea-empty">Sơ đồ EEA trống</div>'
-        + '<figcaption>Chưa vẽ</figcaption></figure>';
+      return '<figure class="rt-eea"><div class="rt-eea-empty">Empty EEA diagram</div>'
+        + '<figcaption>Not drawn yet</figcaption></figure>';
     }
     case 'obdSnippet':
-      return `<figure class="rt-obd">${obdConnectorSvgMarkup()}<figcaption>Đầu nối OBD-II (16 chân)</figcaption></figure>`;
+      return `<figure class="rt-obd">${obdConnectorSvgMarkup()}<figcaption>OBD-II connector (16 pins)</figcaption></figure>`;
     default:
       return `<p>${inlineToHtml(node.content)}</p>`;
   }
@@ -1165,7 +1165,7 @@ function buildGridPicker(onPick) {
   wrap.className = 'rt-grid-picker';
   const label = document.createElement('div');
   label.className = 'rt-grid-label';
-  label.textContent = 'Chọn kích thước';
+  label.textContent = 'Pick a size';
   const grid = document.createElement('div');
   grid.className = 'rt-grid';
   const cells = [];
@@ -1366,7 +1366,7 @@ export function mountRichField(container, opts = {}) {
     const all = listSymbols() || [];
 
     if (!all.length) {
-      openPopupAtCaret(buildMenu([{ label: 'Tài liệu chưa có Calibration, Interface hay Component nào', onClick: () => closePopup() }]));
+      openPopupAtCaret(buildMenu([{ label: 'This document has no Calibration, Interface or Component yet', onClick: () => closePopup() }]));
       return;
     }
 
@@ -1391,7 +1391,7 @@ export function mountRichField(container, opts = {}) {
           kind: c.kind,
           onClick: () => insertMention(c),
         })))
-      : buildMenu([{ label: `Không có ${activeLabel} nào khớp "${found.query}"`, onClick: () => closePopup() }]));
+      : buildMenu([{ label: `No ${activeLabel} matches "${found.query}"`, onClick: () => closePopup() }]));
 
     openPopupAtCaret(wrap);
   }
@@ -1443,11 +1443,11 @@ export function mountRichField(container, opts = {}) {
     toolbar.appendChild(s);
   };
 
-  push({ html: icon(ICONS.bold, 'Đậm'), title: 'Đậm (Ctrl+B)', onClick: () => chain().toggleBold().run(), isActive: () => editor.isActive('bold') });
-  push({ html: icon(ICONS.italic, 'Nghiêng'), title: 'Nghiêng (Ctrl+I)', onClick: () => chain().toggleItalic().run(), isActive: () => editor.isActive('italic') });
-  push({ html: icon(ICONS.underline, 'Gạch chân'), title: 'Gạch chân (Ctrl+U)', onClick: () => chain().toggleUnderline().run(), isActive: () => editor.isActive('underline') });
-  push({ html: icon(ICONS.strike, 'Gạch ngang'), title: 'Gạch ngang', onClick: () => chain().toggleStrike().run(), isActive: () => editor.isActive('strike') });
-  push({ html: icon(ICONS.code, 'Mã'), title: 'Mã inline', onClick: () => chain().toggleCode().run(), isActive: () => editor.isActive('code') });
+  push({ html: icon(ICONS.bold, 'Bold'), title: 'Bold (Ctrl+B)', onClick: () => chain().toggleBold().run(), isActive: () => editor.isActive('bold') });
+  push({ html: icon(ICONS.italic, 'Italic'), title: 'Italic (Ctrl+I)', onClick: () => chain().toggleItalic().run(), isActive: () => editor.isActive('italic') });
+  push({ html: icon(ICONS.underline, 'Underline'), title: 'Underline (Ctrl+U)', onClick: () => chain().toggleUnderline().run(), isActive: () => editor.isActive('underline') });
+  push({ html: icon(ICONS.strike, 'Strikethrough'), title: 'Strikethrough', onClick: () => chain().toggleStrike().run(), isActive: () => editor.isActive('strike') });
+  push({ html: icon(ICONS.code, 'Code'), title: 'Inline code', onClick: () => chain().toggleCode().run(), isActive: () => editor.isActive('code') });
 
   sep();
   HIGHLIGHT_COLORS.forEach((color) => {
@@ -1455,7 +1455,7 @@ export function mountRichField(container, opts = {}) {
     b.type = 'button';
     b.className = 'rt-swatch';
     b.style.background = color;
-    b.title = 'Đánh dấu';
+    b.title = 'Highlight';
     b.onmousedown = (e) => e.preventDefault();
     b.onclick = () => chain().toggleHighlight({ color }).run();
     b._isActive = () => editor.isActive('highlight', { color });
@@ -1464,14 +1464,14 @@ export function mountRichField(container, opts = {}) {
   });
 
   sep();
-  push({ html: icon(ICONS.bullet, 'Gạch đầu dòng'), title: 'Danh sách gạch đầu dòng', onClick: () => chain().toggleBulletList().run(), isActive: () => editor.isActive('bulletList') });
-  push({ html: icon(ICONS.ordered, 'Đánh số'), title: 'Danh sách đánh số', onClick: () => chain().toggleOrderedList().run(), isActive: () => editor.isActive('orderedList') });
-  push({ html: icon(ICONS.quote, 'Trích dẫn'), title: 'Trích dẫn', onClick: () => chain().toggleBlockquote().run(), isActive: () => editor.isActive('blockquote') });
+  push({ html: icon(ICONS.bullet, 'Bullet list'), title: 'Bullet list', onClick: () => chain().toggleBulletList().run(), isActive: () => editor.isActive('bulletList') });
+  push({ html: icon(ICONS.ordered, 'Numbered list'), title: 'Numbered list', onClick: () => chain().toggleOrderedList().run(), isActive: () => editor.isActive('orderedList') });
+  push({ html: icon(ICONS.quote, 'Quote'), title: 'Quote', onClick: () => chain().toggleBlockquote().run(), isActive: () => editor.isActive('blockquote') });
 
   sep();
   const tableBtn = push({
-    html: icon(ICONS.table, 'Bảng'),
-    title: 'Chèn bảng',
+    html: icon(ICONS.table, 'Table'),
+    title: 'Insert table',
     onClick: () => {
       if (popup) return closePopup();
       openPopup(
@@ -1485,8 +1485,8 @@ export function mountRichField(container, opts = {}) {
   });
 
   const imgBtn = push({
-    html: icon(ICONS.image, 'Ảnh'),
-    title: 'Chèn ảnh',
+    html: icon(ICONS.image, 'Image'),
+    title: 'Insert image',
     onClick: async () => {
       if (!attachImage) return;
       const relPath = await attachImage();
@@ -1502,18 +1502,18 @@ export function mountRichField(container, opts = {}) {
 
   push({
     html: icon(ICONS.link, 'Link'),
-    title: 'Chèn link ngoài',
+    title: 'Insert external link',
     onClick: async () => {
       const cur = editor.getAttributes('link').href || '';
       const url = await askText({
-        title: 'Chèn link',
-        label: 'Địa chỉ URL',
+        title: 'Insert link',
+        label: 'URL',
         value: cur,
         placeholder: 'https://…',
-        okLabel: 'Chèn',
+        okLabel: 'Insert',
         allowEmpty: true,
-        emptyLabel: cur ? 'Bỏ link' : null,
-        validate: (v) => (/^(https?|mailto|file):/i.test(v) ? '' : 'Phải bắt đầu bằng http://, https://, mailto: hoặc file:'),
+        emptyLabel: cur ? 'Remove link' : null,
+        validate: (v) => (/^(https?|mailto|file):/i.test(v) ? '' : 'Must start with http://, https://, mailto: or file:'),
       });
       if (url === null) return;
       if (url === '') chain().unsetLink().run();
@@ -1524,19 +1524,19 @@ export function mountRichField(container, opts = {}) {
 
   const refBtn = push({
     html: icon(ICONS.ref, 'Link item'),
-    title: 'Chèn link tới item khác',
+    title: 'Insert link to another item',
     onClick: () => {
       if (popup) return closePopup();
       const items = listItems() || [];
       if (!items.length) {
-        showNotice('Chưa liên kết được', 'Tài liệu chưa có item nào khác để trỏ tới.');
+        showNotice('Cannot link yet', 'This document has no other item to point to.');
         return;
       }
       openPopup(
         refBtn,
         buildMenu(
           items.slice(0, 40).map((it) => ({
-            label: `${it.code} — ${it.title || '(chưa đặt tên)'}`,
+            label: `${it.code} — ${it.title || '(untitled)'}`,
             onClick: () => {
               closePopup();
               chain().insertContent({ type: 'itemRef', attrs: { code: it.code } }).run();
@@ -1548,15 +1548,15 @@ export function mountRichField(container, opts = {}) {
   });
 
   push({
-    html: icon(ICONS.math, 'Công thức'),
-    title: 'Chèn công thức LaTeX',
+    html: icon(ICONS.math, 'Formula'),
+    title: 'Insert LaTeX formula',
     onClick: async () => {
       const latex = await askText({
-        title: 'Chèn công thức',
-        label: 'LaTeX (không cần dấu $)',
-        placeholder: 'vd. \\sum_{i=1}^{n} x_i \\le 100',
-        okLabel: 'Chèn',
-        hint: 'Cú pháp KaTeX. Sau khi chèn, click vào công thức để sửa lại.',
+        title: 'Insert formula',
+        label: 'LaTeX (no need for $ signs)',
+        placeholder: 'e.g. \\sum_{i=1}^{n} x_i \\le 100',
+        okLabel: 'Insert',
+        hint: 'KaTeX syntax. After inserting, click the formula to edit it again.',
       });
       if (!latex) return;
       chain().insertContent({ type: 'mathInline', attrs: { latex } }).run();
@@ -1564,8 +1564,8 @@ export function mountRichField(container, opts = {}) {
   });
 
   push({
-    html: icon(ICONS.uml, 'Sơ đồ'),
-    title: 'Chèn sơ đồ PlantUML',
+    html: icon(ICONS.uml, 'Diagram'),
+    title: 'Insert PlantUML diagram',
     onClick: async () => {
       if (!onEditDiagram) return;
       const made = await onEditDiagram('');
@@ -1575,8 +1575,8 @@ export function mountRichField(container, opts = {}) {
   });
 
   push({
-    html: icon(ICONS.eea, 'Sơ đồ EEA'),
-    title: 'Chèn sơ đồ EEA (kiến trúc điện/điện tử)',
+    html: icon(ICONS.eea, 'EEA diagram'),
+    title: 'Insert EEA diagram (electrical/electronic architecture)',
     onClick: async () => {
       if (!onEditEea) return;
       const made = await onEditEea('');
@@ -1587,38 +1587,38 @@ export function mountRichField(container, opts = {}) {
 
   push({
     html: icon(ICONS.obd, 'OBD'),
-    title: 'Chèn sơ đồ đầu nối OBD-II + bảng 16 chân để điền chức năng',
+    title: 'Insert OBD-II connector diagram + a 16-pin table to fill in',
     onClick: () => {
       chain().insertContent([{ type: 'obdSnippet' }, obdPinTableContent()]).run();
     },
   });
 
-  push({ html: icon(ICONS.hr, 'Đường kẻ'), title: 'Đường kẻ ngang', onClick: () => chain().setHorizontalRule().run() });
+  push({ html: icon(ICONS.hr, 'Divider'), title: 'Horizontal rule', onClick: () => chain().setHorizontalRule().run() });
 
   sep();
   push({
-    html: icon(ICONS.clear, 'Xóa định dạng'),
-    title: 'Xóa định dạng',
+    html: icon(ICONS.clear, 'Clear formatting'),
+    title: 'Clear formatting',
     onClick: () => chain().unsetAllMarks().clearNodes().run(),
   });
 
   // ---------------------------------------------------------- table bar
   const tableActions = [
-    ['+ Hàng trên', () => chain().addRowBefore().run()],
-    ['+ Hàng dưới', () => chain().addRowAfter().run()],
-    ['− Hàng', () => chain().deleteRow().run()],
-    ['+ Cột trái', () => chain().addColumnBefore().run()],
-    ['+ Cột phải', () => chain().addColumnAfter().run()],
-    ['− Cột', () => chain().deleteColumn().run()],
-    ['Hàng tiêu đề', () => chain().toggleHeaderRow().run()],
-    ['Gộp ô', () => mergeCellsSameRow()],
-    ['Tách ô', () => chain().splitCell().run()],
-    ['Xóa bảng', () => chain().deleteTable().run()],
+    ['+ Row above', () => chain().addRowBefore().run()],
+    ['+ Row below', () => chain().addRowAfter().run()],
+    ['− Row', () => chain().deleteRow().run()],
+    ['+ Column left', () => chain().addColumnBefore().run()],
+    ['+ Column right', () => chain().addColumnAfter().run()],
+    ['− Column', () => chain().deleteColumn().run()],
+    ['Header row', () => chain().toggleHeaderRow().run()],
+    ['Merge cells', () => mergeCellsSameRow()],
+    ['Split cell', () => chain().splitCell().run()],
+    ['Delete table', () => chain().deleteTable().run()],
   ];
   tableActions.forEach(([label, fn]) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'rt-tbtn' + (label === 'Xóa bảng' ? ' danger' : '');
+    b.className = 'rt-tbtn' + (label === 'Delete table' ? ' danger' : '');
     b.textContent = label;
     b.onmousedown = (e) => e.preventDefault();
     b.onclick = fn;
@@ -1637,9 +1637,9 @@ export function mountRichField(container, opts = {}) {
         sel.$anchorCell.start(-1) === sel.$headCell.start(-1);
       if (!sameRow) {
         showNotice(
-          'Chỉ gộp được trong cùng một hàng',
-          'Gộp theo chiều dọc cần rowspan, mà định dạng LaTeX của tài liệu này không '
-          + 'biểu diễn được — nếu cho gộp thì ô sẽ mất khi mở lại file.'
+          'Can only merge cells within the same row',
+          'A vertical merge needs rowspan, which this document\'s LaTeX format cannot '
+          + 'represent — allowing it would lose the cell when the file is reopened.'
         );
         return;
       }

@@ -35,20 +35,20 @@ const WORKING = 'WORKING';
 
 function relTime(ms) {
   const s = Math.round((Date.now() - ms) / 1000);
-  if (s < 60) return 'vừa xong';
+  if (s < 60) return 'just now';
   const m = Math.round(s / 60);
-  if (m < 60) return `${m} phút trước`;
+  if (m < 60) return `${m} min ago`;
   const h = Math.round(m / 60);
-  if (h < 24) return `${h} giờ trước`;
+  if (h < 24) return `${h}h ago`;
   const d = Math.round(h / 24);
-  if (d < 30) return `${d} ngày trước`;
-  return new Date(ms).toLocaleDateString('vi-VN');
+  if (d < 30) return `${d}d ago`;
+  return new Date(ms).toLocaleDateString('en-US');
 }
 
-const fullTime = (ms) => new Date(ms).toLocaleString('vi-VN');
+const fullTime = (ms) => new Date(ms).toLocaleString('en-US');
 
 function refLabel(ref) {
-  if (ref === WORKING) return 'Hiện tại (chưa commit)';
+  if (ref === WORKING) return 'Current (uncommitted)';
   const e = H.entries.find((x) => x.oid === ref);
   if (!e) return ref ? ref.slice(0, 7) : '—';
   const tag = e.tags[0] ? `${e.tags[0]} · ` : '';
@@ -72,7 +72,7 @@ function statChips(st) {
   if (st.modified) wrap.append(ctx.h('span', { class: 'chip-m', text: `~${st.modified}` }));
   // U+21C6 rather than a plain arrow: at 10px bold the "→" glyph falls back to
   // a font with no bold face and thins out into something unreadable.
-  if (st.moved) wrap.append(ctx.h('span', { class: 'chip-v', text: `\u21C6${st.moved}`, title: `${st.moved} item chuyển chỗ` }));
+  if (st.moved) wrap.append(ctx.h('span', { class: 'chip-v', text: `\u21C6${st.moved}`, title: `${st.moved} item(s) moved` }));
   if (!st.added && !st.deleted && !st.modified && !st.moved && st.meta) {
     wrap.append(ctx.h('span', { class: 'chip-m', text: 'meta' }));
   }
@@ -163,26 +163,26 @@ export async function refresh() {
 }
 
 function renderNoRepo() {
-  el('histBranch').textContent = 'chưa có git';
+  el('histBranch').textContent = 'no git yet';
   el('btnCommit').disabled = true;
   const list = el('histList');
   list.innerHTML = '';
   list.append(
     ctx.h('div', { class: 'hist-empty' },
-      ctx.h('p', { text: 'Project này chưa được đưa vào git nên chưa có lịch sử.' }),
+      ctx.h('p', { text: 'This project is not under git yet, so there is no history.' }),
       ctx.h('button', {
-        class: 'btn primary', text: 'Khởi tạo git',
+        class: 'btn primary', text: 'Initialize git',
         onclick: async () => {
           try {
             await window.api.git.init(ctx.state.projectDir);
-            ctx.setStatus('Đã khởi tạo git cho project.', 'ok');
+            ctx.setStatus('Initialized git for the project.', 'ok');
             refresh();
           } catch (e) {
-            window.api.showError({ title: 'Không khởi tạo được git', message: e.message });
+            window.api.showError({ title: 'Could not initialize git', message: e.message });
           }
         },
       }),
-      ctx.h('p', { class: 'muted small', text: 'Tạo .git, .gitignore và commit đầu tiên. Repo chuẩn — dùng được với git ngoài app.' })
+      ctx.h('p', { class: 'muted small', text: 'Creates .git, .gitignore, and a first commit. A normal repo — usable with git outside the app too.' })
     )
   );
   el('histCount').textContent = '—';
@@ -202,7 +202,7 @@ function matches(e) {
 
 function render() {
   const st = H.status;
-  el('histBranch').textContent = st.branch || (st.detached ? 'HEAD rời nhánh' : '—');
+  el('histBranch').textContent = st.branch || (st.detached ? 'detached HEAD' : '—');
   el('histBranch').parentElement.classList.toggle('warn', !!st.readOnly);
 
   const dirtyCount = (st.dirty || []).length;
@@ -215,8 +215,8 @@ function render() {
 
   if (st.readOnly) {
     list.append(ctx.h('div', { class: 'hist-warn' },
-      ctx.h('b', { text: st.blockers.includes('merging') ? 'Repo đang merge dở.' : 'HEAD đang rời nhánh.' }),
-      ctx.h('div', { text: 'App chuyển sang chỉ đọc. Xử lý bằng git CLI rồi mở lại project.' })
+      ctx.h('b', { text: st.blockers.includes('merging') ? 'Repo has a merge in progress.' : 'HEAD is detached.' }),
+      ctx.h('div', { text: 'The app has switched to read-only. Resolve it with the git CLI, then reopen the project.' })
     ));
   }
 
@@ -228,7 +228,7 @@ function render() {
     },
       ctx.h('span', { class: 'hdot pending' }),
       ctx.h('div', { class: 'hbody' },
-        ctx.h('div', { class: 'hmsg', text: 'Thay đổi chưa commit' }),
+        ctx.h('div', { class: 'hmsg', text: 'Uncommitted changes' }),
         ctx.h('div', { class: 'hmeta' },
           ctx.h('span', { text: `${dirtyCount} file` }),
           ctx.h('span', { class: 'hstats' })
@@ -246,12 +246,12 @@ function render() {
 
   if (!shown.length && !dirtyCount) {
     list.append(ctx.h('div', { class: 'hist-empty' },
-      ctx.h('p', { text: H.query ? 'Không có commit nào khớp.' : 'Chưa có commit nào.' })));
+      ctx.h('p', { text: H.query ? 'No commit matches.' : 'No commits yet.' })));
   }
 
   if (!H.done) {
     list.append(ctx.h('button', {
-      class: 'hist-more', text: 'Tải thêm…',
+      class: 'hist-more', text: 'Load more…',
       onclick: async () => {
         const more = await window.api.git.log(ctx.state.projectDir, {
           limit: 60, before: H.entries[H.entries.length - 1].oid,
@@ -304,18 +304,18 @@ function workingActions() {
       onclick: (ev) => { ev.stopPropagation(); openCommit(); },
     }),
     ctx.h('button', {
-      class: 'btn small', text: 'Xem thay đổi',
+      class: 'btn small', text: 'View changes',
       onclick: (ev) => { ev.stopPropagation(); openCompare(H.entries[0] ? H.entries[0].oid : null, WORKING); },
     }),
     ctx.h('button', {
-      class: 'btn small danger', text: 'Bỏ thay đổi…',
+      class: 'btn small danger', text: 'Discard changes…',
       onclick: (ev) => { ev.stopPropagation(); discardChanges(); },
     })
   );
 }
 
 /**
- * Throw away everything not yet committed in this book. Unlike "Khôi phục"
+ * Throw away everything not yet committed in this book. Unlike "Restore"
  * on an old commit, this does NOT create a commit — there is nothing new to
  * record, an uncommitted diff is just being erased, so recording a node for
  * it would be noise. (`git checkout -- file`, not a revert.)
@@ -324,10 +324,10 @@ async function discardChanges() {
   const dir = ctx.state.projectDir;
   const dirtyCount = (H.status.dirty || []).length;
   const ok = await window.api.confirm({
-    title: 'Bỏ thay đổi chưa commit',
-    message: `Xóa ${dirtyCount} file thay đổi chưa commit, quay về đúng bản đã commit gần nhất?`,
-    detail: 'Không tạo commit mới — chỉ ghi đè lại đúng nội dung đã lưu trong git. Thay đổi chưa commit sẽ mất hẳn, không có "hoàn tác".',
-    confirmLabel: 'Bỏ thay đổi',
+    title: 'Discard uncommitted changes',
+    message: `Discard ${dirtyCount} uncommitted file change(s) and go back to the last commit?`,
+    detail: 'Creates no new commit — just overwrites with what git already has saved. Uncommitted changes will be lost for good, no "undo".',
+    confirmLabel: 'Discard changes',
     danger: true,
   });
   if (!ok) return;
@@ -338,19 +338,19 @@ async function discardChanges() {
     H.selected = null;
     ctx.exitViewing(true);
     ctx.onDocRestored(doc);
-    ctx.setStatus('Đã bỏ thay đổi chưa commit.', 'ok');
+    ctx.setStatus('Discarded the uncommitted changes.', 'ok');
     await refresh();
   } catch (err) {
-    window.api.showError({ title: 'Không bỏ được thay đổi', message: err.message });
+    window.api.showError({ title: 'Could not discard changes', message: err.message });
   }
 }
 
 /**
- * "Xem bản này" is the one thing most people want from a history row — just
+ * "View this version" is the one thing most people want from a history row — just
  * look, change nothing — so it stays a direct button. The other three
  * (compare / restore / baseline) are rarer and each carries more weight
  * (restore rewrites the working copy, baseline tags a release), so they're
- * grouped behind one "Thêm ▾" to keep the common case from being crowded out.
+ * grouped behind one "More ▾" to keep the common case from being crowded out.
  */
 function commitActions(e) {
   const viewing = ctx.state.viewing && ctx.state.viewing.entry.oid === e.oid;
@@ -360,11 +360,11 @@ function commitActions(e) {
 
   const menu = ctx.h('div', { class: 'hact-menu', hidden: true },
     ctx.h('button', {
-      class: 'hact-menu-item', text: 'So sánh với hiện tại',
+      class: 'hact-menu-item', text: 'Compare with current',
       onclick: (ev) => { ev.stopPropagation(); menu.hidden = true; openCompare(e.oid, WORKING); },
     }),
     ctx.h('button', {
-      class: 'hact-menu-item', text: 'Khôi phục…',
+      class: 'hact-menu-item', text: 'Restore…',
       onclick: (ev) => { ev.stopPropagation(); menu.hidden = true; restoreTo(e); },
     }),
     ctx.h('button', {
@@ -376,7 +376,7 @@ function commitActions(e) {
   box.append(ctx.h('div', { class: 'hact-row' },
     ctx.h('button', {
       class: 'btn small' + (viewing ? ' primary' : ''),
-      text: viewing ? 'Đang xem' : 'Xem bản này',
+      text: viewing ? 'Viewing' : 'View this version',
       onclick: async (ev) => {
         ev.stopPropagation();
         if (viewing) return ctx.exitViewing();
@@ -384,13 +384,13 @@ function commitActions(e) {
           const doc = await docFor(e.oid);
           ctx.enterViewing(e, JSON.parse(JSON.stringify(doc)));
         } catch (err) {
-          window.api.showError({ title: 'Không mở được bản cũ', message: err.message });
+          window.api.showError({ title: 'Could not open the old version', message: err.message });
         }
       },
     }),
     ctx.h('div', { class: 'hact-more' },
       ctx.h('button', {
-        class: 'btn small ghost', text: 'Thêm ▾',
+        class: 'btn small ghost', text: 'More ▾',
         onclick: (ev) => {
           ev.stopPropagation();
           document.querySelectorAll('.hact-menu').forEach((m) => { if (m !== menu) m.hidden = true; });
@@ -414,76 +414,76 @@ export async function openCommit() {
   const issues = ctx.validateNow().filter((i) => i.level === 'error');
   if (issues.length) {
     const go = await window.api.confirm({
-      title: 'Còn lỗi chưa sửa',
-      message: `Tài liệu đang có ${issues.length} lỗi. Vẫn commit?`,
+      title: 'Unresolved issues',
+      message: `The document currently has ${issues.length} error(s). Commit anyway?`,
       detail: issues.slice(0, 6).map((i) => `${i.code}: ${i.message}`).join('\n'),
-      confirmLabel: 'Vẫn commit',
+      confirmLabel: 'Commit anyway',
       danger: true,
     });
     if (!go) return;
   }
 
   const message = await ctx.askText({
-    title: 'Commit thay đổi',
-    label: 'Mô tả thay đổi',
+    title: 'Commit changes',
+    label: 'Describe the change',
     value: pending.line,
-    placeholder: 'Ví dụ: siết ASIL cho chuỗi phanh khẩn cấp',
+    placeholder: 'e.g. tighten ASIL for the emergency-brake chain',
     okLabel: 'Commit',
     hint: pending.diff ? summaryLine(pending.diff) : '',
-    validate: (v) => (v.length >= 4 ? '' : 'Viết ít nhất vài từ — commit không mô tả gì thì lịch sử vô dụng.'),
+    validate: (v) => (v.length >= 4 ? '' : 'Write at least a few words — an undescribed commit makes the history useless.'),
   });
   if (!message) return;
 
   try {
     const { short } = await window.api.git.commit(dir, message);
     H.statCache.clear();
-    hideRestoreUndo();  // a new commit on top makes "hoàn tác khôi phục" stale
-    ctx.setStatus(`Đã commit ${short}.`, 'ok');
+    hideRestoreUndo();  // a new commit on top makes "undo restore" stale
+    ctx.setStatus(`Committed ${short}.`, 'ok');
     await refresh();
   } catch (e) {
-    window.api.showError({ title: 'Commit thất bại', message: e.message });
+    window.api.showError({ title: 'Commit failed', message: e.message });
   }
 }
 
 async function makeBaseline(e) {
   const name = await ctx.askText({
-    title: 'Gắn baseline',
-    label: 'Tên baseline',
+    title: 'Tag baseline',
+    label: 'Baseline name',
     value: ctx.state.doc && ctx.state.doc.meta.revision ? `rev-${ctx.state.doc.meta.revision}` : '',
-    placeholder: 'vd. rev-B, SOP-2026-01',
-    okLabel: 'Gắn',
-    hint: `Gắn vào commit ${e.short} — "${e.message.split('\n')[0]}"`,
-    validate: (v) => (/^[A-Za-z0-9._-]+$/.test(v) ? '' : 'Chỉ dùng chữ, số và . _ -'),
+    placeholder: 'e.g. rev-B, SOP-2026-01',
+    okLabel: 'Tag',
+    hint: `Tags commit ${e.short} — "${e.message.split('\n')[0]}"`,
+    validate: (v) => (/^[A-Za-z0-9._-]+$/.test(v) ? '' : 'Letters, digits and . _ - only'),
   });
   if (!name) return;
 
   const rev = ctx.state.doc ? ctx.state.doc.meta.revision : '';
   if (rev && !name.toLowerCase().includes(String(rev).toLowerCase())) {
     const go = await window.api.confirm({
-      title: 'Tên baseline không khớp Revision',
-      message: `Tài liệu đang ở Revision "${rev}" nhưng baseline đặt tên "${name}".`,
-      detail: 'Sai lệch này hay gây nhầm khi truy vết về sau. Vẫn tiếp tục?',
-      confirmLabel: 'Vẫn gắn',
+      title: 'Baseline name does not match the Revision',
+      message: `The document is at Revision "${rev}" but the baseline is named "${name}".`,
+      detail: 'This mismatch tends to cause confusion later when tracing back. Continue anyway?',
+      confirmLabel: 'Tag anyway',
       danger: true,
     });
     if (!go) return;
   }
 
   const message = await ctx.askText({
-    title: 'Mô tả baseline',
-    label: 'Ghi chú',
+    title: 'Describe the baseline',
+    label: 'Note',
     value: `Baseline ${name}`,
-    okLabel: 'Xong',
+    okLabel: 'Done',
     allowEmpty: true,
   });
   if (message === null) return;
 
   try {
     await window.api.git.createTag(ctx.state.projectDir, e.oid, name, message);
-    ctx.setStatus(`Đã gắn baseline ${name}.`, 'ok');
+    ctx.setStatus(`Tagged baseline ${name}.`, 'ok');
     await refresh();
   } catch (err) {
-    window.api.showError({ title: 'Không gắn được baseline', message: err.message });
+    window.api.showError({ title: 'Could not tag the baseline', message: err.message });
   }
 }
 
@@ -495,18 +495,18 @@ async function restoreTo(e) {
   } catch { /* fall back to cached counts */ }
 
   const detail = stats
-    ? `Sẽ áp dụng: ${stats.added} thêm, ${stats.deleted} xóa, ${stats.modified} sửa, ${stats.moved} chuyển chỗ.`
+    ? `Will apply: ${stats.added} added, ${stats.deleted} deleted, ${stats.modified} modified, ${stats.moved} moved.`
     : '';
   const ok = await window.api.confirm({
-    title: 'Khôi phục phiên bản',
-    message: `Đưa tài liệu về bản ${e.short} — "${e.message.split('\n')[0]}"?`,
-    detail: `${detail}\n\nLịch sử không bị mất: thao tác này tạo một commit MỚI mang nội dung cũ. Nếu đổi ý, có nút "Hoàn tác" ngay sau khi khôi phục xong.`,
-    confirmLabel: 'Khôi phục',
+    title: 'Restore version',
+    message: `Restore the document to ${e.short} — "${e.message.split('\n')[0]}"?`,
+    detail: `${detail}\n\nNo history is lost: this creates a NEW commit carrying the old content. If you change your mind, an "Undo" button appears right after restoring.`,
+    confirmLabel: 'Restore',
     danger: true,
   });
   if (!ok) return;
 
-  // The commit that is HEAD right now is exactly what "hoàn tác" needs to
+  // The commit that is HEAD right now is exactly what "undo" needs to
   // jump back to — capture it before the restore moves HEAD forward.
   const prevHead = H.entries[0] ? H.entries[0].oid : null;
 
@@ -517,11 +517,11 @@ async function restoreTo(e) {
     H.docCache.clear();
     ctx.exitViewing(true);
     ctx.onDocRestored(doc);
-    ctx.setStatus(`Đã khôi phục về ${e.short}.`, 'ok');
+    ctx.setStatus(`Restored to ${e.short}.`, 'ok');
     await refresh();
     if (prevHead && prevHead !== e.oid) showRestoreUndo(prevHead);
   } catch (err) {
-    window.api.showError({ title: 'Khôi phục thất bại', message: err.message });
+    window.api.showError({ title: 'Restore failed', message: err.message });
   }
 }
 
@@ -536,10 +536,10 @@ function showRestoreUndo(prevHeadOid) {
   bar.hidden = false;
   bar.innerHTML = '';
   bar.append(
-    ctx.h('span', { text: 'Đã khôi phục. Muốn quay lại bản mới nhất trước đó?' }),
+    ctx.h('span', { text: 'Restored. Want to go back to the most recent version before that?' }),
     ctx.h('span', { class: 'grow' }),
     ctx.h('button', {
-      class: 'btn small primary', text: 'Hoàn tác khôi phục',
+      class: 'btn small primary', text: 'Undo restore',
       onclick: () => undoRestore(prevHeadOid),
     }),
     ctx.h('button', { class: 'tool icon', text: '✕', onclick: hideRestoreUndo })
@@ -560,10 +560,10 @@ async function undoRestore(prevHeadOid) {
     H.statCache.clear();
     H.docCache.clear();
     ctx.onDocRestored(doc);
-    ctx.setStatus('Đã hoàn tác — quay lại bản mới nhất trước khi khôi phục.', 'ok');
+    ctx.setStatus('Undone — back to the most recent version before the restore.', 'ok');
     await refresh();
   } catch (err) {
-    window.api.showError({ title: 'Không hoàn tác được', message: err.message });
+    window.api.showError({ title: 'Could not undo', message: err.message });
   }
 }
 
@@ -573,7 +573,7 @@ export async function restoreSingleItem(oid, code) {
     const { item } = await window.api.git.restoreItem(ctx.state.projectDir, oid, code);
     return item;
   } catch (e) {
-    window.api.showError({ title: 'Không lấy lại được item', message: e.message });
+    window.api.showError({ title: 'Could not recover the item', message: e.message });
     return null;
   }
 }
@@ -598,7 +598,7 @@ async function runCompare() {
   el('cmpB').textContent = refLabel(b);
   if (!a) {
     el('cmpList').innerHTML = '';
-    el('cmpDetail').innerHTML = '<div class="empty-note">Chưa có commit nào để so sánh.</div>';
+    el('cmpDetail').innerHTML = '<div class="empty-note">No commit to compare yet.</div>';
     return;
   }
   try {
@@ -606,7 +606,7 @@ async function runCompare() {
     H.cmp.diff = diffDocs(docA, docB);
   } catch (e) {
     el('cmpDetail').innerHTML = '';
-    el('cmpDetail').append(ctx.h('div', { class: 'empty-note', text: 'Lỗi khi so sánh: ' + e.message }));
+    el('cmpDetail').append(ctx.h('div', { class: 'empty-note', text: 'Error comparing: ' + e.message }));
     return;
   }
   renderCompare();
@@ -631,7 +631,7 @@ function renderCompare() {
             const esc = l.replace(/&/g, '&amp;').replace(/</g, '&lt;');
             return cls ? `<span class="${cls}">${esc}</span>` : esc;
           }).join('\n')
-        : '<span class="dl-file">Hai bản giống hệt nhau.</span>';
+        : '<span class="dl-file">The two versions are identical.</span>';
     });
     return;
   }
@@ -641,10 +641,10 @@ function renderCompare() {
   safe.innerHTML = '';
   safe.hidden = !d.safety.length;
   if (d.safety.length) {
-    safe.append(ctx.h('div', { class: 'cs-title', text: `${d.safety.length} điểm cần soát về an toàn` }));
+    safe.append(ctx.h('div', { class: 'cs-title', text: `${d.safety.length} point(s) needing a safety check` }));
     d.safety.forEach((f) => {
       safe.append(ctx.h('div', { class: `cs-row ${f.level}`, onclick: () => focusChange(f.code) },
-        ctx.h('span', { class: `lv ${f.level}`, text: f.level === 'error' ? 'nặng' : 'lưu ý' }),
+        ctx.h('span', { class: `lv ${f.level}`, text: f.level === 'error' ? 'severe' : 'note' }),
         ctx.h('span', { class: 'code', text: f.code }),
         ctx.h('span', { text: f.message })
       ));
@@ -656,16 +656,16 @@ function renderCompare() {
   const chip = (n, label, cls) => stats.append(
     ctx.h('span', { class: `cstat ${cls}` + (n ? '' : ' zero') },
       ctx.h('b', { text: String(n) }), ' ' + label));
-  chip(d.stats.added, 'thêm', 'a');
-  chip(d.stats.deleted, 'xóa', 'd');
-  chip(d.stats.modified, 'sửa', 'm');
-  chip(d.stats.moved, 'chuyển chỗ', 'v');
-  if (d.stats.meta) chip(d.stats.meta, 'thông tin tài liệu', 'meta');
+  chip(d.stats.added, 'added', 'a');
+  chip(d.stats.deleted, 'deleted', 'd');
+  chip(d.stats.modified, 'modified', 'm');
+  chip(d.stats.moved, 'moved', 'v');
+  if (d.stats.meta) chip(d.stats.meta, 'document info', 'meta');
 
   const list = el('cmpList');
   list.innerHTML = '';
   if (d.empty) {
-    list.append(ctx.h('div', { class: 'empty-note', text: 'Hai bản giống hệt nhau.' }));
+    list.append(ctx.h('div', { class: 'empty-note', text: 'The two versions are identical.' }));
     el('cmpDetail').innerHTML = '';
     return;
   }
@@ -683,7 +683,7 @@ function renderCompare() {
   },
     ctx.h('span', { class: 'cmark' }),
     ctx.h('div', { class: 'cinfo' },
-      ctx.h('div', { class: 'ctitle', text: r.title || '(chưa đặt tên)' }),
+      ctx.h('div', { class: 'ctitle', text: r.title || '(untitled)' }),
       ctx.h('div', { class: 'csub' },
         ctx.h('span', { class: 'code', text: r.code }),
         ctx.h('span', { class: `type-badge ${r.type}`, text: r.typeShort }),
@@ -692,13 +692,13 @@ function renderCompare() {
     )
   );
 
-  group('Thêm mới', d.added, 'add', (r, c) => rowEl(r, c, `§${r.path}`));
-  group('Đã xóa', d.deleted, 'del', (r, c) => rowEl(r, c, `§${r.path}`));
-  group('Đã sửa', d.modified, 'mod', (r, c) =>
-    rowEl(r, c, `§${r.path} · ${r.fields.length} trường`));
-  group('Chuyển chỗ', d.moved, 'mov', (r, c) => rowEl(r, c, `§${r.from} → §${r.to}`));
+  group('Added', d.added, 'add', (r, c) => rowEl(r, c, `§${r.path}`));
+  group('Deleted', d.deleted, 'del', (r, c) => rowEl(r, c, `§${r.path}`));
+  group('Modified', d.modified, 'mod', (r, c) =>
+    rowEl(r, c, `§${r.path} · ${r.fields.length} field(s)`));
+  group('Moved', d.moved, 'mov', (r, c) => rowEl(r, c, `§${r.from} → §${r.to}`));
   if (d.meta.length) {
-    list.append(ctx.h('div', { class: 'cgroup', text: `Thông tin tài liệu (${d.meta.length})` }));
+    list.append(ctx.h('div', { class: 'cgroup', text: `Document info (${d.meta.length})` }));
     d.meta.forEach((m) => list.append(ctx.h('div', {
       class: 'crow mod' + (H.cmp.sel === '@meta:' + m.key ? ' sel' : ''),
       onclick: () => { H.cmp.sel = '@meta:' + m.key; renderCompare(); },
@@ -719,9 +719,9 @@ function focusChange(code) {
 }
 
 /**
- * Every field diff renders as two columns (Trước/Sau) like a git split-view
+ * Every field diff renders as two columns (Before/After) like a git split-view
  * diff — just scoped to one item's one field instead of a whole-file patch,
- * per the explicit ask for "side by side ... nhưng theo dạng item". A word
+ * per the explicit ask for a side-by-side view scoped to one item. A word
  * diff's single `{op, text}` sequence feeds both columns: the left one skips
  * '+' tokens (so it reads as the old text with removals struck through), the
  * right one skips '-' tokens (the new text with additions highlighted).
@@ -735,14 +735,14 @@ function fieldBlock(f) {
       if (p.op !== '+') left.append(ctx.h('span', { class: p.op === '-' ? 'w-del' : 'w-eq', text: p.text }));
       if (p.op !== '-') right.append(ctx.h('span', { class: p.op === '+' ? 'w-add' : 'w-eq', text: p.text }));
     });
-    if (!f.words.length) { left.textContent = '(trống)'; right.textContent = '(trống)'; }
+    if (!f.words.length) { left.textContent = '(empty)'; right.textContent = '(empty)'; }
   } else {
-    left.append(ctx.h('span', { class: f.from ? 'w-del' : 'w-eq', text: f.from || '(trống)' }));
-    right.append(ctx.h('span', { class: f.to ? 'w-add' : 'w-eq', text: f.to || '(trống)' }));
+    left.append(ctx.h('span', { class: f.from ? 'w-del' : 'w-eq', text: f.from || '(empty)' }));
+    right.append(ctx.h('span', { class: f.to ? 'w-add' : 'w-eq', text: f.to || '(empty)' }));
   }
   box.append(ctx.h('div', { class: 'fpair-sbs' },
-    ctx.h('div', { class: 'fside-col' }, ctx.h('div', { class: 'fside-head old', text: 'Trước' }), left),
-    ctx.h('div', { class: 'fside-col' }, ctx.h('div', { class: 'fside-head new', text: 'Sau' }), right)
+    ctx.h('div', { class: 'fside-col' }, ctx.h('div', { class: 'fside-head old', text: 'Before' }), left),
+    ctx.h('div', { class: 'fside-col' }, ctx.h('div', { class: 'fside-head new', text: 'After' }), right)
   ));
   return box;
 }
@@ -754,7 +754,7 @@ function renderDetail() {
   const sel = H.cmp.sel;
 
   if (!sel) {
-    box.append(ctx.h('div', { class: 'empty-note', text: 'Chọn một thay đổi ở danh sách bên trái để xem chi tiết.' }));
+    box.append(ctx.h('div', { class: 'empty-note', text: 'Pick a change from the list on the left to see details.' }));
     return;
   }
 
@@ -773,21 +773,21 @@ function renderDetail() {
   const entry = mod || add || del || mov;
   if (!entry) return;
 
-  const kind = mod ? 'Đã sửa' : add ? 'Thêm mới' : del ? 'Đã xóa' : 'Chuyển chỗ';
+  const kind = mod ? 'Modified' : add ? 'Added' : del ? 'Deleted' : 'Moved';
   box.append(ctx.h('div', { class: 'cdet-head' },
-    ctx.h('h3', { text: entry.title || '(chưa đặt tên)' }),
+    ctx.h('h3', { text: entry.title || '(untitled)' }),
     ctx.h('div', { class: 'cdet-sub' },
       ctx.h('span', { class: 'code', text: entry.code }),
       ctx.h('span', { class: `type-badge ${entry.type}`, text: typeDef(entry.type).label }),
       ctx.h('span', { class: 'muted', text: kind }),
-      entry.movedFrom ? ctx.h('span', { class: 'chip', text: `chuyển từ §${entry.movedFrom}` }) : null
+      entry.movedFrom ? ctx.h('span', { class: 'chip', text: `moved from §${entry.movedFrom}` }) : null
     )
   ));
 
   if (del) {
-    box.append(ctx.h('div', { class: 'cdet-note del', text: 'Item này không còn ở bản B. Mã của nó sẽ không bao giờ được cấp lại.' }));
+    box.append(ctx.h('div', { class: 'cdet-note del', text: 'This item no longer exists in version B. Its code will never be reissued.' }));
     box.append(ctx.h('button', {
-      class: 'btn small', text: 'Lấy lại item này',
+      class: 'btn small', text: 'Recover this item',
       onclick: async () => {
         const item = await restoreSingleItem(H.cmp.a, entry.code);
         if (item) ctx.onItemRecovered(item);
@@ -797,17 +797,17 @@ function renderDetail() {
     return;
   }
   if (add) {
-    box.append(ctx.h('div', { class: 'cdet-note add', text: 'Item mới xuất hiện ở bản B.' }));
+    box.append(ctx.h('div', { class: 'cdet-note add', text: 'A new item appears in version B.' }));
     itemSnapshotBlocks(entry.item, 'add').forEach((b) => box.append(b));
     return;
   }
   if (mov) {
-    box.append(fieldBlock({ label: 'Vị trí', from: `§${entry.from}`, to: `§${entry.to}` }));
+    box.append(fieldBlock({ label: 'Position', from: `§${entry.from}`, to: `§${entry.to}` }));
     if (entry.fromParent !== entry.toParent) {
       box.append(fieldBlock({
-        label: 'Item cha',
-        from: entry.fromParent || '(cấp gốc)',
-        to: entry.toParent || '(cấp gốc)',
+        label: 'Parent item',
+        from: entry.fromParent || '(root level)',
+        to: entry.toParent || '(root level)',
       }));
     }
     return;
@@ -818,7 +818,7 @@ function renderDetail() {
 /**
  * A whole added/deleted item, rendered through the same side-by-side
  * fieldBlock() as a modified item's fields — there is nothing on the other
- * side to diff against, so that side just reads "(trống)". Keeps the compare
+ * side to diff against, so that side just reads "(empty)". Keeps the compare
  * screen consistently split-view regardless of add/delete/modify, instead of
  * a plain content dump for the add/delete cases only.
  */
@@ -828,7 +828,7 @@ function itemSnapshotBlocks(item, dir) {
     const v = String(value || '');
     blocks.push(fieldBlock(dir === 'del' ? { label, from: v, to: '' } : { label, from: '', to: v }));
   };
-  push('Nội dung', item.desc);
+  push('Description', item.desc);
   Object.keys(item.fields || {}).forEach((k) => {
     if (String(item.fields[k] || '').trim()) push(k, item.fields[k]);
   });
@@ -839,14 +839,14 @@ function itemSnapshotBlocks(item, dir) {
 
 async function pickRef(anchor, onPick) {
   const items = [
-    { value: WORKING, label: 'Hiện tại (chưa commit)', sub: 'nội dung đang mở' },
+    { value: WORKING, label: 'Current (uncommitted)', sub: 'the content currently open' },
     ...H.entries.map((e) => ({
       value: e.oid,
       label: (e.tags.length ? `[${e.tags.join(', ')}] ` : '') + e.message.split('\n')[0],
       sub: `${e.short} · ${e.author} · ${fullTime(e.ts)}`,
     })),
   ];
-  const chosen = await ctx.askChoice({ title: 'Chọn mốc so sánh', items });
+  const chosen = await ctx.askChoice({ title: 'Choose a version to compare', items });
   if (chosen) onPick(chosen);
 }
 

@@ -100,7 +100,7 @@ test('a stray closing brace is reported as orphan text', () => {
 test('an unclosed srsitem stops the run with a clear message', () => {
   const res = checkText(HEAD + '\\begin{srsitem}{X-0001}{information}{T}\n');
   assert.strictEqual(res.doc, null);
-  assert.match(res.issues[0].message, /chưa đóng/);
+  assert.match(res.issues[0].message, /still unclosed/);
 });
 
 test('docnextid below the highest code in use is an error', () => {
@@ -119,13 +119,13 @@ test('duplicate codes and broken references are surfaced', () => {
   const dup =
     '\\begin{srsitem}{X-0001}{information}{A}\\end{srsitem}\n' +
     '\\begin{srsitem}{X-0001}{information}{B}\\end{srsitem}\n';
-  assert.ok(hasError(dup, /bị trùng/));
+  assert.ok(hasError(dup, /is duplicated/));
 
   const ref =
     '\\begin{srsitem}{X-0001}{design}{D}\n' +
     '\\begin{itemprops}\n\\itemfield{functionCode}{X-9999}\n\\itemfield{asil}{QM}\n\\end{itemprops}\n' +
     '\\end{srsitem}\n';
-  assert.ok(hasError(ref, /không tồn tại/));
+  assert.ok(hasError(ref, /does not exist/));
 });
 
 test('canonical formatting is detected and --write output is stable', () => {

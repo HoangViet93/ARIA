@@ -137,11 +137,11 @@ async function main() {
   // ------------------------------------------------------------ marks
   group('Định dạng chữ');
   for (const [title, expect] of [
-    ['Đậm (Ctrl+B)', '\\textbf{mau}'],
-    ['Nghiêng (Ctrl+I)', '\\textit{mau}'],
-    ['Gạch chân (Ctrl+U)', '\\underline{mau}'],
-    ['Gạch ngang', '\\sout{mau}'],
-    ['Mã inline', '\\texttt{mau}'],
+    ['Bold (Ctrl+B)', '\\textbf{mau}'],
+    ['Italic (Ctrl+I)', '\\textit{mau}'],
+    ['Underline (Ctrl+U)', '\\underline{mau}'],
+    ['Strikethrough', '\\sout{mau}'],
+    ['Inline code', '\\texttt{mau}'],
   ]) {
     await freshEdit('BCM-0001');
     await clickTool(title);
@@ -167,9 +167,9 @@ async function main() {
   // ------------------------------------------------------------- lists
   group('Danh sách và khối');
   for (const [title, re] of [
-    ['Danh sách gạch đầu dòng', /\\begin\{itemize\}[\s\S]*\\item mau[\s\S]*\\end\{itemize\}/],
-    ['Danh sách đánh số', /\\begin\{enumerate\}[\s\S]*\\item mau[\s\S]*\\end\{enumerate\}/],
-    ['Trích dẫn', /\\begin\{quote\}[\s\S]*mau[\s\S]*\\end\{quote\}/],
+    ['Bullet list', /\\begin\{itemize\}[\s\S]*\\item mau[\s\S]*\\end\{itemize\}/],
+    ['Numbered list', /\\begin\{enumerate\}[\s\S]*\\item mau[\s\S]*\\end\{enumerate\}/],
+    ['Quote', /\\begin\{quote\}[\s\S]*mau[\s\S]*\\end\{quote\}/],
   ]) {
     await freshEdit('BCM-0001');
     await clickTool(title);
@@ -179,15 +179,15 @@ async function main() {
   }
 
   await freshEdit('BCM-0001');
-  await clickTool('Đường kẻ ngang');
+  await clickTool('Horizontal rule');
   await sleep(180);
   got = await desc();
-  check('Đường kẻ ngang', got.includes('\\srshrule'), got);
+  check('Horizontal rule', got.includes('\\srshrule'), got);
 
   // -------------------------------------------------------------- link
   group('Chèn link (từng hỏng vì window.prompt)');
   await freshEdit('BCM-0001');
-  await clickTool('Chèn link ngoài');
+  await clickTool('Insert external link');
   await sleep(250);
   check('modal link mở được', await modalOpen(), 'không có modal — prompt lại chết?');
   await run(`
@@ -204,9 +204,9 @@ async function main() {
   check('link vào đúng LaTeX', got === '\\href{https://example.com/a?x=1&y=2}{mau}', got);
   check('modal đã đóng', !(await modalOpen()));
 
-  await clickTool('Chèn link ngoài');
+  await clickTool('Insert external link');
   await sleep(250);
-  await run(`[...document.querySelectorAll('.modal-foot .btn')].find(b=>b.textContent==='Bỏ link').click();`);
+  await run(`[...document.querySelectorAll('.modal-foot .btn')].find(b=>b.textContent==='Remove link').click();`);
   await sleep(200);
   got = await desc();
   check('bỏ link', got === 'mau', got);
@@ -215,7 +215,7 @@ async function main() {
   group('Chèn công thức (từng hỏng vì window.prompt)');
   await freshEdit('BCM-0001');
   await run(`window.__srs.state.richHandles[0].editor.commands.focus('end');`);
-  await clickTool('Chèn công thức LaTeX');
+  await clickTool('Insert LaTeX formula');
   await sleep(250);
   check('modal công thức mở được', await modalOpen(), 'không có modal');
   await fillModal('E = mc^2');
@@ -235,7 +235,7 @@ async function main() {
 
   await run(`document.querySelector('.item.editing .rt-math').click();`);
   await sleep(250);
-  await run(`[...document.querySelectorAll('.modal-foot .btn')].find(b=>b.textContent==='Xóa công thức').click();`);
+  await run(`[...document.querySelectorAll('.modal-foot .btn')].find(b=>b.textContent==='Remove formula').click();`);
   await sleep(250);
   got = await desc();
   check('xóa công thức', !got.includes('$'), got);
@@ -243,7 +243,7 @@ async function main() {
   // ------------------------------------------------------------- table
   group('Bảng');
   await freshEdit('BCM-0001');
-  await clickTool('Chèn bảng');
+  await clickTool('Insert table');
   await sleep(200);
   check('bộ chọn kích thước hiện ra',
     await run(`return document.querySelectorAll('.item.editing .rt-grid-cell').length === 64`));
@@ -269,41 +269,41 @@ async function main() {
 
   const rows = (t) => (t.match(/\\\\/g) || []).length;
   let before = rows(await desc());
-  await clickTableBtn('+ Hàng dưới');
+  await clickTableBtn('+ Row below');
   await sleep(200);
   check('+ Hàng dưới', rows(await desc()) === before + 1, await desc());
 
   before = rows(await desc());
-  await clickTableBtn('+ Hàng trên');
+  await clickTableBtn('+ Row above');
   await sleep(200);
   check('+ Hàng trên', rows(await desc()) === before + 1);
 
   before = rows(await desc());
-  await clickTableBtn('− Hàng');
+  await clickTableBtn('− Row');
   await sleep(200);
   check('− Hàng', rows(await desc()) === before - 1);
 
   const cols = (t) => ((/\\begin\{tabularx\}\{\\linewidth\}\{([^}]*)\}/.exec(t) || [, ''])[1].match(/X/g) || []).length;
   before = cols(await desc());
-  await clickTableBtn('+ Cột phải');
+  await clickTableBtn('+ Column right');
   await sleep(200);
   check('+ Cột phải', cols(await desc()) === before + 1, await desc());
 
   before = cols(await desc());
-  await clickTableBtn('+ Cột trái');
+  await clickTableBtn('+ Column left');
   await sleep(200);
   check('+ Cột trái', cols(await desc()) === before + 1);
 
   before = cols(await desc());
-  await clickTableBtn('− Cột');
+  await clickTableBtn('− Column');
   await sleep(200);
   check('− Cột', cols(await desc()) === before - 1);
 
   const hadHeader = (await desc()).includes('\\srsth{');
-  await clickTableBtn('Hàng tiêu đề');
+  await clickTableBtn('Header row');
   await sleep(250);
   check('bật/tắt hàng tiêu đề', (await desc()).includes('\\srsth{') !== hadHeader, await desc());
-  await clickTableBtn('Hàng tiêu đề');
+  await clickTableBtn('Header row');
   await sleep(250);
 
   // horizontal merge is representable; vertical is refused on purpose
@@ -313,24 +313,24 @@ async function main() {
     const cellsSel = h.state.doc;
     h.commands.setCellSelection ? null : null;
   `);
-  await clickTableBtn('Gộp ô');
+  await clickTableBtn('Merge cells');
   await sleep(250);
   check('nút Gộp ô không làm vỡ tài liệu', typeof (await desc()) === 'string');
   if (await modalOpen()) await run(`document.querySelector('.modal-foot .btn.primary').click();`);
   await sleep(150);
 
-  await clickTableBtn('Xóa bảng');
+  await clickTableBtn('Delete table');
   await sleep(250);
   check('Xóa bảng', !(await desc()).includes('tabularx'), await desc());
   check('thanh công cụ bảng ẩn lại',
     await run(`return document.querySelector('.item.editing .rt-tablebar').hidden`));
 
   // -------------------------------------------------------------- image
-  group('Chèn ảnh');
+  group('Insert image');
   fakeImage = path.join(ROOT, 'projects', 'EPB-Park-Brake', 'images', 'epb-architecture.png');
   await freshEdit('BCM-0001');
   await run(`window.__srs.state.richHandles[0].editor.commands.focus('end');`);
-  await clickTool('Chèn ảnh');
+  await clickTool('Insert image');
   await sleep(700);
   got = await desc();
   check('ảnh vào đúng LaTeX', /\\includegraphics\[width=0\.55\\linewidth\]\{images\/epb-architecture\.png\}/.test(got), got);
@@ -344,7 +344,7 @@ async function main() {
   group('Link nội bộ tới item');
   await freshEdit('BCM-0001');
   await run(`window.__srs.state.richHandles[0].editor.commands.focus('end');`);
-  await clickTool('Chèn link tới item khác');
+  await clickTool('Insert link to another item');
   await sleep(250);
   check('danh sách item hiện ra',
     (await run(`return document.querySelectorAll('.item.editing .rt-menu-item').length`)) > 3);
@@ -456,15 +456,15 @@ async function main() {
     JSON.stringify(filtered));
 
   // ------------------------------------------------------ clear format
-  group('Xóa định dạng');
+  group('Clear formatting');
   await freshEdit('BCM-0001');
-  await clickTool('Đậm (Ctrl+B)');
+  await clickTool('Bold (Ctrl+B)');
   await sleep(150);
-  await clickTool('Nghiêng (Ctrl+I)');
+  await clickTool('Italic (Ctrl+I)');
   await sleep(150);
   check('chồng hai định dạng', (await desc()).includes('\\textbf{\\textit{mau}}'), await desc());
   await run(`window.__srs.state.richHandles[0].editor.commands.selectAll();`);
-  await clickTool('Xóa định dạng');
+  await clickTool('Clear formatting');
   await sleep(200);
   check('xóa hết định dạng', (await desc()) === 'mau', await desc());
 
@@ -514,7 +514,7 @@ async function main() {
   await run(`document.getElementById('btnNew').click();`);
   await sleep(350);
   check('modal chọn loại (sách/workspace) mở được', await modalOpen(), 'không có modal — prompt lại chết?');
-  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Một sách')).click();`);
+  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('A single book')).click();`);
   await sleep(300);
   check('modal hỏi prefix mở được', await modalOpen(), 'không có modal — prompt lại chết?');
   await run(`
@@ -528,7 +528,7 @@ async function main() {
   await shot('audit-02-new-project-modal');
   await fillModal('tst');
   await sleep(400);
-  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Trống')).click();`);
+  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Blank')).click();`);
   await sleep(900);
   check('project mới được tạo trên đĩa', fs.existsSync(path.join(WORK, 'NewProj', 'data.tex')));
   check('prefix viết hoa và đã mở',

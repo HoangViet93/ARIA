@@ -82,7 +82,7 @@ async function main() {
   await sleep(600);
   check('panel mở ở bên phải', await run(`return !document.getElementById('histPanel').hidden`));
   check('project chưa có git thì mời khởi tạo',
-    (await run(`return document.querySelector('#histList .hist-empty p').textContent`)).includes('chưa được đưa vào git'));
+    (await run(`return document.querySelector('#histList .hist-empty p').textContent`)).includes('is not under git yet'));
   await shot('git-01-no-repo');
 
   await run(`document.querySelector('#histList .hist-empty .btn').click();`);
@@ -111,7 +111,7 @@ async function main() {
   await run(`document.getElementById('btnCommit').click();`);
   await sleep(700);
   check('modal commit mở với message gợi ý',
-    (await run(`return document.querySelector('.modal-backdrop input.input').value`)).includes('item sửa'));
+    (await run(`return document.querySelector('.modal-backdrop input.input').value`)).includes('item(s) modified'));
   check('message quá ngắn bị chặn', await run(`
     const inp = document.querySelector('.modal-backdrop input.input');
     inp.value = 'ok'; inp.dispatchEvent(new Event('input', { bubbles: true }));
@@ -137,10 +137,10 @@ async function main() {
   await run(`document.querySelector('.hrow.working').click();`);
   await sleep(300);
   check('có nút Bỏ thay đổi…', await run(`
-    return [...document.querySelectorAll('.hactions .btn')].some(b => b.textContent === 'Bỏ thay đổi…');
+    return [...document.querySelectorAll('.hactions .btn')].some(b => b.textContent === 'Discard changes…');
   `));
   const commitsBefore = await run(`return (await window.api.git.log(window.__srs.state.projectDir, {limit:50})).total;`);
-  await run(`[...document.querySelectorAll('.hactions .btn')].find(b => b.textContent === 'Bỏ thay đổi…').click();`);
+  await run(`[...document.querySelectorAll('.hactions .btn')].find(b => b.textContent === 'Discard changes…').click();`);
   await sleep(900);
   check('hết dòng chưa commit sau khi bỏ', !(await run(`return !!document.querySelector('.hrow.working')`)));
   check('tiêu đề quay lại đúng như trước khi sửa', await run(`
@@ -169,7 +169,7 @@ async function main() {
   `);
   await sleep(300);
   check('chọn commit thì hiện thanh hành động', await run(`return !!document.querySelector('.hactions')`));
-  await run(`[...document.querySelectorAll('.hactions .btn')].find(b => b.textContent === 'Xem bản này').click();`);
+  await run(`[...document.querySelectorAll('.hactions .btn')].find(b => b.textContent === 'View this version').click();`);
   await sleep(900);
 
   check('có dải băng báo đang xem bản cũ', await run(`return !document.getElementById('viewingBar').hidden`));
@@ -199,7 +199,7 @@ async function main() {
     return !r || getComputedStyle(r).display === 'none';
   `));
   check('trạng thái báo rõ lý do',
-    (await run(`return document.getElementById('statusMsg').textContent`)).includes('Đang xem bản cũ'));
+    (await run(`return document.getElementById('statusMsg').textContent`)).includes('Viewing old version'));
 
   await run(`window.__srs.exitViewing();`);
   await sleep(600);
@@ -214,12 +214,12 @@ async function main() {
   await sleep(1000);
   check('overlay mở', await run(`return !document.getElementById('compare').hidden`));
   const stats = await run(`return document.getElementById('cmpStats').textContent`);
-  check('có thẻ thống kê', /sửa/.test(stats), stats);
+  check('có thẻ thống kê', /modified/.test(stats), stats);
   check('liệt kê item đã sửa', (await run(`return document.querySelectorAll('.crow.mod').length`)) >= 1);
   check('cảnh báo an toàn hiện lên khi hạ ASIL',
     await run(`return !document.getElementById('cmpSafety').hidden`));
   check('nói rõ ASIL giảm',
-    /ASIL GIẢM/.test(await run(`return document.getElementById('cmpSafety').textContent`)));
+    /ASIL level DECREASED/.test(await run(`return document.getElementById('cmpSafety').textContent`)));
   await shot('git-04-compare');
 
   await run(`document.querySelector('.crow.mod').click();`);
@@ -277,7 +277,7 @@ async function main() {
   await sleep(300);
   await run(`document.querySelector('.hact-more .btn').click();`); // "Thêm ▾"
   await sleep(200);
-  await run(`[...document.querySelectorAll('.hact-menu-item')].find(b => b.textContent === 'Khôi phục…').click();`);
+  await run(`[...document.querySelectorAll('.hact-menu-item')].find(b => b.textContent === 'Restore…').click();`);
   await sleep(1600);
   check('nội dung quay về bản đầu', await run(`
     return window.__srs.state.doc.items[1].children[0].fields.asil === 'ASIL D';
@@ -319,12 +319,12 @@ async function main() {
   check('item đã xóa cũng hiện side-by-side (2 cột Trước/Sau)',
     (await run(`return document.querySelectorAll('.fpair-sbs .fside-col').length;`)) >= 2);
   const delSides = await run(`
-    const b = [...document.querySelectorAll('.fblock')].find(x => x.textContent.includes('Nội dung'));
+    const b = [...document.querySelectorAll('.fblock')].find(x => x.textContent.includes('Description'));
     const cols = b.querySelectorAll('.fside-body');
     return { before: cols[0].textContent.trim(), after: cols[1].textContent.trim() };
   `);
   check('nội dung item đã xóa nằm ở cột Trước', delSides.before.length > 0, JSON.stringify(delSides));
-  check('cột Sau rỗng vì item không còn tồn tại', delSides.after === '(trống)', JSON.stringify(delSides));
+  check('cột Sau rỗng vì item không còn tồn tại', delSides.after === '(empty)', JSON.stringify(delSides));
   await run(`window.__srs.History.closeCompare();`);
 
   await run(`
@@ -341,16 +341,16 @@ async function main() {
   group('Project mới tự có git');
   await run(`document.getElementById('btnNew').click();`);
   await sleep(400);
-  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Một sách')).click();`);
+  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('A single book')).click();`);
   await sleep(400);
   await fillModal('NEW');
   await sleep(400);
-  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Trống')).click();`);
+  await run(`[...document.querySelectorAll('.modal-list-item')].find(b => b.querySelector('.mli-main').textContent.startsWith('Blank')).click();`);
   await sleep(1800);
   check('.git được tạo cùng project', fs.existsSync(path.join(WORK, 'Fresh', '.git', 'HEAD')));
   check('có commit khởi tạo', await run(`
     const l = await window.api.git.log(window.__srs.state.projectDir, {limit:5});
-    return l.entries.length === 1 && l.entries[0].message === 'Khởi tạo project';
+    return l.entries.length === 1 && l.entries[0].message === 'Initialize project';
   `));
   check('.history không lọt vào git', await run(`
     const s = await window.api.git.status(window.__srs.state.projectDir);

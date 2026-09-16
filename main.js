@@ -13,7 +13,45 @@ const { diffDocs, summaryLine } = require('./lib/docDiff');
 const WS = require('./lib/workspace');
 const { unescapeText, escapeText } = require('./lib/latex');
 
-const TEMPLATE_SRC = path.join(__dirname, 'resources', 'template.tex');
+// A file under resources/ that ships inside app.asar is transparently
+// readable via fs.* (Electron shims that), but resources/** is configured as
+// asarUnpack in package.json's build config specifically so the bundled TeX
+// binaries below can be exec'd — child_process cannot run something that only
+// "exists" inside an asar archive. Once a path is unpacked it physically
+// lives one level under app.asar.unpacked, so every resources/ path (not just
+// the binaries) is computed from this one constant rather than __dirname, to
+// avoid one code path working via the fs shim and another silently not.
+const RESOURCES_DIR = app.isPackaged
+  ? path.join(process.resourcesPath, 'app.asar.unpacked', 'resources')
+  : path.join(__dirname, 'resources');
+
+const TEMPLATE_SRC = path.join(RESOURCES_DIR, 'template.tex');
+const FONTS_DIR = path.join(RESOURCES_DIR, 'fonts');
+
+/**
+ * A packaged build may ship a trimmed, self-contained TeX Live under
+ * resources/texlive-<platform>/ (see docs/PORTABLE-TEXLIVE.md) so PDF export
+ * works with nothing installed on the machine it runs on. Absent in a dev
+ * checkout and on any platform it wasn't built for — compile() falls back to
+ * whatever `xelatex` is on PATH in that case, exactly as before this existed.
+ */
+function bundledTex() {
+  const plat = process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'mac' : 'linux';
+  const arch = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'universal-darwin' : 'x86_64-linux';
+  const root = path.join(RESOURCES_DIR, `texlive-${plat}`);
+  const binDir = path.join(root, 'bin', arch);
+  const exeName = process.platform === 'win32' ? 'xelatex.exe' : 'xelatex';
+  const iniExeName = process.platform === 'win32' ? 'xetex.exe' : 'xetex';
+  const exe = path.join(binDir, exeName);
+  if (!fs.existsSync(exe)) return null;
+  return {
+    root,
+    binDir,
+    exe,
+    iniExe: path.join(binDir, iniExeName),
+    fmtDir: path.join(root, 'texmf-var', 'web2c', 'xetex'),
+  };
+}
 
 // ------------------------------------------------------------- settings
 
@@ -140,7 +178,7 @@ function snapshot(projectDir, nextContent) {
 
 ipcMain.handle('project:openDialog', async () => {
   const r = await dialog.showOpenDialog(mainWindow, {
-    title: 'Mở project (thư mục chứa data.tex)',
+    title: 'Open project (folder containing data.tex)',
     properties: ['openDirectory'],
   });
   return r.canceled || !r.filePaths.length ? null : r.filePaths[0];
@@ -148,13 +186,13 @@ ipcMain.handle('project:openDialog', async () => {
 
 ipcMain.handle('project:newDialog', async (_e, { shortName, template } = {}) => {
   const r = await dialog.showSaveDialog(mainWindow, {
-    title: 'Tạo project mới — chọn thư mục',
+    title: 'Create a new project — choose a folder',
     properties: ['createDirectory'],
   });
   if (r.canceled || !r.filePath) return null;
   const dir = r.filePath;
   if (fs.existsSync(dataTexPath(dir))) {
-    throw new Error('Thư mục này đã có data.tex — hãy dùng "Mở project".');
+    throw new Error('This folder already has a data.tex — use "Open project" instead.');
   }
   fs.mkdirSync(imagesDir(dir), { recursive: true });
   const doc = buildTemplateDoc(template, shortName || path.basename(dir).slice(0, 8).toUpperCase());
@@ -166,7 +204,7 @@ ipcMain.handle('project:newDialog', async (_e, { shortName, template } = {}) => 
   try {
     await R.init(dir, identity());
   } catch (e) {
-    console.error('git init thất bại:', e.message);   // project is still usable
+    console.error('git init failed:', e.message);   // project is still usable
   }
   return dir;
 });
@@ -184,18 +222,18 @@ ipcMain.handle('workspace:open', async (_e, dir) => {
     return { isWorkspace: true, workspaceDir: dir, name: ws.name, books: ws.books };
   }
   if (fs.existsSync(dataTexPath(dir))) return { isWorkspace: false };
-  throw new Error('Thư mục này không có data.tex, và cũng không có workspace.json — không phải project hay workspace hợp lệ.');
+  throw new Error('This folder has no data.tex and no workspace.json — not a valid project or workspace.');
 });
 
 ipcMain.handle('workspace:newDialog', async (_e, name) => {
   const r = await dialog.showSaveDialog(mainWindow, {
-    title: 'Tạo workspace mới — chọn thư mục (vd. VF9-SRS)',
+    title: 'Create a new workspace — choose a folder (e.g. VF9-SRS)',
     properties: ['createDirectory'],
   });
   if (r.canceled || !r.filePath) return null;
   const dir = r.filePath;
   if (WS.isWorkspace(dir) || fs.existsSync(dataTexPath(dir))) {
-    throw new Error('Thư mục này đã là một project hoặc workspace rồi.');
+    throw new Error('This folder is already a project or a workspace.');
   }
   fs.mkdirSync(dir, { recursive: true });
   WS.writeWorkspace(dir, { name: name || path.basename(dir), books: [] });
@@ -204,7 +242,7 @@ ipcMain.handle('workspace:newDialog', async (_e, name) => {
   try {
     await R.init(dir, identity());
   } catch (e) {
-    console.error('git init thất bại:', e.message);
+    console.error('git init failed:', e.message);
   }
   return dir;
 });
@@ -212,10 +250,10 @@ ipcMain.handle('workspace:newDialog', async (_e, name) => {
 ipcMain.handle('workspace:addBook', async (_e, { workspaceDir, id, name, template }) => {
   const ws = WS.readWorkspace(workspaceDir);
   if (ws.books.some((b) => b.id.toLowerCase() === id.toLowerCase())) {
-    throw new Error(`Sách "${id}" đã có trong workspace này.`);
+    throw new Error(`Book "${id}" already exists in this workspace.`);
   }
   const bookDir = path.join(workspaceDir, id);
-  if (fs.existsSync(bookDir)) throw new Error(`Thư mục "${id}" đã tồn tại trong workspace.`);
+  if (fs.existsSync(bookDir)) throw new Error(`Folder "${id}" already exists in the workspace.`);
 
   fs.mkdirSync(imagesDir(bookDir), { recursive: true });
   const doc = buildTemplateDoc(template, id);
@@ -228,9 +266,9 @@ ipcMain.handle('workspace:addBook', async (_e, { workspaceDir, id, name, templat
   WS.writeWorkspace(workspaceDir, ws);
 
   try {
-    await R.commitAll(workspaceDir, { message: `Thêm sách ${name || id}`, author: identity() });
+    await R.commitAll(workspaceDir, { message: `Add book ${name || id}`, author: identity() });
   } catch (e) {
-    console.error('commit thêm sách thất bại:', e.message);   // book is still usable
+    console.error('commit for new book failed:', e.message);   // book is still usable
   }
   return book;
 });
@@ -267,14 +305,14 @@ ipcMain.handle('workspace:listAllItems', async (_e, workspaceDir) => {
 
 /**
  * Write exactly the rows/columns the Global filter screen currently shows —
- * exactly the rows/columns the caller currently has on screen — the "Lọc"
- * tab (one book) and "Lọc tổng" (whole workspace) both call this with
+ * exactly the rows/columns the caller currently has on screen — the "Filter"
+ * tab (one book) and "Filter all" (whole workspace) both call this with
  * whatever they're already showing, not a fixed report. `columns` is
  * [{key, label}]; `key` is one of the fixed row properties
  * (book/code/type/title/desc) or a `fields.<name>` lookup.
  */
 ipcMain.handle('table:exportExcel', async (_e, { dir, columns, rows }) => {
-  if (!rows.length) throw new Error('Không có dòng nào để xuất — bỏ bớt điều kiện lọc.');
+  if (!rows.length) throw new Error('No rows to export — loosen the filter.');
 
   const ExcelJS = require('exceljs');
   const wb = new ExcelJS.Workbook();
@@ -292,7 +330,7 @@ ipcMain.handle('table:exportExcel', async (_e, { dir, columns, rows }) => {
   const FIXED_KEYS = ['book', 'code', 'type', 'title', 'desc'];
   const valueOf = (row, key) => (FIXED_KEYS.includes(key) ? row[key] : (row.fields || {})[key]) || '';
 
-  const sheet = wb.addWorksheet('Kết quả lọc');
+  const sheet = wb.addWorksheet('Filter results');
   sheet.columns = columns.map((c) => ({ header: c.label, key: c.key, width: c.key === 'desc' || c.key === 'title' ? 40 : 16 }));
   sheet.getRow(1).font = { bold: true };
   sheet.autoFilter = { from: 'A1', to: `${String.fromCharCode(64 + columns.length)}1` };
@@ -307,7 +345,7 @@ ipcMain.handle('table:exportExcel', async (_e, { dir, columns, rows }) => {
   });
 
   const r = await dialog.showSaveDialog(mainWindow, {
-    title: 'Xuất Excel — kết quả lọc',
+    title: 'Export to Excel — filter results',
     defaultPath: path.join(dir, 'srs-filter.xlsx'),
     filters: [{ name: 'Excel', extensions: ['xlsx'] }],
   });
@@ -319,7 +357,7 @@ ipcMain.handle('table:exportExcel', async (_e, { dir, columns, rows }) => {
 ipcMain.handle('project:load', async (_e, projectDir) => {
   const file = dataTexPath(projectDir);
   if (!fs.existsSync(file)) {
-    throw new Error(`Không tìm thấy data.tex trong ${projectDir}`);
+    throw new Error(`data.tex not found in ${projectDir}`);
   }
   const doc = parseDataTex(fs.readFileSync(file, 'utf8'));
   return { projectDir, doc };
@@ -343,9 +381,9 @@ ipcMain.handle('project:renderTex', async (_e, doc) => generateDataTex(doc));
 
 ipcMain.handle('project:attachImage', async (_e, projectDir) => {
   const r = await dialog.showOpenDialog(mainWindow, {
-    title: 'Chọn ảnh đính kèm',
+    title: 'Choose an image to attach',
     properties: ['openFile'],
-    filters: [{ name: 'Ảnh', extensions: ['png', 'jpg', 'jpeg', 'pdf'] }],
+    filters: [{ name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'pdf'] }],
   });
   if (r.canceled || !r.filePaths.length) return null;
   const src = r.filePaths[0];
@@ -365,8 +403,74 @@ ipcMain.handle('project:attachImage', async (_e, projectDir) => {
 // -------------------------------------------------------------- compiling
 
 function hasXelatex() {
+  if (bundledTex()) return Promise.resolve(true);
   return new Promise((resolve) => {
     execFile('xelatex', ['--version'], { timeout: 8000 }, (err) => resolve(!err));
+  });
+}
+
+/**
+ * The bundled TeX ships without a precompiled xelatex.fmt: a format dump
+ * encodes engine-internal memory layout, which is not portable between the
+ * Linux xetex this app was built with and the downloaded Windows/macOS one —
+ * TeX Live itself always builds this per-machine, never ships one. Instead
+ * the engine's own `-ini` mode (no separate fmtutil/texlua needed) builds it
+ * once, the first time a bundled compile runs, into the writable copy of the
+ * bundle under userData — the resources/ copy itself may be read-only
+ * (Program Files, a mounted volume) and must stay byte-identical across runs
+ * anyway since it is what a future app update replaces wholesale.
+ */
+function bundledFmtDir(tex) {
+  return path.join(app.getPath('userData'), 'texlive-fmt-' + path.basename(tex.root));
+}
+
+/**
+ * fontspec's Path= lookup for the bundled DejaVu fonts (see template.tex)
+ * still goes through XeTeX's own fontconfig layer to initialize at all —
+ * without a config file and a writable cache directory it aborts hard
+ * ("Fontconfig error: Cannot load default config file" / "Kpathsea is not
+ * working") before it ever gets as far as reading \setmainfont, on EVERY
+ * invocation of the bundled engine, not just font-by-name lookups. Generated
+ * once into userData (writable, unlike a possibly read-only resources/ copy —
+ * Program Files, a mounted volume) pointing at FONTS_DIR.
+ */
+function bundledFontconfigEnv(tex) {
+  const dir = path.join(app.getPath('userData'), 'fontconfig-' + path.basename(tex.root));
+  const cacheDir = path.join(dir, 'cache');
+  const confFile = path.join(dir, 'fonts.conf');
+  fs.mkdirSync(cacheDir, { recursive: true });
+  if (!fs.existsSync(confFile)) {
+    const fontsPath = FONTS_DIR.split(path.sep).join('/');
+    const cachePath = cacheDir.split(path.sep).join('/');
+    fs.writeFileSync(confFile, [
+      '<?xml version="1.0"?>',
+      '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
+      '<fontconfig>',
+      `  <dir>${fontsPath}</dir>`,
+      `  <cachedir>${cachePath}</cachedir>`,
+      '</fontconfig>',
+      '',
+    ].join('\n'), 'utf8');
+  }
+  return { FONTCONFIG_FILE: confFile, FONTCONFIG_PATH: dir };
+}
+
+function ensureBundledFormat(tex) {
+  const fmtDir = bundledFmtDir(tex);
+  const fmtFile = path.join(fmtDir, 'xelatex.fmt');
+  if (fs.existsSync(fmtFile)) return Promise.resolve();
+  fs.mkdirSync(fmtDir, { recursive: true });
+  return new Promise((resolve, reject) => {
+    execFile(
+      tex.iniExe,
+      ['-ini', '-interaction=nonstopmode', '-jobname=xelatex', '-progname=xelatex', '-etex', 'xelatex.ini'],
+      { cwd: fmtDir, timeout: 60000, env: { ...process.env, TEXMFVAR: fmtDir, ...bundledFontconfigEnv(tex) } },
+      (error, stdout, stderr) => {
+        if (error || !fs.existsSync(fmtFile)) {
+          reject(new Error('Could not build the bundled xelatex format:\n\n' + condenseLog(stdout || stderr || (error && error.message))));
+        } else resolve();
+      }
+    );
   });
 }
 
@@ -388,12 +492,20 @@ function condenseLog(raw) {
   return out.join('\n').trim().slice(0, 4000);
 }
 
-function runXelatex(projectDir) {
+async function runXelatex(projectDir) {
+  const tex = bundledTex();
+  const exe = tex ? tex.exe : 'xelatex';
+  const env = { ...process.env };
+  if (tex) {
+    await ensureBundledFormat(tex);
+    env.TEXFORMATS = bundledFmtDir(tex);
+    Object.assign(env, bundledFontconfigEnv(tex));
+  }
   return new Promise((resolve, reject) => {
     execFile(
-      'xelatex',
+      exe,
       ['-interaction=nonstopmode', '-halt-on-error', 'template.tex'],
-      { cwd: projectDir, timeout: 120000, maxBuffer: 20 * 1024 * 1024 },
+      { cwd: projectDir, timeout: 120000, maxBuffer: 20 * 1024 * 1024, env },
       (error, stdout, stderr) => {
         if (error) reject(new Error(condenseLog(stdout || stderr || error.message)));
         else resolve(stdout);
@@ -445,16 +557,22 @@ async function writeHistoryTex(projectDir) {
 async function compile(projectDir, passes) {
   if (!(await hasXelatex())) {
     throw new Error(
-      'Không tìm thấy lệnh "xelatex" trong PATH.\n\n' +
-        'Cài TeX Live rồi mở lại app, hoặc thêm thư mục chứa xelatex vào PATH ' +
-        'trước khi khởi động app.'
+      'Command "xelatex" not found in PATH.\n\n' +
+        'Install TeX Live and reopen the app, or add the folder containing xelatex ' +
+        'to PATH before starting the app.'
     );
   }
-  fs.copyFileSync(TEMPLATE_SRC, path.join(projectDir, 'template.tex'));
+  // __SRS_FONTPATH__ is a plain string token (not a LaTeX macro) so it must be
+  // substituted before the file reaches xelatex at all, hence a read/replace/
+  // write here instead of copyFileSync. Forward slashes and a trailing slash
+  // are what fontspec's Path key expects, on every platform including Windows.
+  const fontPath = FONTS_DIR.split(path.sep).join('/') + '/';
+  const templateText = fs.readFileSync(TEMPLATE_SRC, 'utf8').split('__SRS_FONTPATH__').join(fontPath);
+  fs.writeFileSync(path.join(projectDir, 'template.tex'), templateText, 'utf8');
   await writeHistoryTex(projectDir);
   for (let i = 0; i < passes; i++) await runXelatex(projectDir);
   const pdf = path.join(projectDir, 'template.pdf');
-  if (!fs.existsSync(pdf)) throw new Error('Biên dịch xong nhưng không thấy file PDF.');
+  if (!fs.existsSync(pdf)) throw new Error('Compile finished but no PDF file was found.');
   return pdf;
 }
 
@@ -494,7 +612,7 @@ ipcMain.handle('project:history', async (_e, projectDir) => {
 
 ipcMain.handle('project:restore', async (_e, { projectDir, file }) => {
   if (path.dirname(path.resolve(file)) !== path.resolve(historyDir(projectDir))) {
-    throw new Error('Chỉ khôi phục được từ thư mục .history của chính project này.');
+    throw new Error('Can only restore from this project\'s own .history folder.');
   }
   const content = fs.readFileSync(file, 'utf8');
   snapshot(projectDir, content);
@@ -544,8 +662,8 @@ ipcMain.handle('diagram:status', async () => {
     available: !!cmd,
     java: cmd ? cmd.java : null,
     jar: cmd ? cmd.jar : null,
-    hint: 'Cần Java và plantuml.jar. Đặt ở ~/.local/tools/jre/bin/java và '
-      + '~/.local/tools/plantuml.jar, hoặc khai báo javaBin/plantumlJar trong cài đặt.',
+    hint: 'Needs Java and plantuml.jar. Place them at ~/.local/tools/jre/bin/java and '
+      + '~/.local/tools/plantuml.jar, or set javaBin/plantumlJar in settings.',
   };
 });
 
@@ -557,7 +675,7 @@ ipcMain.handle('diagram:status', async () => {
  */
 ipcMain.handle('diagram:render', async (_e, { projectDir, source }) => {
   const cmd = plantumlCommand();
-  if (!cmd) throw new Error('Không tìm thấy PlantUML. Xem hướng dẫn trong hộp thoại sơ đồ.');
+  if (!cmd) throw new Error('PlantUML not found. See the hint in the diagram dialog.');
 
   const hash = crypto.createHash('sha1').update(source, 'utf8').digest('hex').slice(0, 12);
   const rel = `images/uml-${hash}.png`;
@@ -581,7 +699,7 @@ ipcMain.handle('diagram:render', async (_e, { projectDir, source }) => {
 
   try { fs.unlinkSync(src); } catch { /* leaving it behind is harmless */ }
   if (!fs.existsSync(abs)) {
-    throw new Error('PlantUML chạy xong nhưng không sinh ra ảnh — kiểm tra lại cú pháp sơ đồ.');
+    throw new Error('PlantUML ran but produced no image — check the diagram syntax.');
   }
   return { relPath: rel, cached: false };
 });
@@ -675,7 +793,7 @@ ipcMain.handle('git:diff', async (_e, { dir, a, b }) => {
   const load = async (ref) => (ref === 'WORKING' ? currentDoc(dir) : await docAt(dir, ref));
   const docA = await load(a);
   const docB = await load(b);
-  if (!docA || !docB) throw new Error('Không đọc được data.tex ở một trong hai mốc.');
+  if (!docA || !docB) throw new Error('Could not read data.tex at one of the two points.');
   return diffDocs(docA, docB);
 });
 
@@ -684,8 +802,8 @@ ipcMain.handle('git:rawDiff', async (_e, { dir, a, b }) => {
     ref === 'WORKING' ? fs.readFileSync(dataTexPath(dir), 'utf8') : await R.readFileAt(dir, ref);
   const { unifiedDiff } = require('./lib/textDiff');
   return unifiedDiff(await load(a), await load(b), {
-    labelA: `data.tex @ ${a === 'WORKING' ? 'hiện tại' : a.slice(0, 7)}`,
-    labelB: `data.tex @ ${b === 'WORKING' ? 'hiện tại' : b.slice(0, 7)}`,
+    labelA: `data.tex @ ${a === 'WORKING' ? 'current' : a.slice(0, 7)}`,
+    labelB: `data.tex @ ${b === 'WORKING' ? 'current' : b.slice(0, 7)}`,
   });
 });
 
@@ -694,7 +812,7 @@ ipcMain.handle('git:changedFiles', async (_e, { dir, a, b }) => R.changedFiles(d
 /** Prefilled commit message from what actually changed. */
 ipcMain.handle('git:pendingSummary', async (_e, dir) => {
   const head = await R.headOid(dir);
-  if (!head) return { line: 'Khởi tạo project', diff: null };
+  if (!head) return { line: 'Initialize project', diff: null };
   const before = await docAt(dir, head);
   const diff = diffDocs(before, currentDoc(dir));
   return { line: summaryLine(diff), diff };
@@ -703,7 +821,7 @@ ipcMain.handle('git:pendingSummary', async (_e, dir) => {
 ipcMain.handle('git:restoreDoc', async (_e, { dir, oid }) => {
   const { oid: newOid, content } = await R.restoreFileFrom(dir, oid, {
     author: identity(),
-    message: `Khôi phục về ${oid.slice(0, 7)}`,
+    message: `Restore to ${oid.slice(0, 7)}`,
   });
   return { oid: newOid, doc: parseDataTex(content) };
 });
@@ -717,9 +835,9 @@ ipcMain.handle('git:discard', async (_e, dir) => {
 /** Bring a single item back from an old revision, leaving everything else alone. */
 ipcMain.handle('git:restoreItem', async (_e, { dir, oid, code }) => {
   const old = await docAt(dir, oid);
-  if (!old) throw new Error('Không đọc được bản cũ.');
+  if (!old) throw new Error('Could not read the old version.');
   const node = require('./lib/itemModel').locate(old, code);
-  if (!node) throw new Error(`Bản ${oid.slice(0, 7)} không có item ${code}.`);
+  if (!node) throw new Error(`Version ${oid.slice(0, 7)} has no item ${code}.`);
   return { item: JSON.parse(JSON.stringify(node.item)), path: node.path.join('.') };
 });
 
@@ -745,10 +863,10 @@ ipcMain.handle('settings:set', async (_e, patch) => {
 ipcMain.handle('ui:confirm', async (_e, { title, message, detail, confirmLabel, danger }) => {
   const r = await dialog.showMessageBox(mainWindow, {
     type: danger ? 'warning' : 'question',
-    buttons: [confirmLabel || 'Đồng ý', 'Hủy'],
+    buttons: [confirmLabel || 'OK', 'Cancel'],
     defaultId: danger ? 1 : 0,
     cancelId: 1,
-    title: title || 'Xác nhận',
+    title: title || 'Confirm',
     message: message || '',
     detail: detail || '',
   });
@@ -758,8 +876,8 @@ ipcMain.handle('ui:confirm', async (_e, { title, message, detail, confirmLabel, 
 ipcMain.handle('ui:error', async (_e, { title, message }) => {
   await dialog.showMessageBox(mainWindow, {
     type: 'error',
-    buttons: ['Đóng'],
-    title: title || 'Lỗi',
+    buttons: ['Close'],
+    title: title || 'Error',
     message: String(message || '').slice(0, 300),
     detail: String(message || '').length > 300 ? String(message) : undefined,
   });

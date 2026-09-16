@@ -31,17 +31,17 @@ const ROOT = path.join(__dirname, '..', 'projects', 'VF9-SRS');
 const FORCE = process.argv.includes('--force');
 
 const AUTHORS = {
-  viet: { name: 'Hoàng Thế Việt', email: 'viet@srs.local' },
-  lan: { name: 'Nguyễn Thị Lan', email: 'lan@srs.local' },
-  minh: { name: 'Trần Quang Minh', email: 'minh@srs.local' },
-  hoa: { name: 'Phạm Thị Hoa', email: 'hoa@srs.local' },
+  viet: { name: 'Viet Hoang', email: 'viet@srs.local' },
+  lan: { name: 'Lan Nguyen', email: 'lan@srs.local' },
+  minh: { name: 'Minh Tran', email: 'minh@srs.local' },
+  hoa: { name: 'Hoa Pham', email: 'hoa@srs.local' },
 };
 
 const at = (iso) => ({ timestamp: Math.floor(new Date(iso).getTime() / 1000), timezoneOffset: -420 });
 
 if (fs.existsSync(ROOT)) {
   if (!FORCE) {
-    console.log(`${ROOT} đã tồn tại — dùng --force để dựng lại từ đầu.`);
+    console.log(`${ROOT} already exists — use --force to rebuild from scratch.`);
     process.exit(0);
   }
   fs.rmSync(ROOT, { recursive: true, force: true });
@@ -72,61 +72,61 @@ function buildEpb() {
     title: 'System Requirements Specification', subtitle: 'Electric Park Brake',
     docNo: 'SRS-EPB-001', revision: 'B', date: '2026-08-20', classification: 'Internal',
   });
-  const intro = add(doc, null, 'information', 'Giới thiệu',
-    'Yêu cầu hệ thống cho chức năng phanh đỗ điện tử (EPB), tự động và bằng tay.');
-  const apply = add(doc, null, 'function', 'Tự động phanh đỗ khi tắt máy',
-    'Hệ thống \\textbf{phải} tự động kích hoạt phanh đỗ khi tài xế tắt máy và mở cửa lái.',
+  const intro = add(doc, null, 'information', 'Introduction',
+    'System requirements for the Electric Park Brake (EPB) function, automatic and manual.');
+  const apply = add(doc, null, 'function', 'Automatically apply the park brake on engine off',
+    'The system \\textbf{must} automatically apply the park brake when the driver turns off the engine and opens the driver door.',
     { deployMaster: 'EPB-ECU', rationale: 'FEAT-EPB-001' });
-  const applyDsg = add(doc, apply, 'design', 'Logic kích hoạt tự động',
-    'Kích hoạt khi RPM = 0, cửa lái mở, và tốc độ xe = 0 trong 500ms liên tục.',
+  const applyDsg = add(doc, apply, 'design', 'Automatic apply logic',
+    'Applies when RPM = 0, driver door open, and vehicle speed = 0 for 500ms continuously.',
     { functionCode: apply.code, asil: 'C', verification: 'Test; Analysis' });
-  add(doc, applyDsg, 'dvp', 'Kiểm tra kích hoạt tự động khi mở cửa',
-    'Tắt máy, mở cửa lái, đo thời gian phản hồi phanh đỗ.', { verifies: applyDsg.code });
+  add(doc, applyDsg, 'dvp', 'Verify automatic apply on door open',
+    'Turn off the engine, open the driver door, measure the park brake response time.', { verifies: applyDsg.code });
 
-  const release = add(doc, null, 'function', 'Nhả phanh đỗ khi tăng ga',
-    'Hệ thống \\textbf{phải} tự nhả phanh đỗ khi tài xế đạp ga đủ ngưỡng và thắt dây an toàn.',
+  const release = add(doc, null, 'function', 'Release the park brake on accelerator input',
+    'The system \\textbf{must} automatically release the park brake when the driver presses the accelerator past a threshold with the seatbelt fastened.',
     { deployMaster: 'EPB-ECU', rationale: 'FEAT-EPB-002' });
-  add(doc, release, 'design', 'Logic nhả tự động',
-    'Nhả khi ga > 15\\%, dây an toàn cài, và không có lỗi phanh chính.',
+  add(doc, release, 'design', 'Automatic release logic',
+    'Releases when accelerator > 15\\%, seatbelt fastened, and no main-brake fault present.',
     { functionCode: release.code, asil: 'D', verification: 'Test; Review' });
   // Calibration — built before the warning Design below so its desc can
   // \calref{} the real code instead of a guessed one.
-  const calChapter = add(doc, null, 'information', 'Biến hiệu chuẩn',
-    'Các biến hiệu chuẩn của EPB. Gõ @ trong mô tả item khác để trỏ tới một biến ở đây.');
-  const vEpbWarn = add(doc, calChapter, 'calibration', 'Ngưỡng tốc độ cảnh báo chưa nhả phanh',
-    'Tốc độ mà trên đó hệ thống coi là "đang lái" trong khi EPB vẫn kích hoạt.',
+  const calChapter = add(doc, null, 'information', 'Calibration variables',
+    "EPB's calibration variables. Type @ in another item's description to reference one of these.");
+  const vEpbWarn = add(doc, calChapter, 'calibration', 'Warning speed threshold for park brake not released',
+    'The speed above which the system considers the vehicle "driving" while EPB is still applied.',
     { symbol: 'V_epb_warn', unit: 'km/h', defaultValue: '10', minValue: '5', maxValue: '20' });
-  add(doc, calChapter, 'calibration', 'Ngưỡng ga cho phép nhả phanh',
-    'Phần trăm bàn đạp ga tối thiểu để hệ thống coi là tài xế muốn khởi hành.',
+  add(doc, calChapter, 'calibration', 'Accelerator threshold to allow release',
+    'Minimum accelerator pedal percentage for the system to consider the driver intends to move off.',
     { symbol: 'K_release_pedal', unit: '%', defaultValue: '15', minValue: '5', maxValue: '40' });
 
   // Deliberately left without a Design — the workspace-level Excel export
-  // should be able to flag this the same way the single-book Truy vết tab does.
-  const warnFn = add(doc, null, 'function', 'Cảnh báo phanh đỗ chưa nhả khi lái',
-    'Hệ thống \\textbf{phải} cảnh báo nếu xe di chuyển trên 10km/h trong khi phanh đỗ còn kích hoạt.',
+  // should be able to flag this the same way the single-book Traceability tab does.
+  const warnFn = add(doc, null, 'function', 'Warn if the park brake is not released while driving',
+    'The system \\textbf{must} warn if the vehicle moves above 10km/h while the park brake is still applied.',
     { deployMaster: 'EPB-ECU', rationale: 'FEAT-EPB-003', uiImpact: '1' });
-  const warnDsg = add(doc, warnFn, 'design', 'Logic phát cảnh báo IC',
-    `Gửi tín hiệu FAULT nhấp nháy lên cụm đồng hồ (IC) qua CAN khi tốc độ vượt ngưỡng \\calref{${vEpbWarn.code}} trong khi EPB còn kích hoạt.`,
+  const warnDsg = add(doc, warnFn, 'design', 'IC warning logic',
+    `Sends a blinking FAULT signal to the instrument cluster (IC) over CAN when speed exceeds the \\calref{${vEpbWarn.code}} threshold while EPB is still applied.`,
     { functionCode: warnFn.code, asil: 'B', verification: 'Test; Review', uiImpact: '1' });
   warnDsg.settings.push({
-    name: 'Âm lượng còi cảnh báo', values: 'Tắt; Nhỏ; To', defaultValue: 'To', scope: 'profile',
+    name: 'Warning chime volume', values: 'Off; Low; High', defaultValue: 'High', scope: 'profile',
   });
   warnDsg.warnings.push({
     id: 'WRN-EPB-101', enterDelay: '0 ms', exitDelay: '500 ms',
-    enterCondition: `Tốc độ xe vượt \\calref{${vEpbWarn.code}} và trạng thái EPB vẫn là APPLIED.`,
-    exitCondition: 'EPB chuyển sang RELEASED hoặc tốc độ xe về dưới ngưỡng.',
+    enterCondition: `Vehicle speed exceeds \\calref{${vEpbWarn.code}} while EPB state is still APPLIED.`,
+    exitCondition: 'EPB switches to RELEASED or vehicle speed drops back below the threshold.',
   });
 
   // Interface — signals EPB-ECU exchanges with the rest of the vehicle.
-  const ifaceChapter = add(doc, null, 'information', 'Giao diện tín hiệu',
-    'Tín hiệu vào/ra của EPB-ECU. Một dãy Interface liền nhau hiển thị thành bảng.');
+  const ifaceChapter = add(doc, null, 'information', 'Signal interface',
+    "EPB-ECU's input/output signals. A run of consecutive Interface items renders as a table.");
   const epbStatus = add(doc, ifaceChapter, 'interface', 'EPB_Status',
-    'Trạng thái hiện tại của phanh đỗ điện tử.',
+    'Current state of the electric park brake.',
     { values: 'RELEASED; APPLYING; APPLIED; RELEASING; FAULT', defaultValue: 'RELEASED', physical: 'CAN' });
   epbStatus.fields.senderEcu = 'EPB-ECU';
   epbStatus.fields.receiverEcu = 'Gateway';
   const vehSpeed = add(doc, ifaceChapter, 'interface', 'VehicleSpeed',
-    'Tốc độ xe đã lọc, dùng cho logic kích hoạt/nhả và cảnh báo.',
+    'Filtered vehicle speed, used for apply/release logic and warnings.',
     { unit: 'km/h', defaultValue: '0', physical: 'CAN' });
   vehSpeed.fields.senderEcu = 'Gateway';
   vehSpeed.fields.receiverEcu = 'EPB-ECU';
@@ -141,22 +141,22 @@ function buildBcm() {
     title: 'System Requirements Specification', subtitle: 'Body Control Module — Door Lock',
     docNo: 'SRS-BCM-001', revision: 'A', date: '2026-07-10', classification: 'Internal',
   });
-  add(doc, null, 'information', 'Giới thiệu',
-    'Yêu cầu hệ thống cho chức năng khóa cửa trung tâm của Body Control Module.');
-  const cdl = add(doc, null, 'function', 'Khóa cửa trung tâm',
-    'Hệ thống \\textbf{phải} khóa/mở đồng thời toàn bộ cửa xe từ nút bấm, chìa khóa thông minh hoặc lệnh từ xa.',
+  add(doc, null, 'information', 'Introduction',
+    "System requirements for the Body Control Module's central door lock function.");
+  const cdl = add(doc, null, 'function', 'Central door lock',
+    'The system \\textbf{must} lock/unlock every door simultaneously from the switch, smart key, or remote command.',
     { deployMaster: 'BCM', rationale: 'FEAT-BCM-001' });
-  const cdlDsg = add(doc, cdl, 'design', 'Logic khóa/mở tập trung',
-    'Gửi lệnh khóa qua LIN tới từng Door Module trong vòng 200ms.',
+  const cdlDsg = add(doc, cdl, 'design', 'Central lock/unlock logic',
+    'Sends the lock command over LIN to each Door Module within 200ms.',
     { functionCode: cdl.code, asil: 'QM', verification: 'Test' });
-  add(doc, cdlDsg, 'dvp', 'Đo thời gian khóa đồng thời 4 cửa',
-    'Kích hoạt khóa, đo thời điểm mô-tơ mỗi cửa hoàn tất.', { verifies: cdlDsg.code });
+  add(doc, cdlDsg, 'dvp', 'Measure simultaneous 4-door lock timing',
+    'Trigger the lock, measure when each door\'s motor completes.', { verifies: cdlDsg.code });
 
-  const autolock = add(doc, null, 'function', 'Tự động khóa khi xe chạy',
-    'Hệ thống \\textbf{phải} tự khóa cửa khi tốc độ xe vượt 15km/h nếu cài đặt cho phép.',
+  const autolock = add(doc, null, 'function', 'Automatically lock while driving',
+    'The system \\textbf{must} automatically lock the doors when vehicle speed exceeds 15km/h, if the setting allows it.',
     { deployMaster: 'BCM', rationale: 'FEAT-BCM-002' });
-  add(doc, autolock, 'design', 'Logic tự khóa theo tốc độ',
-    'Ngưỡng 15km/h, có thể tắt qua cài đặt người dùng.',
+  add(doc, autolock, 'design', 'Speed-based auto-lock logic',
+    'Threshold of 15km/h, can be disabled via a user setting.',
     { functionCode: autolock.code, asil: 'QM', verification: 'Test; Review' });
 
   return { doc };
@@ -169,16 +169,16 @@ function buildAdas() {
     title: 'System Requirements Specification', subtitle: 'Lane Keep Assist',
     docNo: 'SRS-ADAS-001', revision: 'A', date: '2026-08-01', classification: 'Confidential',
   });
-  add(doc, null, 'information', 'Giới thiệu',
-    'Yêu cầu hệ thống cho chức năng hỗ trợ giữ làn đường (LKA).');
-  const lka = add(doc, null, 'function', 'Cảnh báo và can thiệp lệch làn',
-    'Hệ thống \\textbf{phải} cảnh báo rung vô-lăng và can thiệp mô-men lái khi xe lệch làn không chủ đích.',
+  add(doc, null, 'information', 'Introduction',
+    'System requirements for the Lane Keep Assist (LKA) function.');
+  const lka = add(doc, null, 'function', 'Lane departure warning and intervention',
+    'The system \\textbf{must} warn via steering-wheel vibration and apply steering torque intervention when the vehicle unintentionally drifts out of its lane.',
     { deployMaster: 'ADAS-ECU', deploySlave: 'EPS', rationale: 'FEAT-ADAS-001' });
-  const lkaDsg = add(doc, lka, 'design', 'Logic phát hiện lệch làn',
-    'Dùng camera trước, ngưỡng lệch tâm làn > 0.3m kích hoạt cảnh báo.',
+  const lkaDsg = add(doc, lka, 'design', 'Lane departure detection logic',
+    'Uses the front camera; a lane-center offset > 0.3m triggers the warning.',
     { functionCode: lka.code, asil: 'C', verification: 'Test; Simulation' });
-  add(doc, lkaDsg, 'dvp', 'Kiểm tra can thiệp trên đường thử có vạch kẻ mờ',
-    'Chạy xe lệch làn có chủ đích ở nhiều điều kiện ánh sáng.', { verifies: lkaDsg.code });
+  add(doc, lkaDsg, 'dvp', 'Verify intervention on a test track with faded lane markings',
+    'Deliberately drift out of the lane under various lighting conditions.', { verifies: lkaDsg.code });
 
   return { doc, lka, lkaDsg };
 }
@@ -190,12 +190,12 @@ function buildHvac() {
     title: 'System Requirements Specification', subtitle: 'Climate Control',
     docNo: 'SRS-HVAC-001', revision: 'A', date: '2026-06-15', classification: 'Internal',
   });
-  add(doc, null, 'information', 'Giới thiệu', 'Yêu cầu hệ thống cho điều hòa tự động.');
-  const auto = add(doc, null, 'function', 'Điều chỉnh nhiệt độ tự động',
-    'Hệ thống \\textbf{phải} tự điều chỉnh tốc độ quạt và cửa gió để đạt nhiệt độ cài đặt trong 10 phút.',
+  add(doc, null, 'information', 'Introduction', 'System requirements for the automatic climate control.');
+  const auto = add(doc, null, 'function', 'Automatic temperature regulation',
+    'The system \\textbf{must} automatically adjust fan speed and vents to reach the set temperature within 10 minutes.',
     { deployMaster: 'HVAC-ECU', rationale: 'FEAT-HVAC-001' });
-  add(doc, auto, 'design', 'Vòng điều khiển PID nhiệt độ',
-    'PID theo cảm biến nhiệt độ cabin và bức xạ mặt trời.',
+  add(doc, auto, 'design', 'Temperature PID control loop',
+    'PID based on the cabin temperature sensor and solar radiation sensor.',
     { functionCode: auto.code, asil: 'QM', verification: 'Test' });
 
   return { doc };
@@ -409,7 +409,7 @@ async function main() {
     ],
   });
   // init() commits workspace.json + .gitignore/.gitattributes as the very
-  // first commit ("Khởi tạo project") — no need for a second commit here.
+  // first commit ("Initialize project") — no need for a second commit here.
   await R.init(ROOT, at2('viet', '2026-06-01T09:00:00+07:00'));
 
   const epb = buildEpb();
@@ -420,38 +420,38 @@ async function main() {
   const eea = buildEea(eeaDiagram);
 
   writeBook(path.join(ROOT, 'EEA'), eea.doc);
-  await R.commitAll(path.join(ROOT, 'EEA'), { message: 'Thêm sách EEA — kiến trúc E/E, Component, OBD-II', author: at2('viet', '2026-06-05T09:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'EEA'), { message: 'Add EEA book — E/E architecture, Component, OBD-II', author: at2('viet', '2026-06-05T09:00:00+07:00') });
 
   writeBook(path.join(ROOT, 'HVAC'), hvac.doc);
-  await R.commitAll(path.join(ROOT, 'HVAC'), { message: 'Thêm sách HVAC — Climate Control', author: at2('hoa', '2026-06-15T10:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'HVAC'), { message: 'Add HVAC book — Climate Control', author: at2('hoa', '2026-06-15T10:00:00+07:00') });
 
   writeBook(path.join(ROOT, 'BCM'), bcm.doc);
-  await R.commitAll(path.join(ROOT, 'BCM'), { message: 'Thêm sách BCM — Body Control Module', author: at2('lan', '2026-07-10T14:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'BCM'), { message: 'Add BCM book — Body Control Module', author: at2('lan', '2026-07-10T14:00:00+07:00') });
 
   writeBook(path.join(ROOT, 'ADAS'), adas.doc);
-  await R.commitAll(path.join(ROOT, 'ADAS'), { message: 'Thêm sách ADAS — Lane Keep Assist', author: at2('minh', '2026-08-01T11:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'ADAS'), { message: 'Add ADAS book — Lane Keep Assist', author: at2('minh', '2026-08-01T11:00:00+07:00') });
 
   writeBook(path.join(ROOT, 'EPB'), epb.doc);
-  await R.commitAll(path.join(ROOT, 'EPB'), { message: 'Thêm sách EPB — Electric Park Brake', author: at2('viet', '2026-08-05T09:30:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'EPB'), { message: 'Add EPB book — Electric Park Brake', author: at2('viet', '2026-08-05T09:30:00+07:00') });
 
   // A follow-up review round, each book touched independently — this is what
   // makes the per-book scoped history in the history panel worth looking at.
   const epbFn2 = epb.doc.items.filter((i) => i.type === 'function')[1];
   const epbDsg2 = epbFn2.children[0];
   epbDsg2.fields.asil = 'D';
-  epbDsg2.desc += ' Đã siết sau vòng HARA lần 2.';
+  epbDsg2.desc += ' Tightened after HARA round 2.';
   writeBook(path.join(ROOT, 'EPB'), epb.doc);
-  await R.commitAll(path.join(ROOT, 'EPB'), { message: 'EPB: siết ASIL nhả phanh đỗ sau HARA vòng 2', author: at2('viet', '2026-08-20T15:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'EPB'), { message: 'EPB: tighten release ASIL after HARA round 2', author: at2('viet', '2026-08-20T15:00:00+07:00') });
 
   const lkaDsg = adas.lkaDsg;
   lkaDsg.fields.verification = 'Test; Simulation; Demonstration';
   writeBook(path.join(ROOT, 'ADAS'), adas.doc);
-  await R.commitAll(path.join(ROOT, 'ADAS'), { message: 'ADAS: bổ sung Demonstration cho kiểm chứng LKA', author: at2('minh', '2026-08-22T09:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'ADAS'), { message: 'ADAS: add Demonstration to LKA verification', author: at2('minh', '2026-08-22T09:00:00+07:00') });
 
   const bcmAutolock = bcm.doc.items.filter((i) => i.type === 'function')[1];
-  bcmAutolock.desc += ' Cập nhật: cho phép tắt qua ứng dụng di động.';
+  bcmAutolock.desc += ' Update: can now be disabled via the mobile app.';
   writeBook(path.join(ROOT, 'BCM'), bcm.doc);
-  await R.commitAll(path.join(ROOT, 'BCM'), { message: 'BCM: bổ sung điều khiển tự khóa qua app', author: at2('lan', '2026-08-25T13:00:00+07:00') });
+  await R.commitAll(path.join(ROOT, 'BCM'), { message: 'BCM: add auto-lock control via app', author: at2('lan', '2026-08-25T13:00:00+07:00') });
 
   // -----------------------------------------------------------------
   // a branch that diverges on ONE book only — what "checkout" is for.
@@ -461,23 +461,23 @@ async function main() {
   const base = { fs, dir: ROOT, gitdir: path.join(ROOT, '.git') };
   await git.branch({ ...base, ref: 'review/epb-emergency-brake', checkout: true });
 
-  const epbCoastFn = add(epb.doc, null, 'function', 'Phanh khẩn cấp khi mất phanh chính',
-    'Hệ thống \\textbf{phải} dùng EPB làm phanh dự phòng nếu phát hiện mất áp suất phanh chính.',
+  const epbCoastFn = add(epb.doc, null, 'function', 'Emergency braking on main brake loss',
+    'The system \\textbf{must} use EPB as a backup brake if a loss of main brake pressure is detected.',
     { deployMaster: 'EPB-ECU', rationale: 'FEAT-EPB-004' });
-  add(epb.doc, epbCoastFn, 'design', 'Logic phanh dự phòng',
-    'Kích hoạt tiệm tiến khi áp suất phanh chính < ngưỡng an toàn trong > 200ms.',
+  add(epb.doc, epbCoastFn, 'design', 'Backup braking logic',
+    'Applies progressively when main brake pressure < the safety threshold for > 200ms.',
     { functionCode: epbCoastFn.code, asil: 'D', verification: 'Test; Simulation' });
   writeBook(path.join(ROOT, 'EPB'), epb.doc);
   await R.commitAll(path.join(ROOT, 'EPB'), {
-    message: 'EPB: thêm phanh khẩn cấp dự phòng — đang review trên Gerrit',
+    message: 'EPB: add backup emergency braking — under review on Gerrit',
     author: at2('viet', '2026-09-01T10:00:00+07:00'),
   });
 
   await git.checkout({ ...base, ref: 'main' });
 
-  console.log(`Đã dựng workspace mẫu tại ${ROOT}`);
-  console.log('Sách:', 'EEA, EPB, BCM, ADAS, HVAC');
-  console.log('Nhánh:', 'main (đang đứng ở đây), review/epb-emergency-brake');
+  console.log(`Built the sample workspace at ${ROOT}`);
+  console.log('Books:', 'EEA, EPB, BCM, ADAS, HVAC');
+  console.log('Branches:', 'main (currently here), review/epb-emergency-brake');
 }
 
 function at2(who, iso) {

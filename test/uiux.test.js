@@ -74,7 +74,7 @@ test('a default outside the value list is an error', () => {
     Object.assign(s.fields, { symbol: 'K_x', values: 'A; B', defaultValue: 'C' });
     d.items.push(s);
   });
-  assert.ok(has(errorsOf(doc), /mặc định "C" không nằm trong danh sách/), errorsOf(doc).join('|'));
+  assert.ok(has(errorsOf(doc), /Default value "C" is not in the allowed values list/), errorsOf(doc).join('|'));
 });
 
 test('duplicate values, a missing default, and leftover scalar fields are caught', () => {
@@ -84,10 +84,10 @@ test('duplicate values, a missing default, and leftover scalar fields are caught
     Object.assign(s.fields, { values: 'A; B; A', defaultValue: '', unit: 'km/h', maxValue: '9' });
     d.items.push(s);
   });
-  assert.ok(has(errorsOf(doc), /bị trùng: A/));
-  assert.ok(has(errorsOf(doc), /chưa chọn giá trị mặc định/));
-  assert.ok(has(warnsOf(doc), /còn sót trường "unit"/));
-  assert.ok(has(warnsOf(doc), /còn sót trường "maxValue"/));
+  assert.ok(has(errorsOf(doc), /duplicated: A/));
+  assert.ok(has(errorsOf(doc), /no default value chosen/));
+  assert.ok(has(warnsOf(doc), /numeric field "unit"/));
+  assert.ok(has(warnsOf(doc), /numeric field "maxValue"/));
 });
 
 test('a scalar signal is left completely alone', () => {
@@ -109,8 +109,8 @@ test('dropping an enum value is an error in the diff, adding one is a warning', 
     d.items.push(s);
   });
   const flags = D.diffDocs(mk('A; B; C'), mk('A; B; D')).safety.map((f) => `${f.level}:${f.message}`);
-  assert.ok(has(flags, /error:.*Bỏ giá trị enum: C/), flags.join('|'));
-  assert.ok(has(flags, /warn:.*Thêm giá trị enum: D/), flags.join('|'));
+  assert.ok(has(flags, /error:.*Enum value\(s\) removed: C/), flags.join('|'));
+  assert.ok(has(flags, /warn:.*Enum value\(s\) added: D/), flags.join('|'));
 });
 
 // =================================================== UI/UX sub-records
@@ -160,7 +160,7 @@ test('a stray uiwarnrich stops the parse instead of silently vanishing', () => {
     '\\begin{srsitem}{T-0001}{function}{F}\n' +
     '\\begin{uiwarnings}\n\\uiwarnrich{enterCondition}{x}\n\\end{uiwarnings}\n' +
     '\\end{srsitem}\n';
-  assert.throws(() => M.parseDataTex(tex), /uiwarnrich xuất hiện trước/);
+  assert.throws(() => M.parseDataTex(tex), /uiwarnrich appears before/);
 });
 
 test('the sticker gates the sub-record fields in the form', () => {
@@ -178,7 +178,7 @@ test('unticking the sticker keeps the data and warns instead of deleting it', ()
   delete doc.items[0].fields.uiImpact;
   const tex = M.generateDataTex(doc);
   assert.ok(tex.includes('\\uisetting{Auto Hold}'), 'records must stay in the file');
-  assert.ok(has(warnsOf(doc), /chưa tick "Ảnh hưởng UI\/UX"/), warnsOf(doc).join('|'));
+  assert.ok(has(warnsOf(doc), /"UI\/UX impact" is not ticked/), warnsOf(doc).join('|'));
 });
 
 test('missing warning ids, duplicate ids and broken settings are caught', () => {
@@ -195,11 +195,11 @@ test('missing warning ids, duplicate ids and broken settings are caught', () => 
     d.items.push(a, b);
   });
   const e = errorsOf(doc);
-  assert.ok(has(e, /Cảnh báo #1 chưa có Warning ID/), e.join('|'));
-  assert.ok(has(e, /Warning ID "W1" đã dùng ở T-0001/), e.join('|'));
-  assert.ok(has(e, /Setting "S" chưa có giá trị nào/), e.join('|'));
-  assert.ok(has(e, /Setting "S2" có mặc định "z" không nằm trong danh sách/), e.join('|'));
-  assert.ok(has(warnsOf(doc), /Setting "S" chưa cho biết lưu ở đâu/));
+  assert.ok(has(e, /Warning #1 has no Warning ID/), e.join('|'));
+  assert.ok(has(e, /Warning ID "W1" is already used at T-0001/), e.join('|'));
+  assert.ok(has(e, /Setting "S" has no values yet/), e.join('|'));
+  assert.ok(has(e, /Setting "S2" has a default "z" that is not in its value list/), e.join('|'));
+  assert.ok(has(warnsOf(doc), /Setting "S" does not say where it is stored/));
 });
 
 test('ticking the sticker with nothing filled in is a note, not an error', () => {
@@ -209,7 +209,7 @@ test('ticking the sticker with nothing filled in is a note, not an error', () =>
     d.items.push(f);
   });
   assert.deepStrictEqual(errorsOf(doc), []);
-  assert.ok(M.validate(doc).some((i) => i.level === 'info' && /chưa khai setting hay cảnh báo/.test(i.message)));
+  assert.ok(M.validate(doc).some((i) => i.level === 'info' && /declares no setting or warning yet/.test(i.message)));
 });
 
 test('a mention inside a warning condition counts as a use of the calibration', () => {
@@ -285,7 +285,7 @@ test('losing a Warning ID is an error — an external document points at it', ()
   const after = uiDoc();
   after.items[0].warnings.pop();
   const flags = D.diffDocs(before, after).safety.map((f) => `${f.level}:${f.message}`);
-  assert.ok(has(flags, /error:.*Warning ID "WRN-013" không còn/), flags.join('|'));
+  assert.ok(has(flags, /error:.*Warning ID "WRN-013" no longer exists/), flags.join('|'));
 });
 
 test('changed delays, defaults and storage scope are warnings, dropped values an error', () => {
@@ -296,9 +296,9 @@ test('changed delays, defaults and storage scope are warnings, dropped values an
   after.items[0].settings[0].defaultValue = 'Bật';
   after.items[0].settings[1].scope = 'volatile';
   const flags = D.diffDocs(before, after).safety.map((f) => `${f.level}:${f.message}`);
-  assert.ok(has(flags, /warn:.*Thời gian trễ của WRN-012 đổi/), flags.join('|'));
-  assert.ok(has(flags, /error:.*bỏ giá trị: Tắt/), flags.join('|'));
-  assert.ok(has(flags, /warn:.*đổi nơi lưu global → volatile/), flags.join('|'));
+  assert.ok(has(flags, /warn:.*Delay for WRN-012 changed/), flags.join('|'));
+  assert.ok(has(flags, /error:.*removed value\(s\): Tắt/), flags.join('|'));
+  assert.ok(has(flags, /warn:.*storage changed global → volatile/), flags.join('|'));
 });
 
 test('the compare screen gets a readable text diff of the sub-records', () => {
@@ -307,7 +307,7 @@ test('the compare screen gets a readable text diff of the sub-records', () => {
   after.items[0].settings[0].defaultValue = 'Tắt';
   const row = D.diffDocs(before, after).modified[0].fields.find((f) => f.key === 'settings');
   assert.ok(row, 'settings must show up as a changed field');
-  assert.match(row.from, /mặc định: Bật/);
-  assert.match(row.to, /mặc định: Tắt/);
+  assert.match(row.from, /default: Bật/);
+  assert.match(row.to, /default: Tắt/);
   assert.ok(row.words && row.words.length, 'a word diff makes the change visible');
 });

@@ -245,7 +245,7 @@ async function main() {
   check('mention trong điều kiện cảnh báo UI/UX KHÔNG tính vào "Được dùng ở" (giảm nhiễu)',
     !usedBy.includes(codes.ui), JSON.stringify(usedBy));
   check('calibration không còn hiện "Được dùng ở" trong nội dung (Truy vết lo rồi)',
-    !(await textOf(codes.cal)).includes('Được dùng ở'), await textOf(codes.cal));
+    !(await textOf(codes.cal)).includes('Used by'), await textOf(codes.cal));
 
   await patch(`
     const i = S.state.doc.items.findIndex(x => x.code === '${codes.fn}');
@@ -315,12 +315,12 @@ async function main() {
     window.__srs.renderDocument();
     return out;
   `);
-  check('bình thường có nút Sửa và Xóa', editable.includes('Sửa') && editable.includes('Xóa'), editable.join(','));
+  check('bình thường có nút Sửa và Xóa', editable.includes('Edit') && editable.includes('Delete'), editable.join(','));
   check('vào chế độ xem bản cũ thì không còn nút Sửa/Xóa',
-    !readonly.includes('Sửa') && !readonly.includes('Xóa'), readonly.join(','));
+    !readonly.includes('Edit') && !readonly.includes('Delete'), readonly.join(','));
   check('chế độ xem bản cũ đổi sang nút lấy lại item',
-    readonly.some((t) => /Lấy lại/.test(t)), readonly.join(','));
-  check('thoát chế độ xem thì nút Sửa trở lại', (await btns()).includes('Sửa'));
+    readonly.some((t) => /Recover this item/.test(t)), readonly.join(','));
+  check('thoát chế độ xem thì nút Sửa trở lại', (await btns()).includes('Edit'));
 
   // -------------------------------------------------------------------
   group('Cache không rò rỉ giữa các project');
@@ -422,7 +422,7 @@ async function main() {
     const code = document.querySelector('#docBody .item[data-code]').dataset.code;
     S.startEdit(code);
     await new Promise(r => setTimeout(r, 250));
-    const btn = document.querySelector('.item.editing .rt-toolbar [title="Chèn bảng"]');
+    const btn = document.querySelector('.item.editing .rt-toolbar [title="Insert table"]');
     if (!btn) return { err: 'không thấy nút Chèn bảng' };
     btn.click();
     await new Promise(r => requestAnimationFrame(r));
@@ -514,7 +514,7 @@ async function main() {
 
   const first = await uiText();
   check('bảng setting hiện tên, giá trị và nơi lưu',
-    first.includes('Auto Hold') && first.includes('Theo profile'), first.slice(0, 200));
+    first.includes('Auto Hold') && first.includes('Per driver profile'), first.slice(0, 200));
   check('thẻ cảnh báo hiện ID và thời gian trễ',
     first.includes('WRN-001') && first.includes('500 ms') && first.includes('200 ms'), first.slice(0, 300));
   check('cảnh báo hiện điều kiện vào và ra',
@@ -590,12 +590,12 @@ async function main() {
   await run(`window.__srs.startEdit('${codes.compDoor}');`);
   await sleep(150);
 
-  check('component hiện "Được dùng ở" đúng item đã @ mention nó',
+  check('component hiện "Used by" đúng item đã @ mention nó',
     (await textOf(codes.compBcm)).includes(codes.plain), await textOf(codes.compBcm));
 
   const jump = await run(`
     const btn = [...document.querySelectorAll('#item-${codes.compBcm} button')]
-      .find(b => b.textContent.includes('Lọc Design'));
+      .find(b => b.textContent.includes('Filter Design'));
     btn.click();
     await new Promise(r => requestAnimationFrame(r));
     return { view: window.__srs.state.view, code: window.__srs.state.compFilterCode };
@@ -623,7 +623,7 @@ async function main() {
     return document.getElementById('compFilterBody').textContent.replace(/\\s+/g, ' ');
   `);
   check('đổi lựa chọn thì danh sách đoạn trích đổi theo (Door Module chưa ai nhắc tới)',
-    /Chưa Design nào/.test(switched), switched.slice(0, 200));
+    /No Design mentions/.test(switched), switched.slice(0, 200));
   await run(`window.__srs.setView('document');`);
 
   // -------------------------------------------------------------------

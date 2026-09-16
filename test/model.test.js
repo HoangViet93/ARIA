@@ -232,7 +232,7 @@ test('an item cannot be moved into its own subtree', () => {
   const { doc, a, c } = treeDoc();
   const res = M.moveItem(doc, a.code, c.code, 'inside');
   assert.strictEqual(res.ok, false);
-  assert.match(res.reason, /nhánh con/);
+  assert.match(res.reason, /own subtree/);
   assert.strictEqual(doc.items.length, 2, 'tree must be left untouched');
 });
 
@@ -258,7 +258,7 @@ test('validate reports broken and mistyped references', () => {
   doc.items.push(fn, d1, d2);
 
   const issues = M.validate(doc);
-  assert.ok(issues.some((i) => i.level === 'error' && /không tồn tại/.test(i.message)));
+  assert.ok(issues.some((i) => i.level === 'error' && /does not exist/.test(i.message)));
   assert.ok(!issues.some((i) => /traceability gap/.test(i.message)), 'F is covered by D2');
 });
 
@@ -270,7 +270,7 @@ test('validate flags an uncovered function and a missing ASIL', () => {
   doc.items.push(fn, d);
   const issues = M.validate(doc);
   assert.ok(issues.some((i) => /traceability gap/.test(i.message)));
-  assert.ok(issues.some((i) => /chưa gán mức ASIL/.test(i.message)));
+  assert.ok(issues.some((i) => /no ASIL level assigned/.test(i.message)));
 });
 
 test('validate detects duplicate codes from a bad hand-edit', () => {
@@ -280,7 +280,7 @@ test('validate detects duplicate codes from a bad hand-edit', () => {
     '\\begin{srsitem}{X-0001}{information}{B}\\end{srsitem}',
   ].join('\n');
   const issues = M.validate(M.parseDataTex(tex));
-  assert.ok(issues.some((i) => i.level === 'error' && /bị trùng/.test(i.message)));
+  assert.ok(issues.some((i) => i.level === 'error' && /is duplicated/.test(i.message)));
 });
 
 // ------------------------------------------------------- parse failures
@@ -288,14 +288,14 @@ test('validate detects duplicate codes from a bad hand-edit', () => {
 test('unclosed srsitem is reported, not silently accepted', () => {
   assert.throws(
     () => M.parseDataTex('\\begin{srsitem}{A-1}{information}{T}'),
-    /chưa đóng/
+    /still unclosed/
   );
 });
 
 test('stray end is reported with a line number', () => {
   assert.throws(
     () => M.parseDataTex('\\docname{X}\n\\end{srsitem}'),
-    /dòng 2/
+    /line 2/
   );
 });
 
@@ -315,7 +315,7 @@ test('fields of the old type survive a type change and are flagged', () => {
   assert.strictEqual(back.items[0].fields.enterCondition, 'Ignition ON',
     'a rich field keeps being written with \\itemrich after re-typing');
   assert.deepStrictEqual(M.foreignFieldKeys(back.items[0]), ['asil', 'enterCondition']);
-  assert.ok(M.validate(back).some((i) => /không thuộc kiểu function/.test(i.message)));
+  assert.ok(M.validate(back).some((i) => /not part of type function/.test(i.message)));
 });
 
 test('validate catches an inline \\srsref pointing at a missing item', () => {
@@ -330,7 +330,7 @@ test('validate catches an inline \\srsref pointing at a missing item', () => {
   b.fields.enterCondition = 'Theo \\srsref{X-4242}.';
   doc.items.push(a, b);
 
-  const msgs = M.validate(doc).filter((i) => /Liên kết trong nội dung/.test(i.message));
+  const msgs = M.validate(doc).filter((i) => /A link in the content points at code/.test(i.message));
   assert.strictEqual(msgs.length, 2, 'one per missing target, across desc and rich fields');
   assert.ok(msgs.some((i) => i.message.includes('X-9999')));
   assert.ok(msgs.some((i) => i.message.includes('X-4242')));
