@@ -236,6 +236,7 @@ npm run test:all    # tất cả các bộ trên
 npm run perf        # đo hiệu năng trên tài liệu 288 trang
 npm run check      # lint data.tex của cả hai project mẫu
 npm run sample     # sinh lại hai project mẫu
+npm run dist:win   # đóng gói bản Windows — xem "Đóng gói bản Windows" trong README.md
 ```
 
 Node cài ở `~/.local/node/bin`, TeX Live ở `~/texlive/cur/bin/x86_64-linux` —
@@ -247,6 +248,13 @@ thêm vào PATH nếu lệnh không chạy.
 - Đừng sửa `projects/*/template.tex` — app ghi đè nó mỗi lần compile. Sửa
   `resources/template.tex`.
 - Đừng chỉnh `renderer/dist/` — sinh ra từ build.
+- Đừng đóng gói bản Windows thành 1 file `.exe` đơn (electron-builder NSIS,
+  hay tự đổi tên/ký lại `electron.exe`) — đã thử, Windows Smart App Control
+  chặn cứng không có nút bỏ qua, và mỗi lần build lại là ra file khác hoàn
+  toàn nên không "tích lũy" được danh tiếng để hết bị chặn. `npm run dist:win`
+  (`scripts/build-portable-win.js`) dùng đúng cách đã kiểm chứng chạy được:
+  1 folder + `Start-ARIA.bat` (văn bản thuần) gọi thẳng `electron.exe` gốc
+  chưa chỉnh sửa từ `node_modules`. Xem "Đóng gói bản Windows" trong README.md.
 - Đừng dùng `window.prompt()` / `window.alert()`: Electron **không** hỗ trợ
   `prompt` (gọi vào là ném lỗi). Dùng `askText` / `askChoice` / `showNotice`
   trong `renderer/src/modal.js`.

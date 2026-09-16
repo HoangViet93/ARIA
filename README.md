@@ -30,8 +30,7 @@ gọn, chạy offline, và **lưu dữ liệu thẳng trong LaTeX** để versio
   đúng sách đang mở (`git log -- <sách>/data.tex`), không lẫn sách khác.
   **Xuất Excel** quét Function của mọi sách trong workspace ra một file. Nhánh
   git (tạo/merge trên Gerrit, ngoài app) có thể **checkout** thẳng trong app —
-  chuyển cả workspace sang trạng thái của nhánh đó. Xem
-  `docs/PROPOSAL-MULTIBOOK-GIT.md`.
+  chuyển cả workspace sang trạng thái của nhánh đó.
 - Xuất PDF qua XeLaTeX (tiếng Việt có dấu, mục lục, bookmark)
 - Zoom khung tài liệu (`Ctrl` + con lăn), tối đa là mức vừa bề rộng trang
 - Chịu được sách dài: 288 trang / 1 150 item vẫn cuộn 60 fps — xem
@@ -60,6 +59,37 @@ Nếu Node hoặc TeX Live nằm trong thư mục home (không cài hệ thống
 ```bash
 ./run.sh
 ```
+
+## Đóng gói bản Windows
+
+```bash
+npm run dist:win
+```
+
+Ra `dist/ARIA-<version>-win-portable/` (và file `.zip` tương ứng) — một
+**folder**, không phải file `.exe` đơn — kèm sẵn TeX Live rút gọn
+(`resources/texlive-win`) nên máy Windows đích không cần cài TeX Live/MiKTeX
+riêng để xuất PDF. Người dùng chỉ cần giải nén rồi bấm đúp `Start-ARIA.bat`.
+
+**Vì sao không đóng gói thành 1 file `.exe`:** đã thử (electron-builder, cả
+dạng NSIS lẫn dạng đổi tên `electron.exe` trần) — Windows **Smart App
+Control** chặn cứng (không có nút "Run anyway") bất kỳ file `.exe` mới, chưa
+ký số, chưa có danh tiếng nào, và **mỗi lần build lại app là ra một file khác
+hoàn toàn** (icon/version resource nhúng khác, nội dung `app.asar` khác) nên
+không bao giờ "tích lũy" được danh tiếng. `Start-ARIA.bat` là văn bản thuần
+(không phải PE binary) và chỉ gọi thẳng `node_modules/electron/dist/electron.exe`
+— bản `electron.exe` **gốc, chưa chỉnh sửa gì**, giống hệt bản mà rất nhiều
+app Electron khác dùng, nên không phải là "một binary mới lạ" theo cách
+Smart App Control đánh giá. Không có cách đóng gói `.exe` đơn nào né được vấn
+đề này nếu không mua chứng chỉ code-signing thật hoặc tắt hẳn Smart App
+Control trên máy đích (tắt là một chiều, không bật lại được nếu không cài lại
+Windows).
+
+`scripts/build-portable-win.js` tự tải riêng một bản Electron Windows-x64 (ép
+qua `npm_config_platform=win32 npm_config_arch=x64`, khác với `node_modules`
+Linux/macOS bạn đang dùng để phát triển) và chỉ mang theo đúng ba gói npm mà
+`main.js`/`lib/` thực sự `require()` lúc chạy (`electron`, `isomorphic-git`,
+`exceljs`) — không kèm `esbuild` hay các gói dev khác.
 
 ## Kiểm thử
 

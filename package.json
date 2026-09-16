@@ -21,42 +21,11 @@
     "seed-history": "node scripts/seed-history.js",
     "perf": "SRS_TEST=1 electron test/perf.js",
     "predist:win": "npm run build && npm run version:write",
-    "dist:win": "electron-builder --win"
+    "dist:win": "node scripts/build-portable-win.js"
   },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^26.15.3",
     "esbuild": "^0.28.2"
-  },
-  "build": {
-    "appId": "com.aria.app",
-    "productName": "ARIA",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "package.json",
-      "lib/**/*",
-      "renderer/**/*",
-      "resources/**/*",
-      "!renderer/vendor/eea-editor/**/*.md"
-    ],
-    "asarUnpack": [
-      "resources/**"
-    ],
-    "extraResources": [
-      {
-        "from": "projects/VF9-SRS",
-        "to": "sample-projects/VF9-SRS"
-      }
-    ],
-    "win": {
-      "target": [
-        "portable"
-      ]
-    }
   },
   "dependencies": {
     "@tiptap/core": "^3.31.3",
