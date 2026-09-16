@@ -271,8 +271,15 @@ async function main() {
     return { nums, first };
   `);
   check('chuyển item lên đầu thì thứ tự DOM đổi', renum.first === codes.dvp, renum.first);
-  check('đánh số lại đúng dãy liên tiếp',
-    renum.nums.join(',') === renum.nums.map((_, i) => String(i + 1)).join(','), renum.nums.join(','));
+  // Not necessarily 1,2,3,... — a lone Interface/Component/Calibration item
+  // still collapses into a one-row table (no heading number of its own, same
+  // as template.tex's \stepcounter{srsdepth} skipping table members), so the
+  // sequence legitimately has gaps around one. What must still hold after a
+  // reorder is that what IS shown is freshly recomputed and strictly
+  // increasing, not stale numbers left over from before the move.
+  const asNums = renum.nums.map(Number);
+  check('đánh số lại tăng dần, không còn số cũ sau khi đổi vị trí',
+    asNums.every((n, i) => i === 0 || n > asNums[i - 1]), renum.nums.join(','));
 
   // -------------------------------------------------------------------
   group('Bảng interface');
@@ -284,12 +291,21 @@ async function main() {
   `);
   check('sửa một hàng interface thì bảng cập nhật', row && row.includes('42'), row);
 
+  // .iface-table is a class SHARED by all three grouped-table renderers
+  // (Interface/Component/Calibration render visually the same table shape),
+  // so a bare document-wide querySelector('.iface-table') only ever
+  // happened to land on the interface table by DOM-order coincidence — true
+  // as long as no OTHER top-level table sat earlier in the document. A lone
+  // Calibration item is now also a (one-row) table (see the fix above), and
+  // it is seeded before the interface chapter, so it must be scoped to the
+  // chapter that actually holds the interface signals.
   await patch(`byCode('${codes.iface[0]}').title = 'Sig_A_renamed';`);
-  check('đổi tên tín hiệu hiện ra trong bảng',
-    (await run(`return document.querySelector('.iface-table').textContent;`)).includes('Sig_A_renamed'));
+  const ifaceTableText = () => run(`
+    return document.getElementById('item-${codes.iface[0]}').closest('.iface-table').textContent;
+  `);
+  check('đổi tên tín hiệu hiện ra trong bảng', (await ifaceTableText()).includes('Sig_A_renamed'));
 
-  check('cột lớp vật lý hiện trong bảng interface',
-    (await run(`return document.querySelector('.iface-table').textContent;`)).includes('CAN'));
+  check('cột lớp vật lý hiện trong bảng interface', (await ifaceTableText()).includes('CAN'));
 
   const senderCell = await textOf(codes.iface[0]);
   check('ECU gửi là rich text: @ mention component giải ra tên, không phải mã',

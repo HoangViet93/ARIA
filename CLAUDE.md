@@ -57,6 +57,7 @@ Ngữ pháp đầy đủ ở `docs/DESIGN.md` §3. Tóm tắt:
 | Tham số thứ 2 của `\uiwarnrich` | rich | LaTeX subset |
 | Tham số của `\itemdesc` | rich | LaTeX subset |
 | Tham số thứ 2 của `\itemrich` | rich | LaTeX subset |
+| Cả hai tham số của `\teststep` (action, expected) | rich | LaTeX subset |
 
 **Escape trong trường plain:**
 `&` → `\&` · `%` → `\%` · `$` → `\$` · `#` → `\#` · `_` → `\_` ·
@@ -116,7 +117,7 @@ Khai báo gốc ở `lib/itemTypes.js` — đọc file đó nếu cần chắc c
 | `information` | không có |
 | `function` | `deployMaster`, `deploySlave`, `featureCode` (đều plain), `uiImpact` + UI/UX |
 | `design` | `functionCode` (ref → `function`), `asil` (QM / ASIL A–D), `verification` (text tự do), `enterCondition`, `exitCondition` (rich), `uiImpact` + UI/UX |
-| `dvp` | `verifies` (refs → nhiều `design`/`function`), `testLevel` (Unit/SIL/MIL/HIL/Bench/Vehicle), `preCondition`, `postCondition`, `acceptance` (rich), và **`item.steps`** — mảng `{action, expected}` nằm NGOÀI `fields`, text **plain có escape** |
+| `dvp` | `verifies` (refs → nhiều `design`/`function`), `testLevel` (Unit/SIL/MIL/HIL/Bench/Vehicle), `preCondition`, `postCondition`, `acceptance` (rich), và **`item.steps`** — mảng `{action, expected}` nằm NGOÀI `fields`, cả hai đều là **rich** (subset LaTeX y hệt `itemrich`/`itemdesc`, xem `\teststep` trong template.tex) |
 | `calibration` | `symbol` (bắt buộc, dạng định danh, duy nhất), `values`, `unit`, `defaultValue`, `minValue`, `maxValue` |
 | `interface` | `values`, `physical` (CAN/LIN/Ethernet/Hardwired), `unit`, `defaultValue`, `senderEcu`, `receiverEcu`. Hai trường ECU là **rich** (không phải plain) để có thể `@` mention một Component — xem lưu ý riêng bên dưới. Dãy interface liền nhau được gói trong `\begin{ifacegroup}` để render thành bảng |
 | `component` | không có trường riêng — chỉ mã, tiêu đề, mô tả. Dãy component liền nhau được gói trong `\begin{compgroup}` để render thành bảng — cùng cơ chế với interface, xem `groupRuns()`/`typeDef(type).tableEnv` |

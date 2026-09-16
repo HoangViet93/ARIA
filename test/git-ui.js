@@ -231,6 +231,24 @@ async function main() {
   check('diff hiện side-by-side (2 cột Trước/Sau)', (await run(`return document.querySelectorAll('.fpair-sbs .fside-col').length`)) >= 2);
   await shot('git-05-compare-detail');
 
+  // A field embedding an image/EEA diagram/table must render as that
+  // (an <img>, the diagram's PNG, an actual <table>) in the compare view —
+  // not as a word-level diff of the raw \includegraphics{...} macro call,
+  // which used to be exactly what happened (docDiff word-diffs the LaTeX
+  // source verbatim, with no notion of what the macro means).
+  const imgItemCode = await run(`
+    const it = window.__srs.state.doc.items[1].children[0];
+    it.desc += '\\n\\n\\\\includegraphics[width=0.5\\\\linewidth]{images/does-not-exist.png}';
+    await window.__srs.History.openCompare(${JSON.stringify(firstOid)}, 'WORKING');
+    return it.code;
+  `);
+  await sleep(700);
+  await run(`document.querySelector('.crow[data-code="${imgItemCode}"]').click();`);
+  await sleep(400);
+  check('trường chèn ảnh hiện ra dạng ảnh trong so sánh, không phải chữ \\\\includegraphics thô',
+    await run(`return !!document.querySelector('#cmpDetail .fside-body img');`),
+    await run(`return document.getElementById('cmpDetail').textContent.slice(0, 200);`));
+
   await run(`[...document.querySelectorAll('[data-cmpmode]')].find(b=>b.dataset.cmpmode==='raw').click();`);
   await sleep(700);
   check('xem được LaTeX thô', await run(`return !document.getElementById('cmpRaw').hidden`));

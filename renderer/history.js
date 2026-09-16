@@ -10,6 +10,7 @@
  */
 
 import { diffDocs, summaryLine, unifiedDiff, typeDef } from './dist/shared.js';
+import { latexToHtml } from './dist/richtext.js';
 
 let ctx = null;
 
@@ -718,6 +719,18 @@ function focusChange(code) {
   if (row) row.scrollIntoView({ block: 'center' });
 }
 
+// A word-level diff over the raw LaTeX source is fine for prose — but when
+// the field embeds an EEA diagram, a PlantUML/attached image, or a table,
+// that source is a data.tex macro call (an \eeadiagram's first argument is
+// literally the diagram's JSON) or a block of table markup, and a word diff
+// of it reads as noise (raw JSON, `\hline`/`&` tokens) instead of showing
+// the reader what actually changed. Render those fields as the same HTML the
+// document view uses instead of a word diff.
+// \includegraphics (unlike \eeadiagram/\plantuml) takes an OPTIONAL
+// [width=...] argument before its brace group, so this can't require the
+// brace immediately after the macro name the way the other two safely can.
+const RICH_EMBED_RE = /\\(?:eeadiagram|plantuml)\{|\\includegraphics\b|\\begin\{tabularx\}/;
+
 /**
  * Every field diff renders as two columns (Before/After) like a git split-view
  * diff — just scoped to one item's one field instead of a whole-file patch,
@@ -730,7 +743,10 @@ function fieldBlock(f) {
   const box = ctx.h('div', { class: 'fblock' }, ctx.h('div', { class: 'flabel2', text: f.label }));
   const left = ctx.h('div', { class: 'fside-body' });
   const right = ctx.h('div', { class: 'fside-body' });
-  if (f.words) {
+  if (f.words && RICH_EMBED_RE.test(f.from + f.to)) {
+    left.innerHTML = f.from ? latexToHtml(f.from, ctx.state.projectDir, {}) : '(empty)';
+    right.innerHTML = f.to ? latexToHtml(f.to, ctx.state.projectDir, {}) : '(empty)';
+  } else if (f.words) {
     f.words.forEach((p) => {
       if (p.op !== '+') left.append(ctx.h('span', { class: p.op === '-' ? 'w-del' : 'w-eq', text: p.text }));
       if (p.op !== '-') right.append(ctx.h('span', { class: p.op === '+' ? 'w-add' : 'w-eq', text: p.text }));

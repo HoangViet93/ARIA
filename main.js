@@ -28,6 +28,16 @@ const RESOURCES_DIR = app.isPackaged
 const TEMPLATE_SRC = path.join(RESOURCES_DIR, 'template.tex');
 const FONTS_DIR = path.join(RESOURCES_DIR, 'fonts');
 
+// The flagship VF9-SRS sample ships as an electron-builder extraResource, NOT
+// through RESOURCES_DIR/asarUnpack like everything else above: it needs to be
+// COPIED (not just read) to a writable location before it's usable, and
+// extraResources already places it as a plain directory straight under
+// resourcesPath for exactly that reason. In a dev checkout there is nothing
+// to copy from — projects/VF9-SRS in the repo itself already IS writable.
+const SAMPLE_DIR = app.isPackaged
+  ? path.join(process.resourcesPath, 'sample-projects', 'VF9-SRS')
+  : path.join(__dirname, 'projects', 'VF9-SRS');
+
 /**
  * A packaged build may ship a trimmed, self-contained TeX Live under
  * resources/texlive-<platform>/ (see docs/PORTABLE-TEXLIVE.md) so PDF export
@@ -225,6 +235,27 @@ ipcMain.handle('workspace:open', async (_e, dir) => {
   throw new Error('This folder has no data.tex and no workspace.json — not a valid project or workspace.');
 });
 
+/**
+ * "Open sample project" — the flagship VF9-SRS workspace, bundled read-only
+ * inside the app so a fresh install/copy has something to look at without
+ * needing to create a project first. Copied once into a writable location on
+ * first use (SAMPLE_DIR itself may be read-only — Program Files, a mounted
+ * volume); subsequent clicks just reopen that same writable copy so any
+ * edits/commits the user made to it persist instead of resetting every time.
+ */
+ipcMain.handle('workspace:openSample', async () => {
+  if (!fs.existsSync(SAMPLE_DIR)) {
+    throw new Error('No sample project is bundled with this build.');
+  }
+  if (!app.isPackaged) return SAMPLE_DIR; // dev checkout: already writable in place
+  const dest = path.join(app.getPath('documents'), 'ARIA Sample - VF9-SRS');
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.cpSync(SAMPLE_DIR, dest, { recursive: true });
+  }
+  return dest;
+});
+
 ipcMain.handle('workspace:newDialog', async (_e, name) => {
   const r = await dialog.showSaveDialog(mainWindow, {
     title: 'Create a new workspace — choose a folder (e.g. VF9-SRS)',
@@ -397,6 +428,26 @@ ipcMain.handle('project:attachImage', async (_e, projectDir) => {
     n++;
   }
   fs.copyFileSync(src, path.join(imagesDir(projectDir), dest));
+  return path.join('images', dest).split(path.sep).join('/');
+});
+
+/**
+ * Same destination as project:attachImage's file-picker path, but for image
+ * bytes that never touched disk — a screenshot pasted straight from the
+ * clipboard (Snipping Tool, etc). Content-hashed filename, same as the
+ * PlantUML renderer below: pasting the same image twice reuses one file
+ * instead of piling up paste-1.png, paste-2.png, ... forever.
+ */
+ipcMain.handle('project:attachImageData', async (_e, { projectDir, dataUrl }) => {
+  const m = /^data:image\/(png|jpeg|jpg|gif|webp);base64,(.+)$/.exec(dataUrl || '');
+  if (!m) throw new Error('Unrecognized pasted image format.');
+  const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+  const buf = Buffer.from(m[2], 'base64');
+  const hash = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 12);
+  const dest = `paste-${hash}.${ext}`;
+  fs.mkdirSync(imagesDir(projectDir), { recursive: true });
+  const full = path.join(imagesDir(projectDir), dest);
+  if (!fs.existsSync(full)) fs.writeFileSync(full, buf);
   return path.join('images', dest).split(path.sep).join('/');
 });
 

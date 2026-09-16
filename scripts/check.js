@@ -226,10 +226,10 @@ function checkText(raw, label) {
     } else if (macro === 'itemfield') {
       spans.push({ kind: 'plain', text: args[1], start: valueStart, label: `trường ${args[0]}` });
     } else if (macro === 'teststep') {
-      // Step text is plain, not the rich subset — see lib/itemModel.js.
+      // Step text is rich (the itemrich/itemdesc subset) — see lib/itemModel.js.
       const actionStart = raw.lastIndexOf('{' + args[0], valueStart) + 1;
-      spans.push({ kind: 'plain', text: args[0], start: actionStart, label: 'hành động của bước' });
-      spans.push({ kind: 'plain', text: args[1], start: valueStart, label: 'kết quả mong đợi' });
+      spans.push({ kind: 'rich', text: args[0], start: actionStart, label: 'hành động của bước' });
+      spans.push({ kind: 'rich', text: args[1], start: valueStart, label: 'kết quả mong đợi' });
     } else if (macro === 'uisetting') {
       // {name}{values}{default}{scope} — all plain.
       ['tên setting', 'giá trị setting', 'mặc định của setting', 'nơi lưu setting']

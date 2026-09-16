@@ -704,39 +704,31 @@ function renderUiRead(item) {
   }
 
   if (warnings.length) {
-    const cards = h('div', { class: 'warn-list' });
+    // A real table, matching the PDF export's warning table (Warning | Turn-on
+    // delay | Turn-off delay | Shown when | Cleared when) — this used to be a
+    // stack of cards on screen while the PDF was a table, so the two disagreed.
+    const table = h('table', { class: 'set-table warn-table' });
+    table.append(h('thead', {}, h('tr', {},
+      h('th', { text: 'Warning' }),
+      h('th', { text: 'Turn-on delay' }),
+      h('th', { text: 'Turn-off delay' }),
+      h('th', { text: 'Shown when' }),
+      h('th', { text: 'Cleared when' })
+    )));
+    const tb = h('tbody', {});
     warnings.forEach((w) => {
-      const card = h('div', { class: 'warn-card' },
-        h('div', { class: 'warn-head' },
-          h('span', { class: 'warn-id', text: w.id || '(no Warning ID)' })
-        )
-      );
-      // Turn-on/off delay (mature/demature time) get their own labeled rows, same
-      // layout as the conditions below — a muted 11px corner label was too
-      // easy to miss.
-      const enterDelay = String(w.enterDelay || '').trim();
-      const exitDelay = String(w.exitDelay || '').trim();
-      if (enterDelay || exitDelay) {
-        card.append(h('div', { class: 'warn-cond' },
-          h('div', { class: 'warn-k', text: 'Turn-on delay' }),
-          h('div', { class: 'warn-v', text: enterDelay || '—' })
-        ));
-        card.append(h('div', { class: 'warn-cond' },
-          h('div', { class: 'warn-k', text: 'Turn-off delay' }),
-          h('div', { class: 'warn-v', text: exitDelay || '—' })
-        ));
-      }
-      [['enterCondition', 'Shown when'], ['exitCondition', 'Cleared when']].forEach(([key, label]) => {
-        const v = String(w[key] || '').trim();
-        if (!v) return;
-        card.append(h('div', { class: 'warn-cond' },
-          h('div', { class: 'warn-k', text: label }),
-          h('div', { class: 'warn-v', html: latexToHtml(v, state.projectDir, richOpts()) })
-        ));
-      });
-      cards.append(card);
+      const enterCond = String(w.enterCondition || '').trim();
+      const exitCond = String(w.exitCondition || '').trim();
+      tb.append(h('tr', {},
+        h('td', {}, h('span', { class: 'warn-id', text: w.id || '(no Warning ID)' })),
+        h('td', { class: 'set-scope', text: String(w.enterDelay || '').trim() || '—' }),
+        h('td', { class: 'set-scope', text: String(w.exitDelay || '').trim() || '—' }),
+        h('td', { class: 'warn-v', html: enterCond ? latexToHtml(enterCond, state.projectDir, richOpts()) : '—' }),
+        h('td', { class: 'warn-v', html: exitCond ? latexToHtml(exitCond, state.projectDir, richOpts()) : '—' })
+      ));
     });
-    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'Warnings' }), cards));
+    table.append(tb);
+    out.push(h('div', { class: 'rich-sub' }, h('div', { class: 'k', text: 'Warnings' }), table));
   }
   return out;
 }
@@ -783,8 +775,8 @@ function renderStepsRead(item) {
   steps.forEach((st, i) => {
     tb.append(h('tr', {},
       h('td', { class: 'st-n', text: String(i + 1) }),
-      h('td', { text: st.action }),
-      h('td', { text: st.expected })
+      h('td', { html: latexToHtml(st.action, state.projectDir, richOpts()) }),
+      h('td', { html: latexToHtml(st.expected, state.projectDir, richOpts()) })
     ));
   });
   table.append(tb);
@@ -1151,7 +1143,10 @@ function itemSig(item, num, depth) {
     else if (f.kind === 'rich') texts.push(v);
   });
 
-  (item.steps || []).forEach((st) => { sig += `\u0001${st.action}\u0002${st.expected}`; });
+  (item.steps || []).forEach((st) => {
+    sig += `\u0001${st.action}\u0002${st.expected}`;
+    texts.push(st.action, st.expected);
+  });
   (item.settings || []).forEach((st) => {
     sig += `\u0001s:${st.name}\u0002${st.values}\u0002${st.defaultValue}\u0002${st.scope}`;
   });
@@ -1225,7 +1220,7 @@ function renderDocument() {
     const TABLE_RENDERERS = { interface: renderInterfaceTable, component: renderComponentTable, calibration: renderCalibrationTable };
     groupRuns(items).forEach((run) => {
       const editingInRun = run.items.some((it) => state.editing === it.code);
-      if (run.table && run.items.length > 1 && !editingInRun) {
+      if (run.table && !editingInRun) {
         const key = run.items[0].code;
         const sig = run.items.map((it, k) => itemSig(it, [...prefix, i + k + 1], depth)).join('\u0002');
         const hit = tableCache.get(key);
@@ -1385,6 +1380,7 @@ function richOptions(getter, setter, placeholder) {
     placeholder,
     onChangeLatex: (latex) => { setter(latex); },
     attachImage: () => window.api.attachImage(state.projectDir),
+    attachImageData: (dataUrl) => window.api.attachImageData(state.projectDir, dataUrl),
     listItems: () =>
       flatten(state.doc)
         .map((n) => n.item)
@@ -1793,18 +1789,20 @@ function buildFieldControl(f) {
       )));
       const tb = h('tbody', {});
       draft.steps.forEach((st, i) => {
+        const actionHolder = h('div', {});
+        const expectedHolder = h('div', {});
+        queueMicrotask(mountRich(actionHolder, {
+          ...richOptions(() => st.action || '', (v) => { st.action = v; }, 'What the tester does'),
+          compact: true,
+        }));
+        queueMicrotask(mountRich(expectedHolder, {
+          ...richOptions(() => st.expected || '', (v) => { st.expected = v; }, 'How the system must respond'),
+          compact: true,
+        }));
         tb.append(h('tr', {},
           h('td', { class: 'st-n', text: String(i + 1) }),
-          h('td', {}, h('input', {
-            class: 'input', type: 'text', value: st.action,
-            placeholder: 'What the tester does',
-            oninput: (e) => { st.action = e.target.value; },
-          })),
-          h('td', {}, h('input', {
-            class: 'input', type: 'text', value: st.expected,
-            placeholder: 'How the system must respond',
-            oninput: (e) => { st.expected = e.target.value; },
-          })),
+          h('td', {}, actionHolder),
+          h('td', {}, expectedHolder),
           h('td', { class: 'st-x' },
             h('button', {
               class: 'row-del', text: '✕', title: 'Remove step',
@@ -3406,6 +3404,15 @@ function renderGlobalFilter() {
 el('btnOpen').onclick = el('btnOpen2').onclick = async () => {
   const dir = await window.api.openProjectDialog();
   if (dir) openPath(dir);
+};
+
+el('btnOpenSample').onclick = async () => {
+  try {
+    const dir = await window.api.workspace.openSample();
+    await openPath(dir);
+  } catch (e) {
+    window.api.showError({ title: 'Could not open sample project', message: e.message });
+  }
 };
 
 el('btnAddBook').onclick = () => { closeBookSwitcher(); addBookFlow(); };

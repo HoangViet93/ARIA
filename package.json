@@ -46,6 +46,12 @@
     "asarUnpack": [
       "resources/**"
     ],
+    "extraResources": [
+      {
+        "from": "projects/VF9-SRS",
+        "to": "sample-projects/VF9-SRS"
+      }
+    ],
     "win": {
       "target": [
         "portable"

@@ -43,10 +43,14 @@ function dvpDoc() {
   dvp.fields.testLevel = 'HIL';
   dvp.fields.preCondition = 'Ignition ON, tốc độ $= 0$.';
   dvp.fields.acceptance = 'Đạt 10/10 lần lặp.';
+  // Steps are rich text (see lib/itemModel.js): a literal & or % must already
+  // be escaped here, the same as any other rich field fixture — the model
+  // does not escape/unescape it on the way in or out any more than it does
+  // for desc/itemrich fields.
   dvp.steps = [
     { action: 'Kéo công tắc EPB và giữ 100 ms', expected: 'Mô-tơ quay trong ≤ 200 ms' },
     { action: 'Chờ chu trình kẹp hoàn tất', expected: 'Cả hai caliper báo LOCKED' },
-    { action: 'Đo lực kẹp & so với chuẩn', expected: 'F ≥ 100% mục tiêu' },
+    { action: 'Đo lực kẹp \\& so với chuẩn', expected: 'F ≥ 100\\% mục tiêu' },
   ];
 
   doc.items.push(fn, dg, dvp);
@@ -87,21 +91,28 @@ test('an item with no steps emits no teststeps block', () => {
   assert.deepStrictEqual(clone(doc), doc);
 });
 
-test('step text is escaped on the way out and restored on the way in', () => {
+test('step text is rich — written and read back byte for byte, not escaped/unescaped', () => {
   const { doc } = dvpDoc();
   const tex = M.generateDataTex(doc);
+  // The fixture already has \& and \% pre-escaped, same as any other rich
+  // field — the model passes it through unchanged, it does not escape it.
   assert.ok(tex.includes('\\teststep{Đo lực kẹp \\& so với chuẩn}{F ≥ 100\\% mục tiêu}'), tex);
   const back = clone(doc);
-  assert.strictEqual(back.items[2].steps[2].action, 'Đo lực kẹp & so với chuẩn');
-  assert.strictEqual(back.items[2].steps[2].expected, 'F ≥ 100% mục tiêu');
+  assert.strictEqual(back.items[2].steps[2].action, 'Đo lực kẹp \\& so với chuẩn');
+  assert.strictEqual(back.items[2].steps[2].expected, 'F ≥ 100\\% mục tiêu');
 });
 
-test('a step full of LaTeX specials still round-trips', () => {
+test('a step using the rich subset (bold, math, an @ mention) round-trips', () => {
   const doc = M.emptyDoc('X');
+  const other = M.newItem(doc, 'design');
+  other.title = 'Referenced';
   const v = M.newItem(doc, 'dvp');
   v.title = 'T';
-  v.steps = [{ action: 'Đặt 100% & {x} $5 _a #1 \\b', expected: '~ok^' }];
-  doc.items.push(v);
+  v.steps = [{
+    action: `Set 100\\% \\textbf{bold} \\{x\\} $5$ F\\_a \\#1, see \\srsref{${other.code}}`,
+    expected: '\\textasciitilde{}ok\\textasciicircum{}',
+  }];
+  doc.items.push(other, v);
   assert.deepStrictEqual(clone(doc), doc);
 });
 
@@ -158,11 +169,13 @@ test('consecutive interface siblings are wrapped in one group', () => {
   assert.deepStrictEqual(clone(doc), doc, 'wrapper chỉ để trình bày, không vào model');
 });
 
-test('a lone interface is not wrapped', () => {
+test('a lone interface still renders as a (one-row) table', () => {
   const doc = M.emptyDoc('EPB');
   const a = M.newItem(doc, 'interface'); a.title = 'Một mình';
   doc.items.push(a);
-  assert.ok(!M.generateDataTex(doc).includes('ifacegroup'));
+  const tex = M.generateDataTex(doc);
+  assert.ok(tex.includes('\\begin{ifacegroup}'), 'chỉ 1 item vẫn phải vào bảng, không rơi về heading rời');
+  assert.strictEqual((tex.match(/\\begin\{ifacegroup\}/g) || []).length, 1);
   assert.deepStrictEqual(clone(doc), doc);
 });
 
@@ -188,7 +201,13 @@ test('an interface with children is rendered normally, not as a table row', () =
   const b = M.newItem(doc, 'interface'); b.title = 'Bình thường';
   doc.items.push(a, b);
 
-  assert.ok(!M.generateDataTex(doc).includes('ifacegroup'), 'không gộp khi có item con');
+  const tex = M.generateDataTex(doc);
+  // `a` has a child, so it can never join a table row — but `b` right after
+  // it has no siblings of its own type to group with, and (since a lone
+  // table-eligible item is still a table now, one row) still becomes its
+  // OWN one-row table rather than falling back to a heading.
+  assert.ok(tex.indexOf('Có con') < tex.indexOf('\\begin{ifacegroup}'), '"Có con" phải in ra TRƯỚC bảng, không nằm trong đó');
+  assert.strictEqual((tex.match(/\\begin\{ifacegroup\}/g) || []).length, 1, '"Bình thường" vẫn phải thành bảng 1 hàng');
   assert.deepStrictEqual(clone(doc), doc);
 });
 

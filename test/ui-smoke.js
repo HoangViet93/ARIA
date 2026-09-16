@@ -119,6 +119,16 @@ async function main() {
     await run('return /^ARIA v\\d+\\.\\d+\\.\\d+ · \\S+$/.test(document.getElementById("appVersion").textContent);'),
     await run('return document.getElementById("appVersion").textContent;'));
 
+  // "Open sample project" on a dev checkout points straight at the real
+  // projects/VF9-SRS in the repo (no bundled copy to make a writable copy
+  // from outside a packaged build) — clicking it should open it like any
+  // other workspace.
+  await run('document.getElementById("btnOpenSample").click();');
+  await sleep(600);
+  check('nút "Open sample project" mở được VF9-SRS',
+    await run('return document.getElementById("emptyState").offsetParent === null && window.__srs.state.workspaceName === "VF9-SRS";'),
+    await run('return JSON.stringify({ empty: document.getElementById("emptyState").hidden, ws: window.__srs.state.workspaceName });'));
+
   // ---------------------------------------------------------------------
   group('Mở project');
   await run(`await window.__srs.openProject(${JSON.stringify(project)});`);

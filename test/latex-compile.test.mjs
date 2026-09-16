@@ -209,10 +209,13 @@ test('DVP, calibration and interface items compile', { skip: SKIP && 'xelatex no
   dvp.fields.testLevel = 'HIL';
   dvp.fields.preCondition = 'Ignition ON, tốc độ $= 0$.';
   dvp.fields.acceptance = 'Đạt 10/10 lần lặp.';
+  // Steps are rich text now (see lib/itemModel.js) — a literal & or % must be
+  // pre-escaped by whoever authors the LaTeX source, same as any other rich
+  // field fixture in this file (e.g. "Powertrain_Torque \\& hướng" below).
   dvp.steps = [
-    { action: 'Kéo công tắc & giữ 100 ms', expected: 'Mô-tơ quay trong ≤ 200 ms' },
+    { action: 'Kéo công tắc \\& giữ 100 ms', expected: 'Mô-tơ quay trong ≤ 200 ms' },
     { action: 'Chờ chu trình hoàn tất', expected: 'Cả hai caliper báo LOCKED' },
-    { action: 'Đo lực kẹp', expected: 'F ≥ 100% mục tiêu' },
+    { action: 'Đo lực kẹp', expected: 'F ≥ 100\\% mục tiêu' },
   ];
 
   const chapter = M.newItem(doc, 'information');

@@ -1229,6 +1229,7 @@ export function mountRichField(container, opts = {}) {
     projectDir = null,
     onChangeLatex = () => {},
     attachImage = null,
+    attachImageData = null,
     listItems = () => [],
     listSymbols = () => [],
     resolveSym = null,
@@ -1305,6 +1306,31 @@ export function mountRichField(container, opts = {}) {
           return true;
         }
         return false;
+      },
+      // A screenshot tool (Snipping Tool, etc) puts the image straight on the
+      // clipboard with no filename — clipboardData exposes it as a File with
+      // no filesystem path, so this can't reuse attachImage's open-a-dialog
+      // flow. Read it as a data URL and hand the bytes to the main process
+      // directly (project:attachImageData), same destination convention
+      // (images/) as a picked file.
+      handlePaste: (view, event) => {
+        if (!attachImageData) return false;
+        const file = [...(event.clipboardData?.items || [])]
+          .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+          .map((it) => it.getAsFile())[0];
+        if (!file) return false;
+        event.preventDefault();
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const relPath = await attachImageData(reader.result);
+          if (!relPath) return;
+          editor.chain().focus().insertContent({
+            type: 'image',
+            attrs: { src: `file://${projectDir}/${relPath}`, relPath, width: 0.55 },
+          }).run();
+        };
+        reader.readAsDataURL(file);
+        return true;
       },
     },
     onUpdate: ({ editor: ed }) => {

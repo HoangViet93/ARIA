@@ -340,6 +340,33 @@ async function main() {
     await run(`return !!document.querySelector('.item.editing .rt-content img')`));
   fakeImage = null;
 
+  // A screenshot tool puts the image bytes straight on the clipboard with no
+  // filename, so this exercises the OTHER path (project:attachImageData) —
+  // dispatching a real paste event with clipboardData set is the only way to
+  // reach handlePaste from outside the browser's own paste gesture.
+  group('Paste image from clipboard');
+  const srcImg = path.join(ROOT, 'projects', 'EPB-Park-Brake', 'images', 'epb-architecture.png');
+  await freshEdit('BCM-0002');
+  await run(`window.__srs.state.richHandles[0].editor.commands.focus('end');`);
+  await run(`
+    const resp = await fetch('file://${srcImg}');
+    const blob = await resp.blob();
+    const file = new File([blob], 'clipboard.png', { type: 'image/png' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const el = document.querySelector('.item.editing .rt-content');
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  `);
+  await sleep(800);
+  got = await desc();
+  check('ảnh dán từ clipboard vào đúng LaTeX (paste-<hash>.png)',
+    /\\includegraphics\[width=0\.55\\linewidth\]\{images\/paste-[0-9a-f]{12}\.png\}/.test(got), got);
+  const pasteMatch = /images\/(paste-[0-9a-f]{12}\.png)/.exec(got);
+  check('file ảnh dán thực sự nằm trên đĩa',
+    !!pasteMatch && fs.existsSync(path.join(project, 'images', pasteMatch[1])));
+  check('ảnh dán hiện trong editor',
+    await run(`return !!document.querySelector('.item.editing .rt-content img')`));
+
   // ----------------------------------------------------------- item ref
   group('Link nội bộ tới item');
   await freshEdit('BCM-0001');
