@@ -1794,10 +1794,12 @@ function buildFieldControl(f) {
         queueMicrotask(mountRich(actionHolder, {
           ...richOptions(() => st.action || '', (v) => { st.action = v; }, 'What the tester does'),
           compact: true,
+          minimalToolbar: true,
         }));
         queueMicrotask(mountRich(expectedHolder, {
           ...richOptions(() => st.expected || '', (v) => { st.expected = v; }, 'How the system must respond'),
           compact: true,
+          minimalToolbar: true,
         }));
         tb.append(h('tr', {},
           h('td', { class: 'st-n', text: String(i + 1) }),

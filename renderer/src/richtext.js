@@ -1238,6 +1238,12 @@ export function mountRichField(container, opts = {}) {
     onEditEea = null,
     placeholder = '',
     compact = false,
+    // A DVP test step is one line of procedure text in a table cell — the
+    // full 18-button toolbar (tables, diagrams, highlight colors, lists...)
+    // is the exact "does not warrant a rich editor apiece" concern this field
+    // used to be plain specifically to avoid. Trims the toolbar down to what
+    // a one-line step actually uses: inline formatting, a link/mention, math.
+    minimalToolbar = false,
   } = opts;
 
   container.innerHTML = '';
@@ -1472,60 +1478,65 @@ export function mountRichField(container, opts = {}) {
   push({ html: icon(ICONS.bold, 'Bold'), title: 'Bold (Ctrl+B)', onClick: () => chain().toggleBold().run(), isActive: () => editor.isActive('bold') });
   push({ html: icon(ICONS.italic, 'Italic'), title: 'Italic (Ctrl+I)', onClick: () => chain().toggleItalic().run(), isActive: () => editor.isActive('italic') });
   push({ html: icon(ICONS.underline, 'Underline'), title: 'Underline (Ctrl+U)', onClick: () => chain().toggleUnderline().run(), isActive: () => editor.isActive('underline') });
-  push({ html: icon(ICONS.strike, 'Strikethrough'), title: 'Strikethrough', onClick: () => chain().toggleStrike().run(), isActive: () => editor.isActive('strike') });
+  if (!minimalToolbar) {
+    push({ html: icon(ICONS.strike, 'Strikethrough'), title: 'Strikethrough', onClick: () => chain().toggleStrike().run(), isActive: () => editor.isActive('strike') });
+  }
   push({ html: icon(ICONS.code, 'Code'), title: 'Inline code', onClick: () => chain().toggleCode().run(), isActive: () => editor.isActive('code') });
 
-  sep();
-  HIGHLIGHT_COLORS.forEach((color) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'rt-swatch';
-    b.style.background = color;
-    b.title = 'Highlight';
-    b.onmousedown = (e) => e.preventDefault();
-    b.onclick = () => chain().toggleHighlight({ color }).run();
-    b._isActive = () => editor.isActive('highlight', { color });
-    buttons.push(b);
-    toolbar.appendChild(b);
-  });
+  if (!minimalToolbar) {
+    sep();
+    HIGHLIGHT_COLORS.forEach((color) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rt-swatch';
+      b.style.background = color;
+      b.title = 'Highlight';
+      b.onmousedown = (e) => e.preventDefault();
+      b.onclick = () => chain().toggleHighlight({ color }).run();
+      b._isActive = () => editor.isActive('highlight', { color });
+      buttons.push(b);
+      toolbar.appendChild(b);
+    });
+
+    sep();
+    push({ html: icon(ICONS.bullet, 'Bullet list'), title: 'Bullet list', onClick: () => chain().toggleBulletList().run(), isActive: () => editor.isActive('bulletList') });
+    push({ html: icon(ICONS.ordered, 'Numbered list'), title: 'Numbered list', onClick: () => chain().toggleOrderedList().run(), isActive: () => editor.isActive('orderedList') });
+    push({ html: icon(ICONS.quote, 'Quote'), title: 'Quote', onClick: () => chain().toggleBlockquote().run(), isActive: () => editor.isActive('blockquote') });
+
+    sep();
+    const tableBtn = push({
+      html: icon(ICONS.table, 'Table'),
+      title: 'Insert table',
+      onClick: () => {
+        if (popup) return closePopup();
+        openPopup(
+          tableBtn,
+          buildGridPicker((rows, cols) => {
+            closePopup();
+            chain().insertTable({ rows, cols, withHeaderRow: true }).run();
+          })
+        );
+      },
+    });
+
+    const imgBtn = push({
+      html: icon(ICONS.image, 'Image'),
+      title: 'Insert image',
+      onClick: async () => {
+        if (!attachImage) return;
+        const relPath = await attachImage();
+        if (!relPath) return;
+        chain()
+          .insertContent({
+            type: 'image',
+            attrs: { src: `file://${projectDir}/${relPath}`, relPath, width: 0.55 },
+          })
+          .run();
+      },
+    });
+  }
 
   sep();
-  push({ html: icon(ICONS.bullet, 'Bullet list'), title: 'Bullet list', onClick: () => chain().toggleBulletList().run(), isActive: () => editor.isActive('bulletList') });
-  push({ html: icon(ICONS.ordered, 'Numbered list'), title: 'Numbered list', onClick: () => chain().toggleOrderedList().run(), isActive: () => editor.isActive('orderedList') });
-  push({ html: icon(ICONS.quote, 'Quote'), title: 'Quote', onClick: () => chain().toggleBlockquote().run(), isActive: () => editor.isActive('blockquote') });
-
-  sep();
-  const tableBtn = push({
-    html: icon(ICONS.table, 'Table'),
-    title: 'Insert table',
-    onClick: () => {
-      if (popup) return closePopup();
-      openPopup(
-        tableBtn,
-        buildGridPicker((rows, cols) => {
-          closePopup();
-          chain().insertTable({ rows, cols, withHeaderRow: true }).run();
-        })
-      );
-    },
-  });
-
-  const imgBtn = push({
-    html: icon(ICONS.image, 'Image'),
-    title: 'Insert image',
-    onClick: async () => {
-      if (!attachImage) return;
-      const relPath = await attachImage();
-      if (!relPath) return;
-      chain()
-        .insertContent({
-          type: 'image',
-          attrs: { src: `file://${projectDir}/${relPath}`, relPath, width: 0.55 },
-        })
-        .run();
-    },
-  });
-
   push({
     html: icon(ICONS.link, 'Link'),
     title: 'Insert external link',
@@ -1589,37 +1600,39 @@ export function mountRichField(container, opts = {}) {
     },
   });
 
-  push({
-    html: icon(ICONS.uml, 'Diagram'),
-    title: 'Insert PlantUML diagram',
-    onClick: async () => {
-      if (!onEditDiagram) return;
-      const made = await onEditDiagram('');
-      if (!made) return;
-      chain().insertContent({ type: 'umlDiagram', attrs: made }).run();
-    },
-  });
+  if (!minimalToolbar) {
+    push({
+      html: icon(ICONS.uml, 'Diagram'),
+      title: 'Insert PlantUML diagram',
+      onClick: async () => {
+        if (!onEditDiagram) return;
+        const made = await onEditDiagram('');
+        if (!made) return;
+        chain().insertContent({ type: 'umlDiagram', attrs: made }).run();
+      },
+    });
 
-  push({
-    html: icon(ICONS.eea, 'EEA diagram'),
-    title: 'Insert EEA diagram (electrical/electronic architecture)',
-    onClick: async () => {
-      if (!onEditEea) return;
-      const made = await onEditEea('');
-      if (!made) return;
-      chain().insertContent({ type: 'eeaDiagram', attrs: made }).run();
-    },
-  });
+    push({
+      html: icon(ICONS.eea, 'EEA diagram'),
+      title: 'Insert EEA diagram (electrical/electronic architecture)',
+      onClick: async () => {
+        if (!onEditEea) return;
+        const made = await onEditEea('');
+        if (!made) return;
+        chain().insertContent({ type: 'eeaDiagram', attrs: made }).run();
+      },
+    });
 
-  push({
-    html: icon(ICONS.obd, 'OBD'),
-    title: 'Insert OBD-II connector diagram + a 16-pin table to fill in',
-    onClick: () => {
-      chain().insertContent([{ type: 'obdSnippet' }, obdPinTableContent()]).run();
-    },
-  });
+    push({
+      html: icon(ICONS.obd, 'OBD'),
+      title: 'Insert OBD-II connector diagram + a 16-pin table to fill in',
+      onClick: () => {
+        chain().insertContent([{ type: 'obdSnippet' }, obdPinTableContent()]).run();
+      },
+    });
 
-  push({ html: icon(ICONS.hr, 'Divider'), title: 'Horizontal rule', onClick: () => chain().setHorizontalRule().run() });
+    push({ html: icon(ICONS.hr, 'Divider'), title: 'Horizontal rule', onClick: () => chain().setHorizontalRule().run() });
+  }
 
   sep();
   push({
