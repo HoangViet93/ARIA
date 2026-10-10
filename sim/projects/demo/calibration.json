@@ -443,5 +443,680 @@
     "group": "plant",
     "min": 0.001,
     "max": 0.5
+  },
+  "MOTOR_V_NOM": {
+    "kind": "scalar",
+    "value": 360,
+    "unit": "V",
+    "desc": "Điện áp DC mà dưới nó công suất đỉnh giảm tỉ lệ (suy giảm từ trường).",
+    "group": "plant",
+    "min": 100,
+    "max": 900
+  },
+  "MOTOR_V_MIN_OP": {
+    "kind": "scalar",
+    "value": 250,
+    "unit": "V",
+    "desc": "Điện áp DC thấp nhất inverter còn chạy.",
+    "group": "plant",
+    "min": 0,
+    "max": 900
+  },
+  "MOTOR_K_CU": {
+    "kind": "scalar",
+    "value": 0.035,
+    "unit": "W/Nm²",
+    "desc": "Tổn hao đồng k·T² — sàn tổn hao cuộn dây khi đứng yên (bản đồ hiệu suất không cho tổn hao ở 0 rpm).",
+    "group": "plant",
+    "min": 0,
+    "max": 1
+  },
+  "MOTOR_P0": {
+    "kind": "scalar",
+    "value": 150,
+    "unit": "W",
+    "desc": "Tổn hao inverter không tải.",
+    "group": "plant",
+    "min": 0,
+    "max": 2000
+  },
+  "MOTOR_C_WIND": {
+    "kind": "scalar",
+    "value": 8000,
+    "unit": "J/K",
+    "desc": "Nhiệt dung cuộn dây (gồm stator).",
+    "group": "plant",
+    "min": 500,
+    "max": 100000
+  },
+  "MOTOR_H_WIND": {
+    "kind": "scalar",
+    "value": 40,
+    "unit": "W/K",
+    "desc": "Hệ số tản nhiệt cuộn dây → nước làm mát.",
+    "group": "plant",
+    "min": 1,
+    "max": 1000
+  },
+  "MOTOR_C_INV": {
+    "kind": "scalar",
+    "value": 3000,
+    "unit": "J/K",
+    "desc": "Nhiệt dung inverter.",
+    "group": "plant",
+    "min": 100,
+    "max": 50000
+  },
+  "MOTOR_H_INV": {
+    "kind": "scalar",
+    "value": 60,
+    "unit": "W/K",
+    "desc": "Hệ số tản nhiệt inverter → nước làm mát.",
+    "group": "plant",
+    "min": 1,
+    "max": 1000
+  },
+  "MOTOR_T_WIND0": {
+    "kind": "scalar",
+    "value": 40,
+    "unit": "°C",
+    "desc": "Nhiệt độ cuộn dây lúc bắt đầu kịch bản.",
+    "group": "plant",
+    "min": -40,
+    "max": 200
+  },
+  "MOTOR_T_INV0": {
+    "kind": "scalar",
+    "value": 40,
+    "unit": "°C",
+    "desc": "Nhiệt độ inverter lúc bắt đầu kịch bản.",
+    "group": "plant",
+    "min": -40,
+    "max": 150
+  },
+  "MOTOR_TN_PEAK": {
+    "kind": "curve",
+    "group": "plant",
+    "unit": "Nm",
+    "desc": "Đường T-n đỉnh ở Vdc = MOTOR_V_NOM (datasheet mô-tơ).",
+    "x": [0, 1000, 2000, 3000, 3820, 4500, 6000, 8000, 10000, 11000, 11500, 12000],
+    "xName": "Tốc độ mô-tơ",
+    "xUnit": "rpm",
+    "y": [400, 400, 400, 400, 400, 339.5, 254.6, 191, 152.8, 138.9, 132.9, 0]
+  },
+  "MOTOR_TN_CONT": {
+    "kind": "curve",
+    "group": "plant",
+    "unit": "Nm",
+    "desc": "Đường T-n liên tục (S1). Trên đường này quỹ quá tải bị tiêu.",
+    "x": [0, 1000, 2000, 3000, 3820, 4500, 6000, 8000, 10000, 11000, 11500, 12000],
+    "xName": "Tốc độ mô-tơ",
+    "xUnit": "rpm",
+    "y": [200, 200, 200, 200, 200, 169.8, 127.3, 95.5, 76.4, 69.4, 66.4, 0]
+  },
+  "MOTOR_TN_REGEN": {
+    "kind": "curve",
+    "group": "plant",
+    "unit": "Nm",
+    "desc": "Đường T-n tái sinh (độ lớn mô-men hãm).",
+    "x": [0, 1000, 2000, 3000, 3820, 4500, 6000, 8000, 10000, 11000, 11500, 12000],
+    "xName": "Tốc độ mô-tơ",
+    "xUnit": "rpm",
+    "y": [400, 400, 400, 382, 300, 254.6, 191, 143.2, 114.6, 104.2, 99.6, 0]
+  },
+  "MOTOR_T_PEAK": {
+    "kind": "scalar",
+    "value": 30,
+    "unit": "s",
+    "desc": "Thời gian được chạy trên đường T-n liên tục (quỹ quá tải).",
+    "group": "plant",
+    "min": 1,
+    "max": 600
+  },
+  "MOTOR_OVL_RECOVER": {
+    "kind": "scalar",
+    "value": 3,
+    "unit": "-",
+    "desc": "Hồi quỹ quá tải chậm hơn tiêu bao nhiêu lần.",
+    "group": "plant",
+    "min": 0.1,
+    "max": 100
+  },
+  "MOTOR_EFF_MAP": {
+    "kind": "map",
+    "group": "plant",
+    "unit": "%",
+    "desc": "Bản đồ hiệu suất mô-tơ + inverter (chưa gồm tổn hao không tải MOTOR_P0).",
+    "x": [500, 1000, 2000, 3000, 4000, 6000, 8000, 10000, 12000],
+    "xName": "Tốc độ mô-tơ",
+    "xUnit": "rpm",
+    "y": [5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 400],
+    "yName": "Mô-men",
+    "yUnit": "Nm",
+    "z": [
+      [65.2, 64.6, 63.3, 62.1, 60.9, 58.7, 56.6, 54.7, 52.9],
+      [78.2, 77.9, 77, 76.1, 75.3, 73.5, 71.9, 70.3, 68.8],
+      [88.1, 88.5, 88.4, 88, 87.5, 86.6, 85.7, 84.8, 84],
+      [90.9, 92.2, 92.6, 92.6, 92.4, 92, 91.6, 91.1, 90.6],
+      [90.3, 93, 94.4, 94.7, 94.8, 94.8, 94.6, 94.4, 94.2],
+      [88.3, 92.3, 94.4, 95.1, 95.4, 95.6, 95.6, 95.5, 95.4],
+      [86.1, 91.3, 94.1, 95, 95.5, 95.8, 96, 96, 95.9],
+      [83.9, 90.2, 93.6, 94.8, 95.4, 95.9, 96.1, 96.2, 96.2],
+      [81.7, 89, 93.1, 94.5, 95.2, 95.9, 96.1, 96.3, 96.3],
+      [79.6, 87.8, 92.5, 94.1, 95, 95.8, 96.1, 96.3, 96.4],
+      [77.6, 86.6, 91.8, 93.7, 94.7, 95.6, 96.1, 96.3, 96.4]
+    ]
+  },
+  "MOTOR_LOSS_SPLIT": {
+    "kind": "scalar",
+    "value": 0.75,
+    "unit": "-",
+    "desc": "Phần tổn hao (theo bản đồ hiệu suất) sinh nhiệt ở cuộn dây; còn lại ở inverter.",
+    "group": "plant",
+    "min": 0,
+    "max": 1
+  },
+  "MOTOR_STALL_RPM": {
+    "kind": "scalar",
+    "value": 30,
+    "unit": "rpm",
+    "desc": "Dưới tốc độ này coi là stall (inverter gần 0 Hz).",
+    "group": "plant",
+    "min": 0,
+    "max": 500
+  },
+  "MOTOR_STALL_TQ": {
+    "kind": "scalar",
+    "value": 400,
+    "unit": "Nm",
+    "desc": "Mô-men stall đỉnh (rotor đứng yên).",
+    "group": "plant",
+    "min": 0,
+    "max": 1000
+  },
+  "MOTOR_STALL_CONT": {
+    "kind": "scalar",
+    "value": 150,
+    "unit": "Nm",
+    "desc": "Mô-men stall giữ được vô hạn.",
+    "group": "plant",
+    "min": 0,
+    "max": 1000
+  },
+  "MOTOR_STALL_TIME": {
+    "kind": "scalar",
+    "value": 5,
+    "unit": "s",
+    "desc": "Giữ trên mô-men stall liên tục quá thời gian này thì inverter hạ về mức liên tục.",
+    "group": "plant",
+    "min": 0.5,
+    "max": 120
+  },
+  "MOTOR_DERATE_WIND": {
+    "kind": "curve",
+    "group": "plant",
+    "unit": "-",
+    "desc": "Phần mềm inverter: hệ số giảm mô-men theo nhiệt cuộn dây.",
+    "x": [-40, 140, 150, 160, 170],
+    "xName": "Nhiệt cuộn dây",
+    "xUnit": "°C",
+    "y": [1, 1, 0.8, 0.5, 0]
+  },
+  "MOTOR_DERATE_INV": {
+    "kind": "curve",
+    "group": "plant",
+    "unit": "-",
+    "desc": "Phần mềm inverter: hệ số giảm mô-men theo nhiệt inverter.",
+    "x": [-40, 85, 95, 105],
+    "xName": "Nhiệt inverter",
+    "xUnit": "°C",
+    "y": [1, 1, 0.6, 0]
+  },
+  "MOTOR_EFF_EST": {
+    "kind": "scalar",
+    "value": 0.9,
+    "unit": "-",
+    "desc": "Hiệu suất mô-tơ + inverter mà VCU giả định khi đổi công suất pin ra mô-men (thấp hơn thực tế = an toàn).",
+    "group": "controller",
+    "min": 0.5,
+    "max": 1
+  },
+  "BATT_NS": {
+    "kind": "scalar",
+    "value": 108,
+    "unit": "-",
+    "desc": "Số cell nối tiếp.",
+    "group": "battery",
+    "min": 1,
+    "max": 300
+  },
+  "BATT_NP": {
+    "kind": "scalar",
+    "value": 2,
+    "unit": "-",
+    "desc": "Số cell song song.",
+    "group": "battery",
+    "min": 1,
+    "max": 20
+  },
+  "BATT_CAP_AH": {
+    "kind": "scalar",
+    "value": 52.5,
+    "unit": "Ah",
+    "desc": "Dung lượng một cell.",
+    "group": "battery",
+    "min": 1,
+    "max": 500
+  },
+  "BATT_OCV": {
+    "kind": "curve",
+    "group": "battery",
+    "unit": "V",
+    "desc": "Điện áp hở mạch của cell theo SOC (dạng NMC, số giả).",
+    "x": [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [3, 3.3, 3.45, 3.55, 3.62, 3.67, 3.72, 3.79, 3.88, 3.96, 4.06, 4.11, 4.18]
+  },
+  "BATT_R0": {
+    "kind": "map",
+    "group": "battery",
+    "unit": "mΩ",
+    "desc": "Điện trở tức thời của cell theo SOC và nhiệt độ.",
+    "x": [0, 10, 20, 50, 80, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [-20, -10, 0, 10, 25, 45],
+    "yName": "Nhiệt độ cell",
+    "yUnit": "°C",
+    "z": [
+      [9.6, 7.6, 6.8, 6.4, 6.6, 7],
+      [6.24, 4.94, 4.42, 4.16, 4.29, 4.55],
+      [4.32, 3.42, 3.06, 2.88, 2.97, 3.15],
+      [3.12, 2.47, 2.21, 2.08, 2.15, 2.28],
+      [2.4, 1.9, 1.7, 1.6, 1.65, 1.75],
+      [2.04, 1.62, 1.44, 1.36, 1.4, 1.49]
+    ]
+  },
+  "BATT_R1": {
+    "kind": "scalar",
+    "value": 0.8,
+    "unit": "mΩ",
+    "desc": "Nhánh RC nhanh: điện trở (cell).",
+    "group": "battery",
+    "min": 0.01,
+    "max": 20
+  },
+  "BATT_C1": {
+    "kind": "scalar",
+    "value": 4000,
+    "unit": "F",
+    "desc": "Nhánh RC nhanh: điện dung (cell), τ ≈ 3 s.",
+    "group": "battery",
+    "min": 1,
+    "max": 1000000
+  },
+  "BATT_R2": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "mΩ",
+    "desc": "Nhánh RC chậm: điện trở (cell).",
+    "group": "battery",
+    "min": 0.01,
+    "max": 20
+  },
+  "BATT_C2": {
+    "kind": "scalar",
+    "value": 60000,
+    "unit": "F",
+    "desc": "Nhánh RC chậm: điện dung (cell), τ ≈ 60 s.",
+    "group": "battery",
+    "min": 1,
+    "max": 10000000
+  },
+  "BATT_R0_SCALE": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "-",
+    "desc": "Hệ số nhân R0 (lão hóa) — nhận dạng từ log.",
+    "group": "battery",
+    "min": 0.5,
+    "max": 3
+  },
+  "BATT_R1_SCALE": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "-",
+    "desc": "Hệ số nhân R1 (lão hóa) — nhận dạng từ log.",
+    "group": "battery",
+    "min": 0.5,
+    "max": 3
+  },
+  "BATT_THERMAL_C": {
+    "kind": "scalar",
+    "value": 300000,
+    "unit": "J/K",
+    "desc": "Nhiệt dung pack.",
+    "group": "battery",
+    "min": 1000,
+    "max": 5000000
+  },
+  "BATT_HA": {
+    "kind": "scalar",
+    "value": 250,
+    "unit": "W/K",
+    "desc": "Hệ số trao đổi nhiệt pack → nước làm mát.",
+    "group": "battery",
+    "min": 0,
+    "max": 5000
+  },
+  "BATT_SOC0": {
+    "kind": "scalar",
+    "value": 80,
+    "unit": "%",
+    "desc": "SOC thật lúc bắt đầu kịch bản.",
+    "group": "battery",
+    "min": 0,
+    "max": 100
+  },
+  "BATT_T0": {
+    "kind": "scalar",
+    "value": 25,
+    "unit": "°C",
+    "desc": "Nhiệt độ pack lúc bắt đầu kịch bản.",
+    "group": "battery",
+    "min": -40,
+    "max": 80
+  },
+  "BMS_CAP_AH": {
+    "kind": "scalar",
+    "value": 105,
+    "unit": "Ah",
+    "desc": "Dung lượng pack BMS dùng để đếm Coulomb (= cell × số song song).",
+    "group": "bms",
+    "min": 1,
+    "max": 2000
+  },
+  "BMS_R_EST": {
+    "kind": "scalar",
+    "value": 0.8,
+    "unit": "mΩ",
+    "desc": "Điện trở BMS dùng để tính SOP, quy về một cell nối tiếp (đã chia số song song), ở 25 °C.",
+    "group": "bms",
+    "min": 0.05,
+    "max": 20
+  },
+  "BMS_R_TEMP_FACTOR": {
+    "kind": "curve",
+    "group": "bms",
+    "unit": "-",
+    "desc": "Hệ số nhân điện trở theo nhiệt độ trong mô hình của BMS.",
+    "x": [-20, -10, 0, 10, 25, 45],
+    "xName": "Nhiệt độ pack",
+    "xUnit": "°C",
+    "y": [4, 2.6, 1.8, 1.3, 1, 0.85]
+  },
+  "BMS_V_MIN": {
+    "kind": "scalar",
+    "value": 3,
+    "unit": "V",
+    "desc": "Áp cell thấp nhất cho phép.",
+    "group": "bms",
+    "min": 2,
+    "max": 4
+  },
+  "BMS_V_MAX": {
+    "kind": "scalar",
+    "value": 4.2,
+    "unit": "V",
+    "desc": "Áp cell cao nhất cho phép.",
+    "group": "bms",
+    "min": 3.5,
+    "max": 4.5
+  },
+  "BMS_I_MAX": {
+    "kind": "scalar",
+    "value": 500,
+    "unit": "A",
+    "desc": "Dòng pack lớn nhất (xả và sạc).",
+    "group": "bms",
+    "min": 10,
+    "max": 2000
+  },
+  "BMS_P_DIS_PEAK": {
+    "kind": "map",
+    "group": "bms",
+    "unit": "kW",
+    "desc": "Profile xả: công suất đỉnh (BMS_T_PEAK giây) theo SOC và nhiệt độ.",
+    "x": [0, 5, 10, 20, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [-20, -10, 0, 10, 20, 40, 45, 50, 55],
+    "yName": "Nhiệt độ pack",
+    "yUnit": "°C",
+    "z": [
+      [0, 4.5, 11.3, 22.5, 22.5],
+      [0, 9, 22.5, 45, 45],
+      [0, 16.5, 41.3, 82.5, 82.5],
+      [0, 25.5, 63.8, 127.5, 127.5],
+      [0, 30, 75, 150, 150],
+      [0, 30, 75, 150, 150],
+      [0, 24, 60, 120, 120],
+      [0, 15, 37.5, 75, 75],
+      [0, 6, 15, 30, 30]
+    ]
+  },
+  "BMS_P_DIS_CONT": {
+    "kind": "map",
+    "group": "bms",
+    "unit": "kW",
+    "desc": "Profile xả: công suất liên tục theo SOC và nhiệt độ.",
+    "x": [0, 5, 10, 20, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [-20, -10, 0, 10, 20, 40, 45, 50, 55],
+    "yName": "Nhiệt độ pack",
+    "yUnit": "°C",
+    "z": [
+      [0, 3, 7.5, 15, 15],
+      [0, 6, 15, 30, 30],
+      [0, 11, 27.5, 55, 55],
+      [0, 17, 42.5, 85, 85],
+      [0, 20, 50, 100, 100],
+      [0, 20, 50, 100, 100],
+      [0, 16, 40, 80, 80],
+      [0, 10, 25, 50, 50],
+      [0, 4, 10, 20, 20]
+    ]
+  },
+  "BMS_P_CHG_PEAK": {
+    "kind": "map",
+    "group": "bms",
+    "unit": "kW",
+    "desc": "Profile sạc (tái sinh): công suất đỉnh theo SOC và nhiệt độ.",
+    "x": [0, 80, 90, 95, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [-20, -10, 0, 10, 20, 40, 45, 50, 55],
+    "yName": "Nhiệt độ pack",
+    "yUnit": "°C",
+    "z": [
+      [0, 0, 0, 0, 0],
+      [8, 8, 4.8, 2.4, 0],
+      [24, 24, 14.4, 7.2, 0],
+      [56, 56, 33.6, 16.8, 0],
+      [80, 80, 48, 24, 0],
+      [80, 80, 48, 24, 0],
+      [64, 64, 38.4, 19.2, 0],
+      [40, 40, 24, 12, 0],
+      [16, 16, 9.6, 4.8, 0]
+    ]
+  },
+  "BMS_P_CHG_CONT": {
+    "kind": "map",
+    "group": "bms",
+    "unit": "kW",
+    "desc": "Profile sạc (tái sinh): công suất liên tục theo SOC và nhiệt độ.",
+    "x": [0, 80, 90, 95, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [-20, -10, 0, 10, 20, 40, 45, 50, 55],
+    "yName": "Nhiệt độ pack",
+    "yUnit": "°C",
+    "z": [
+      [0, 0, 0, 0, 0],
+      [5, 5, 3, 1.5, 0],
+      [15, 15, 9, 4.5, 0],
+      [35, 35, 21, 10.5, 0],
+      [50, 50, 30, 15, 0],
+      [50, 50, 30, 15, 0],
+      [40, 40, 24, 12, 0],
+      [25, 25, 15, 7.5, 0],
+      [10, 10, 6, 3, 0]
+    ]
+  },
+  "BMS_T_PEAK": {
+    "kind": "scalar",
+    "value": 10,
+    "unit": "s",
+    "desc": "Thời gian được dùng công suất đỉnh.",
+    "group": "bms",
+    "min": 0,
+    "max": 120
+  },
+  "BMS_T_RAMP": {
+    "kind": "scalar",
+    "value": 2,
+    "unit": "s",
+    "desc": "Thời gian trượt từ đỉnh về liên tục khi hết quỹ đỉnh.",
+    "group": "bms",
+    "min": 0.01,
+    "max": 30
+  },
+  "BMS_PEAK_RECOVER": {
+    "kind": "scalar",
+    "value": 3,
+    "unit": "-",
+    "desc": "Hồi quỹ đỉnh chậm hơn tiêu bao nhiêu lần.",
+    "group": "bms",
+    "min": 0.1,
+    "max": 100
+  },
+  "BMS_I_CC": {
+    "kind": "map",
+    "group": "bms",
+    "unit": "A",
+    "desc": "Profile sạc cắm súng: dòng pack giai đoạn CC theo SOC và nhiệt độ.",
+    "x": [0, 50, 70, 80, 90, 100],
+    "xName": "SOC",
+    "xUnit": "%",
+    "y": [0, 10, 25, 45],
+    "yName": "Nhiệt độ pack",
+    "yUnit": "°C",
+    "z": [
+      [48, 48, 39, 30, 18, 9],
+      [96, 96, 78, 60, 36, 18],
+      [160, 160, 130, 100, 60, 30],
+      [128, 128, 104, 80, 48, 24]
+    ]
+  },
+  "BMS_V_CV": {
+    "kind": "scalar",
+    "value": 4.15,
+    "unit": "V",
+    "desc": "Áp cell chuyển từ CC sang CV.",
+    "group": "bms",
+    "min": 3.5,
+    "max": 4.3
+  },
+  "BMS_K_CV": {
+    "kind": "scalar",
+    "value": 1000,
+    "unit": "A/(V·s)",
+    "desc": "Hệ số vòng CV: tốc độ giảm dòng theo sai lệch áp cell.",
+    "group": "bms",
+    "min": 1,
+    "max": 100000
+  },
+  "BMS_I_TERM": {
+    "kind": "scalar",
+    "value": 10,
+    "unit": "A",
+    "desc": "Dòng CV dưới mức này thì kết thúc sạc.",
+    "group": "bms",
+    "min": 0,
+    "max": 100
+  },
+  "CHARGER_TAU": {
+    "kind": "scalar",
+    "value": 0.5,
+    "unit": "s",
+    "desc": "Hằng thời gian bám dòng của bộ sạc DC (plant).",
+    "group": "plant",
+    "min": 0.01,
+    "max": 10
+  },
+  "BMS_T_FAULT": {
+    "kind": "scalar",
+    "value": 58,
+    "unit": "°C",
+    "desc": "Nhiệt độ pack trên ngưỡng này (đủ thời gian debounce) là lỗi quá nhiệt.",
+    "group": "bms",
+    "min": 30,
+    "max": 90
+  },
+  "BMS_FAULT_DEBOUNCE": {
+    "kind": "scalar",
+    "value": 0.5,
+    "unit": "s",
+    "desc": "Thời gian một điều kiện lỗi phải kéo dài trước khi chốt lỗi.",
+    "group": "bms",
+    "min": 0,
+    "max": 10
+  },
+  "BMS_CONTACTOR_DELAY": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "s",
+    "desc": "Từ lúc chốt lỗi tới lúc mở contactor (để VCU kịp đưa mô-men về 0).",
+    "group": "bms",
+    "min": 0,
+    "max": 10
+  },
+  "BMS_SOC_INIT": {
+    "kind": "scalar",
+    "value": 50,
+    "unit": "%",
+    "desc": "SOC lưu trong EEPROM lúc thức dậy (chỉ dùng khi không hiệu chỉnh theo OCV).",
+    "group": "bms",
+    "min": 0,
+    "max": 100
+  },
+  "BMS_REST_I": {
+    "kind": "scalar",
+    "value": 2,
+    "unit": "A",
+    "desc": "Dòng dưới mức này coi là pin đang nghỉ.",
+    "group": "bms",
+    "min": 0,
+    "max": 50
+  },
+  "BMS_REST_T": {
+    "kind": "scalar",
+    "value": 30,
+    "unit": "s",
+    "desc": "Nghỉ liên tục bao lâu thì bắt đầu kéo SOC về giá trị suy từ OCV.",
+    "group": "bms",
+    "min": 0,
+    "max": 3600
+  },
+  "BMS_OCV_BLEND": {
+    "kind": "scalar",
+    "value": 0.05,
+    "unit": "1/s",
+    "desc": "Tốc độ kéo SOC về giá trị suy từ OCV khi nghỉ.",
+    "group": "bms",
+    "min": 0,
+    "max": 1
   }
 }

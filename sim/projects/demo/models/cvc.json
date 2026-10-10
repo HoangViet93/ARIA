@@ -115,14 +115,17 @@
       "params": { "BLEND": "@CREEP_BLEND_ACC" }
     },
     "TqLimit": {
-      "type": "Expr", "implements": ["DEMO-0202", "DEMO-0204"],
-      "desc": "Giới hạn mô-men bánh theo curve tốc độ và theo công suất pin (P/ω bánh).",
-      "inputs": ["tq", "v", "gear", "pBat"],
+      "type": "Expr", "implements": ["DEMO-0202", "DEMO-0204", "DEMO-0502"],
+      "desc": "Giới hạn mô-men bánh: curve theo tốc độ, công suất pin BMS cho phép (trừ tải phụ, nhân hiệu suất ước lượng), giới hạn mô-tơ báo lên. Chiều kéo dùng giới hạn xả, chiều hãm dùng giới hạn sạc (hiệu suất = 1 cho an toàn). Gear R: kéo là mô-men âm.",
+      "inputs": ["tq", "v", "gear", "pBat", "pChg", "aux", "motLimP", "motLimN"],
       "outputs": {
-        "lim": "min(lut(DRV_MAX, abs(v)), pBat * 1000 * EFF / max(abs(v) / 3.6 / R, 2))",
-        "y": "(gear == GearPos.D || gear == GearPos.R) ? clamp(tq, -lim, lim) : 0"
+        "w": "max(abs(v) / 3.6 / R, 2)",
+        "drive": "min(lut(DRV_MAX, abs(v)), max(0, pBat - aux) * 1000 * ETA_M * EFF / w, motLimP * RATIO * EFF)",
+        "regen": "min(lut(DRV_MAX, abs(v)), (pChg + aux) * 1000 / w, -motLimN * RATIO)",
+        "lim": "drive",
+        "y": "gear == GearPos.D ? clamp(tq, -regen, drive) : gear == GearPos.R ? clamp(tq, -drive, regen) : 0"
       },
-      "params": { "DRV_MAX": "@DRIVE_TQ_MAX", "R": "@WHEEL_RADIUS", "EFF": "@DRIVELINE_EFF" }
+      "params": { "DRV_MAX": "@DRIVE_TQ_MAX", "R": "@WHEEL_RADIUS", "EFF": "@DRIVELINE_EFF", "RATIO": "@GEAR_RATIO", "ETA_M": "@MOTOR_EFF_EST" }
     },
     "RateSel": {
       "type": "Expr", "implements": ["DEMO-0203"],
@@ -155,6 +158,10 @@
     ["bus:DoorStatus", "CreepChart.door"],
     ["bus:RoadSlopePct", "CreepRef.slope"],
     ["bus:BattDischgPwrLim", "TqLimit.pBat"],
+    ["bus:BattChgPwrLim", "TqLimit.pChg"],
+    ["bus:AuxPowerKw", "TqLimit.aux"],
+    ["bus:MotorTqLimPos", "TqLimit.motLimP"],
+    ["bus:MotorTqLimNeg", "TqLimit.motLimN"],
 
     ["SpdAbs", ["PedalMapD.x", "PedalMapR.x"]],
     ["PedalMapD", "PedalTq.tqD"],

@@ -27,7 +27,7 @@ node sim/cli.js run sim/projects/demo                 # chạy mọi kịch bả
 node sim/cli.js identify sim/projects/demo replay_fake_drive
 node sim/cli.js import-aria projects/BCM-Door-Lock/data.tex sim/projects/bcm
 
-npm run sim:test             # 55 test, ~15 s
+npm run sim:test             # 66 test, ~2–3 phút
 npm run sim:smoke            # mở UI trong Electron, bấm qua mọi tab, thoát 0/1
 ```
 
@@ -46,6 +46,26 @@ Từ gốc repo còn có `npm run sim` (server) và `npm run sim:app` (Electron)
 | 6 | Tab **Calibration** → `CREEP_TQ_MAX` → sửa thành 1000 / 1000 / 900 / 250 / 0 → Chạy tất cả | Mọi kịch bản lại đạt. **Xuất DCM** để mang bộ mới đi; **Lưu vào project** ghi `calibration.json` (xem khác biệt bằng git). |
 | 7 | Tab **Log & nhận dạng** → Chạy monitor trên log | Cùng monitor chạy thẳng trên log đo, không mô phỏng. Monitor cần tín hiệu log không có (vd. `VehSpeedTrue`) được bỏ qua kèm lý do. |
 | 8 | Tab **Sơ đồ khối** | Kiến trúc CVC / Motor / Vehicle nối qua bus; bấm đúp CVC để vào trong; bấm `CreepChart` xem trạng thái, điều kiện có tên, số lần mỗi transition chạy. Tham số `@CAL` bấm được → nhảy sang calibration. |
+
+| 9 | Chọn `batt_peak_power`, `batt_low_soc`, `batt_cold`, `motor_hot`, `hill_hold_stall`, `charge_dc` | Hệ điện cao áp kín vòng: BMS cho đỉnh 150 kW trong 10 s rồi về 100 kW; pin yếu/lạnh/nóng bị giảm công suất; mô-tơ nóng tự giảm mô-men; giữ dốc 18 % bằng chân ga thì sau 5 s inverter hạ mô-men stall và xe trôi lùi; sạc DC đi qua CC → CV → Xong |
+| 10 | `fault_batt_temp_sensor`, `fault_current_sensor_offset` | Lỗi cảm biến nhiệt → BMS cắt công suất, mở contactor khi dòng đã về 0. Cảm biến dòng lệch −60 A → SOC ước lượng trôi 3 % sau ~190 s, không gì phát hiện (cố ý trượt) |
+| 11 | Tab **Log & nhận dạng** → `replay_battery` → Nhận dạng | Phát lại dòng pack đo, khớp điện áp: tìm lại hệ số lão hóa R0 ×1.30, R1 ×1.50 |
+
+## Plant model và khối có sẵn
+
+| Khối | Loại | Nội dung |
+|---|---|---|
+| `VehicleLongitudinal` | plant | Dọc xe 1 DOF: mô-men bánh, phanh, dốc, cản lăn, cản gió, lực giữ ngoài |
+| truyền động (`vehicle.json`) | plant | Hộp số 1 cấp `GEAR_RATIO` + hiệu suất `DRIVELINE_EFF` |
+| `PmsmDrive` | plant | Mô-tơ + inverter: đường T-n đỉnh / liên tục / tái sinh, suy giảm từ trường theo Vdc, bản đồ hiệu suất η(n, T), stall torque có bộ đếm, quỹ quá tải, nhiệt cuộn dây + inverter, derate, báo giới hạn lên VCU |
+| `BatteryPack` | plant | Pin 2RC: OCV(SOC), R0(SOC, T), hệ số lão hóa, nhiệt, contactor; vào là công suất hoặc dòng, + dòng bộ sạc |
+| bộ sạc DC (`main.json`) | plant | Bám dòng BMS yêu cầu, giới hạn công suất trạm |
+| `BmsCore` | controller | SOC (Coulomb + OCV), profile xả/sạc đỉnh–liên tục theo map SOC × T, sạc CC-CV, bảo vệ OV/UV/OT/OC có debounce + chốt, contactor |
+| `ElectricMotor` | plant | Mô-tơ rút gọn (PT1 + kẹp mô-men/công suất) — giữ cho model nhỏ |
+| `DriverPI` | tài xế | Bám tốc độ tham chiếu |
+
+Mạch DC trong demo: công suất mô-tơ + tải phụ → dòng pin (bộ sạc bơm dòng vào);
+áp pin → mô-tơ; BMS → giới hạn công suất cho CVC và dòng sạc cho bộ sạc.
 
 ## Khái niệm
 

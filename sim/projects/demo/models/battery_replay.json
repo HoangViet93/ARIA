@@ -1,0 +1,38 @@
+{
+  "name": "battery_replay",
+  "desc": "Chỉ pin, dòng đo lấy từ log; so điện áp mô phỏng với điện áp đo. Dùng để nhận dạng điện trở (lão hóa).",
+  "blocks": {
+    "On": {"type": "Constant", "params": {"value": 1}},
+    "Pack": {
+      "type": "BatteryPack",
+      "params": {
+        "ns": "@BATT_NS",
+        "np": "@BATT_NP",
+        "capAh": "@BATT_CAP_AH",
+        "soc0": "@BATT_SOC0",
+        "t0": "@BATT_T0",
+        "ocv": "@BATT_OCV",
+        "r0": "@BATT_R0",
+        "r1": "@BATT_R1",
+        "c1": "@BATT_C1",
+        "r2": "@BATT_R2",
+        "c2": "@BATT_C2",
+        "r0Scale": "@BATT_R0_SCALE",
+        "r1Scale": "@BATT_R1_SCALE",
+        "thermalC": "@BATT_THERMAL_C",
+        "hA": "@BATT_HA",
+        "inputMode": "current"
+      }
+    },
+    "Zero": {"type": "Constant", "params": {"value": 0}}
+  },
+  "lines": [
+    ["bus:PackCurrent", "Pack.demand"],
+    ["Zero", "Pack.iExt"],
+    ["On", "Pack.contactor"],
+    ["bus:BattCoolantTemp", "Pack.coolantT"],
+    ["Pack.vBus", "bus:PackVoltage"],
+    ["Pack.soc", "bus:BattSocTrue"],
+    ["Pack.temp", "bus:BattTempTrue"]
+  ]
+}

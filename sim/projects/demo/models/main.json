@@ -1,23 +1,84 @@
 {
   "name": "main",
-  "desc": "Model kín vòng: controller CVC (rời rạc 10 ms) + mô-tơ + plant dọc xe (liên tục).",
+  "desc": "Model kín vòng: controller CVC (10 ms) + BMS (10 ms) + mô-tơ PMSM + pin 2RC + bộ sạc DC + plant dọc xe. Mạch DC: công suất mô-tơ + tải phụ → dòng pin, bộ sạc bơm dòng vào; áp pin → mô-tơ; BMS → giới hạn công suất cho CVC và dòng sạc cho bộ sạc.",
   "blocks": {
-    "CVC": { "type": "Subsystem", "ref": "cvc.json" },
+    "CVC": {"type": "Subsystem", "ref": "cvc.json"},
+    "BMS": {"type": "Subsystem", "ref": "bms.json"},
     "Motor": {
       "type": "Subsystem",
-      "desc": "Mô-tơ trước: bám mô-men yêu cầu, giới hạn mô-men và công suất.",
+      "desc": "Mô-tơ PMSM + inverter: đường T-n đỉnh/liên tục/tái sinh theo Vdc, bản đồ hiệu suất, stall, derate nhiệt, nhiệt cuộn dây và inverter.",
       "blocks": {
         "EM": {
-          "type": "ElectricMotor",
-          "params": { "tau": "@MOTOR_TAU", "tqMax": "@MOTOR_TQ_MAX", "pwrMaxKw": "@MOTOR_PWR_MAX" }
+          "type": "PmsmDrive",
+          "params": {
+            "tqMax": "@MOTOR_TQ_MAX",
+            "pMaxKw": "@MOTOR_PWR_MAX",
+            "tau": "@MOTOR_TAU",
+            "vNom": "@MOTOR_V_NOM",
+            "vMinOp": "@MOTOR_V_MIN_OP",
+            "kCu": "@MOTOR_K_CU",
+            "p0": "@MOTOR_P0",
+            "cW": "@MOTOR_C_WIND",
+            "hW": "@MOTOR_H_WIND",
+            "cInv": "@MOTOR_C_INV",
+            "hInv": "@MOTOR_H_INV",
+            "tW0": "@MOTOR_T_WIND0",
+            "tInv0": "@MOTOR_T_INV0",
+            "derateW": "@MOTOR_DERATE_WIND",
+            "derateInv": "@MOTOR_DERATE_INV",
+            "tnPeak": "@MOTOR_TN_PEAK",
+            "tnCont": "@MOTOR_TN_CONT",
+            "tnRegen": "@MOTOR_TN_REGEN",
+            "tPeak": "@MOTOR_T_PEAK",
+            "ovlRecover": "@MOTOR_OVL_RECOVER",
+            "effMap": "@MOTOR_EFF_MAP",
+            "lossSplit": "@MOTOR_LOSS_SPLIT",
+            "stallRpm": "@MOTOR_STALL_RPM",
+            "stallTq": "@MOTOR_STALL_TQ",
+            "stallCont": "@MOTOR_STALL_CONT",
+            "stallTime": "@MOTOR_STALL_TIME"
+          }
         }
       },
       "lines": [
         ["bus:MotorTqReq", "EM.tqReq"],
         ["bus:MotorSpeed", "EM.speedRpm"],
-        ["EM.tq", "bus:MotorTqAct"]
+        ["bus:PackVoltage", "EM.vdc"],
+        ["bus:ContactorClosed", "EM.enable"],
+        ["bus:MotorCoolantTemp", "EM.coolantT"],
+        ["EM.tq", "bus:MotorTqAct"],
+        ["EM.pDcKw", "bus:MotorPowerDc"],
+        ["EM.lossKw", "bus:MotorLossKw"],
+        ["EM.eff", "bus:MotorEff"],
+        ["EM.tWind", "bus:MotorTempWinding"],
+        ["EM.tInv", "bus:MotorTempInverter"],
+        ["EM.tqLimPos", "bus:MotorTqLimPos"],
+        ["EM.tqLimNeg", "bus:MotorTqLimNeg"]
       ]
     },
-    "Vehicle": { "type": "Subsystem", "ref": "vehicle.json" }
+    "Battery": {"type": "Subsystem", "ref": "battery.json"},
+    "Charger": {
+      "type": "Subsystem",
+      "desc": "Bộ sạc DC ngoài xe (plant): bám dòng BMS yêu cầu, giới hạn theo công suất trạm.",
+      "blocks": {
+        "Target": {
+          "type": "Expr",
+          "inputs": ["iReq", "plug", "pMax", "v"],
+          "outputs": {"i": "plug >= 0.5 ? min(iReq, pMax * 1000 / max(v, 100)) : 0"}
+        },
+        "Lag": {"type": "PT1", "params": {"tau": "@CHARGER_TAU"}},
+        "Neg": {"type": "Gain", "params": {"k": -1}}
+      },
+      "lines": [
+        ["bus:BmsChgCurrentReq", "Target.iReq"],
+        ["bus:ChargerPlugged", "Target.plug"],
+        ["bus:ChargerMaxKw", "Target.pMax"],
+        ["bus:PackVoltage", "Target.v"],
+        ["Target.i", "Lag"],
+        ["Lag", ["bus:ChargerCurrent", "Neg"]],
+        ["Neg", "bus:ChargerCurrentIn"]
+      ]
+    },
+    "Vehicle": {"type": "Subsystem", "ref": "vehicle.json"}
   }
 }

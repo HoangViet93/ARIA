@@ -10,7 +10,7 @@ Quy tắc của ARIA (`../CLAUDE.md`) vẫn áp dụng khi đụng tới `data.t
 Sau mọi thay đổi trong `sim/`:
 
 ```bash
-npm --prefix sim test          # 55 test, ~15 s — phải sạch
+npm --prefix sim test          # 66 test, ~2–3 phút — phải sạch
 node sim/cli.js run sim/projects/demo   # mọi kịch bản demo phải "OK"
 ```
 
@@ -54,6 +54,7 @@ engine/
                    PI Timer Debounce Relay
     chart.js       Chart (máy trạng thái phân cấp) — ngữ nghĩa ghi ở đầu file
     automotive.js  VehicleLongitudinal ElectricMotor DriverPI
+    electric.js    BatteryPack BmsCore PmsmDrive (hệ cao áp — phương trình ở đầu từng khối)
     internal.js    BusWrite ExtInput + tiêm lỗi (compiler tự sinh)
   compile.js       model JSON -> danh sách khối đã sắp (flatten, bus, nối cổng, Kahn, vòng đại số)
   stimulus.js      kịch bản -> hàm theo thời gian (set/ramp/bảng/replay) + lỗi tiêm
@@ -83,7 +84,7 @@ test/              node:test; fixtures/mini-book.tex là sách ARIA tổng hợp
   dùng để chốt đại lượng quan sát (vd. `accel` của xe, trễ một bước tích phân).
 - `ts` phải là bội số của `dt`; `logDt` phải là bội số của `dt`.
 - Khối **không feedthrough** (Integrator, PT1, UnitDelay, Timer, VehicleLongitudinal,
-  ElectricMotor) cắt vòng đại số. Vòng không qua khối nào như vậy = lỗi biên dịch.
+  ElectricMotor, BmsCore; PmsmDrive với vdc/enable; BatteryPack với coolantT) cắt vòng đại số. Vòng không qua khối nào như vậy = lỗi biên dịch.
 - Bus: mỗi tín hiệu một nơi ghi. Đọc mà không ai ghi = đầu vào ngoài. Kịch bản
   **không** được `set` tín hiệu do model tính — phải dùng `faults`.
 - Monitor chạy trên dữ liệu ĐÃ LOG (`logDt`, mặc định 10 ms). `when` kích hoạt ở
@@ -91,6 +92,20 @@ test/              node:test; fixtures/mini-book.tex là sách ARIA tổng hợp
   tính vào trạng thái yêu cầu.
 - Độ dốc: % theo chiều tiến, **lên dốc dương** (quy ước engine). Tín hiệu xe
   thật có thể ngược dấu — đổi ở lớp tín hiệu, không sửa khối.
+
+## Hệ cao áp trong demo — đừng phá
+
+- `PmsmDrive` chỉ đọc `vdc`/`enable` trong `derivatives()` và chốt giới hạn ở
+  lần gọi `major` — đó là cách cắt vòng mô-tơ → pin → mô-tơ. Đọc chúng trong
+  `output()` là phụ thuộc thứ tự sắp khối, kết quả lệch mà không báo gì.
+- `BmsCore` không feedthrough; mọi monitor so đầu ra BMS với giá trị đo phải
+  dùng `prev(...)` cho đầu vào (BMS gửi kết quả nhịp trước).
+- Bản đồ hiệu suất cho tổn hao 0 ở 0 rpm; `kCu·T²` là sàn tổn hao cuộn dây để
+  stall vẫn nóng. Đừng bỏ.
+- Tín hiệu đo và tín hiệu thật tách riêng (`PackCurrent`/`PackCurrentTrue`,
+  `BattTempPack`/`BattTempTrue`) để tiêm lỗi cảm biến không làm sai monitor.
+- `BattDischgPwrLim` giờ do BMS tính — kịch bản không được `set` nó nữa.
+- Log giả có cột pin; truth gồm `BATT_R0_SCALE` 1.3, `BATT_R1_SCALE` 1.5.
 
 ## Thêm một kiểu khối
 
@@ -137,7 +152,7 @@ test/              node:test; fixtures/mini-book.tex là sách ARIA tổng hợp
    bậc 2–3, Jacobian số) và **zero-crossing** — điều kiện cần cho ride /
    lateral / VMC. Đổi `S` từ một ô/tín hiệu sang (offset, width) trong compile.
 5. **Thư viện plant**: truyền động 2 khối lượng có khe hở (cho preload/TIP-IN),
-   pin ECM 1RC, genset REEV, quarter-car / full-car, bicycle + Pacejka.
+   genset REEV, quarter-car / full-car, bicycle + Pacejka.
    Mỗi plant khai báo tham số nhận dạng được và tín hiệu log cần có.
 6. **Editor**: sửa kịch bản/monitor trong UI (hiện chỉ sửa JSON), rồi editor
    sơ đồ kéo-thả (ghi lại `models/*.json`; tọa độ để trong file riêng

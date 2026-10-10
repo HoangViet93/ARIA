@@ -1,0 +1,42 @@
+{
+  "desc": "Pin cao áp 2RC + nhiệt + contactor. Vào: công suất bus DC (mô-tơ + tải phụ). Ghi cả giá trị đo (BMS đọc, tiêm lỗi cảm biến được) và giá trị thật (cho monitor).",
+  "blocks": {
+    "DcBus": {"type": "Expr", "inputs": ["pMot", "aux"], "outputs": {"p": "pMot + aux"}},
+    "Pack": {
+      "type": "BatteryPack",
+      "params": {
+        "ns": "@BATT_NS",
+        "np": "@BATT_NP",
+        "capAh": "@BATT_CAP_AH",
+        "soc0": "@BATT_SOC0",
+        "t0": "@BATT_T0",
+        "ocv": "@BATT_OCV",
+        "r0": "@BATT_R0",
+        "r1": "@BATT_R1",
+        "c1": "@BATT_C1",
+        "r2": "@BATT_R2",
+        "c2": "@BATT_C2",
+        "r0Scale": "@BATT_R0_SCALE",
+        "r1Scale": "@BATT_R1_SCALE",
+        "thermalC": "@BATT_THERMAL_C",
+        "hA": "@BATT_HA",
+        "inputMode": "power"
+      }
+    }
+  },
+  "lines": [
+    ["bus:MotorPowerDc", "DcBus.pMot"],
+    ["bus:AuxPowerKw", "DcBus.aux"],
+    ["DcBus", "Pack.demand"],
+    ["bus:ContactorClosed", "Pack.contactor"],
+    ["bus:BattCoolantTemp", "Pack.coolantT"],
+    ["bus:ChargerCurrentIn", "Pack.iExt"],
+    ["Pack.vBus", "bus:PackVoltage"],
+    ["Pack.i", ["bus:PackCurrent", "bus:PackCurrentTrue"]],
+    ["Pack.soc", "bus:BattSocTrue"],
+    ["Pack.temp", ["bus:BattTempPack", "bus:BattTempTrue"]],
+    ["Pack.vCell", "bus:CellVoltageAvg"],
+    ["Pack.pKw", "bus:PackPowerKw"],
+    ["Pack.lim", "bus:BattOverload"]
+  ]
+}

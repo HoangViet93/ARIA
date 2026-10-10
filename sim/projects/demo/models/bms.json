@@ -1,0 +1,52 @@
+{
+  "desc": "Phần mềm BMS (rời rạc 10 ms): SOC đếm Coulomb + OCV, profile xả/sạc đỉnh–liên tục theo SOC × nhiệt độ, sạc cắm súng CC-CV, bảo vệ quá/thấp áp, quá nhiệt, quá dòng, điều khiển contactor.",
+  "ts": 0.01,
+  "blocks": {
+    "Core": {
+      "type": "BmsCore",
+      "implements": ["DEMO-0401", "DEMO-0402", "DEMO-0403", "DEMO-0405"],
+      "params": {
+        "ns": "@BATT_NS",
+        "capAh": "@BMS_CAP_AH",
+        "ocv": "@BATT_OCV",
+        "socInit": "@BMS_SOC_INIT",
+        "rEst": "@BMS_R_EST",
+        "rTempFactor": "@BMS_R_TEMP_FACTOR",
+        "vMin": "@BMS_V_MIN",
+        "vMax": "@BMS_V_MAX",
+        "iMax": "@BMS_I_MAX",
+        "pDisCont": "@BMS_P_DIS_CONT",
+        "pChgCont": "@BMS_P_CHG_CONT",
+        "tFault": "@BMS_T_FAULT",
+        "faultDebounce": "@BMS_FAULT_DEBOUNCE",
+        "contactorDelay": "@BMS_CONTACTOR_DELAY",
+        "restI": "@BMS_REST_I",
+        "restT": "@BMS_REST_T",
+        "ocvBlend": "@BMS_OCV_BLEND",
+        "pDisPeak": "@BMS_P_DIS_PEAK",
+        "pChgPeak": "@BMS_P_CHG_PEAK",
+        "tPeak": "@BMS_T_PEAK",
+        "tRamp": "@BMS_T_RAMP",
+        "peakRecover": "@BMS_PEAK_RECOVER",
+        "iCc": "@BMS_I_CC",
+        "vCv": "@BMS_V_CV",
+        "kCv": "@BMS_K_CV",
+        "iTerm": "@BMS_I_TERM"
+      }
+    }
+  },
+  "lines": [
+    ["bus:CellVoltageAvg", "Core.vCell"],
+    ["bus:PackCurrent", "Core.current"],
+    ["bus:BattTempPack", "Core.temp"],
+    ["bus:ChargerPlugged", "Core.plug"],
+    ["Core.socEst", "bus:BattSocEst"],
+    ["Core.pDisLim", "bus:BattDischgPwrLim"],
+    ["Core.pChgLim", "bus:BattChgPwrLim"],
+    ["Core.state", "bus:BmsState"],
+    ["Core.contactor", "bus:ContactorClosed"],
+    ["Core.fault", "bus:BmsFault"],
+    ["Core.iChgReq", "bus:BmsChgCurrentReq"],
+    ["Core.chgSt", "bus:ChargeState"]
+  ]
+}

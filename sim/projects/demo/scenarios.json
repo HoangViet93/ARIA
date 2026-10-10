@@ -1,161 +1,356 @@
 [
   {
-    "name": "creep_flat", "desc": "Creep tiến trên đường phẳng; mở cửa rồi đóng; chạy lại bằng đạp phanh nhẹ.",
+    "name": "creep_flat",
+    "desc": "Creep tiến trên đường phẳng; mở cửa rồi đóng; chạy lại bằng đạp phanh nhẹ.",
     "traces": ["DEMO-0101", "DEMO-0102", "DEMO-0103"],
     "duration": 25,
-    "init": { "Gear": "D", "BrakePedalPct": 30 },
+    "init": {"Gear": "D", "BrakePedalPct": 30},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 }, "note": "nhả phanh → creep" },
-      { "t": 12, "set": { "DoorStatus": "Opened" } },
-      { "t": 15, "set": { "DoorStatus": "Closed" } },
-      { "t": 17, "set": { "BrakePedalPct": 10 }, "note": "ý định đi tiếp" },
-      { "t": 17.5, "set": { "BrakePedalPct": 0 } }
+      {"t": 1, "set": {"BrakePedalPct": 0}, "note": "nhả phanh → creep"},
+      {"t": 12, "set": {"DoorStatus": "Opened"}},
+      {"t": 15, "set": {"DoorStatus": "Closed"}},
+      {"t": 17, "set": {"BrakePedalPct": 10}, "note": "ý định đi tiếp"},
+      {"t": 17.5, "set": {"BrakePedalPct": 0}}
     ],
     "plots": ["VehSpeedTrue", "CreepState", "CreepTq", "DoorStatus", "BrakePedalPct"]
   },
   {
-    "name": "creep_uphill", "desc": "Creep lên dốc 8 %.",
+    "name": "creep_uphill",
+    "desc": "Creep lên dốc 8 %.",
     "traces": ["DEMO-0102"],
     "duration": 15,
-    "init": { "Gear": "D", "BrakePedalPct": 30, "RoadSlopePct": 8 },
-    "steps": [{ "t": 1, "set": { "BrakePedalPct": 0 } }],
+    "init": {"Gear": "D", "BrakePedalPct": 30, "RoadSlopePct": 8},
+    "steps": [{"t": 1, "set": {"BrakePedalPct": 0}}],
     "plots": ["VehSpeedTrue", "CreepTq", "CreepState", "RoadSlopePct"]
   },
   {
-    "name": "creep_reverse", "desc": "Creep lùi trên đường phẳng.",
+    "name": "creep_reverse",
+    "desc": "Creep lùi trên đường phẳng.",
     "traces": ["DEMO-0102"],
     "duration": 12,
-    "init": { "Gear": "R", "BrakePedalPct": 30 },
-    "steps": [{ "t": 1, "set": { "BrakePedalPct": 0 } }],
+    "init": {"Gear": "R", "BrakePedalPct": 30},
+    "steps": [{"t": 1, "set": {"BrakePedalPct": 0}}],
     "plots": ["VehSpeedTrue", "CreepTq", "CreepState"]
   },
   {
-    "name": "creep_brake", "desc": "Đang creep thì đạp phanh dần: mô-men creep giảm theo phanh.",
+    "name": "creep_brake",
+    "desc": "Đang creep thì đạp phanh dần: mô-men creep giảm theo phanh.",
     "traces": ["DEMO-0301"],
     "duration": 14,
-    "init": { "Gear": "D", "BrakePedalPct": 30 },
-    "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 7, "ramp": { "BrakePedalPct": { "to": 30, "over": 3 } } }
-    ],
+    "init": {"Gear": "D", "BrakePedalPct": 30},
+    "steps": [{"t": 1, "set": {"BrakePedalPct": 0}}, {"t": 7, "ramp": {"BrakePedalPct": {"to": 30, "over": 3}}}],
     "plots": ["VehSpeedTrue", "CreepTq", "BrakePedalPct", "CreepState"]
   },
   {
-    "name": "creep_setting_off", "desc": "Tài xế tắt creep khi đang bò, rồi bật lại.",
+    "name": "creep_setting_off",
+    "desc": "Tài xế tắt creep khi đang bò, rồi bật lại.",
     "traces": ["DEMO-0104"],
     "duration": 20,
-    "init": { "Gear": "D", "BrakePedalPct": 30 },
+    "init": {"Gear": "D", "BrakePedalPct": 30},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 7, "set": { "CreepSetting": "Off" } },
-      { "t": 13, "set": { "CreepSetting": "On" } }
+      {"t": 1, "set": {"BrakePedalPct": 0}},
+      {"t": 7, "set": {"CreepSetting": "Off"}},
+      {"t": 13, "set": {"CreepSetting": "On"}}
     ],
     "plots": ["VehSpeedTrue", "CreepTq", "CreepState", "CreepSetting"]
   },
   {
-    "name": "creep_still_curb", "desc": "Bánh bị gờ chặn nên creep không làm xe chạy được; sau thời gian cho phép creep tạm dừng, đạp ga thì chạy lại. (Đây chính là điều kiện mà DVP phải ghi rõ: cần chèn bánh.)",
+    "name": "creep_still_curb",
+    "desc": "Bánh bị gờ chặn nên creep không làm xe chạy được; sau thời gian cho phép creep tạm dừng, đạp ga thì chạy lại. (Đây chính là điều kiện mà DVP phải ghi rõ: cần chèn bánh.)",
     "traces": ["DEMO-0106"],
     "duration": 30,
-    "init": { "Gear": "D", "BrakePedalPct": 30, "ObstacleHoldN": 20000 },
+    "init": {"Gear": "D", "BrakePedalPct": 30, "ObstacleHoldN": 20000},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 26, "set": { "ObstacleHoldN": 0, "AccPedalPct": 8 } },
-      { "t": 27, "set": { "AccPedalPct": 0 } }
+      {"t": 1, "set": {"BrakePedalPct": 0}},
+      {"t": 26, "set": {"ObstacleHoldN": 0, "AccPedalPct": 8}},
+      {"t": 27, "set": {"AccPedalPct": 0}}
     ],
     "plots": ["VehSpeedTrue", "CreepState", "CreepTq", "ObstacleHoldN", "AccPedalPct"]
   },
   {
-    "name": "creep_downhill", "desc": "Creep xuống dốc 15 %: mô-men ngược chiều của creep không giữ nổi xe. Kịch bản này được viết để kích hoạt chẩn đoán quá tốc độ (DEMO-0105) — nhưng monitor báo 'chưa kích hoạt' và transition Enabled → Fault không bao giờ chạy: creep tự tắt ở CREEP_ENABLE_MAX_SPD = 7 km/h, TRƯỚC khi chạm CREEP_OVERSPEED_TH = 8 km/h. Chẩn đoán là logic chết với bộ calibration này. Phát hiện cố ý để lại trong demo — xem README.",
+    "name": "creep_downhill",
+    "desc": "Creep xuống dốc 15 %: mô-men ngược chiều của creep không giữ nổi xe. Kịch bản này được viết để kích hoạt chẩn đoán quá tốc độ (DEMO-0105) — nhưng monitor báo 'chưa kích hoạt' và transition Enabled → Fault không bao giờ chạy: creep tự tắt ở CREEP_ENABLE_MAX_SPD = 7 km/h, TRƯỚC khi chạm CREEP_OVERSPEED_TH = 8 km/h. Chẩn đoán là logic chết với bộ calibration này. Phát hiện cố ý để lại trong demo — xem README.",
     "traces": ["DEMO-0105"],
     "duration": 24,
-    "init": { "Gear": "D", "BrakePedalPct": 30, "RoadSlopePct": -15 },
+    "init": {"Gear": "D", "BrakePedalPct": 30, "RoadSlopePct": -15},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 9, "set": { "BrakePedalPct": 60 } },
-      { "t": 12, "set": { "Gear": "P" } },
-      { "t": 13, "set": { "Gear": "D", "RoadSlopePct": 0 } },
-      { "t": 14, "set": { "BrakePedalPct": 0 } }
+      {"t": 1, "set": {"BrakePedalPct": 0}},
+      {"t": 9, "set": {"BrakePedalPct": 60}},
+      {"t": 12, "set": {"Gear": "P"}},
+      {"t": 13, "set": {"Gear": "D", "RoadSlopePct": 0}},
+      {"t": 14, "set": {"BrakePedalPct": 0}}
     ],
     "plots": ["VehSpeedTrue", "CreepState", "CreepTq", "RoadSlopePct", "BrakePedalPct"]
   },
   {
-    "name": "tip_in_out", "desc": "Đạp ga nhanh rồi nhả ở Eco, sau đó lặp lại ở Sport.",
+    "name": "tip_in_out",
+    "desc": "Đạp ga nhanh rồi nhả ở Eco, sau đó lặp lại ở Sport.",
     "traces": ["DEMO-0201", "DEMO-0203"],
     "duration": 26,
-    "init": { "Gear": "D", "BrakePedalPct": 30 },
+    "init": {"Gear": "D", "BrakePedalPct": 30},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 3, "ramp": { "AccPedalPct": { "to": 50, "over": 0.3 } } },
-      { "t": 9, "ramp": { "AccPedalPct": { "to": 0, "over": 0.2 } } },
-      { "t": 13, "set": { "DriveModeSel": "Sport" } },
-      { "t": 15, "ramp": { "AccPedalPct": { "to": 50, "over": 0.3 } } },
-      { "t": 21, "ramp": { "AccPedalPct": { "to": 0, "over": 0.2 } } }
+      {"t": 1, "set": {"BrakePedalPct": 0}},
+      {"t": 3, "ramp": {"AccPedalPct": {"to": 50, "over": 0.3}}},
+      {"t": 9, "ramp": {"AccPedalPct": {"to": 0, "over": 0.2}}},
+      {"t": 13, "set": {"DriveModeSel": "Sport"}},
+      {"t": 15, "ramp": {"AccPedalPct": {"to": 50, "over": 0.3}}},
+      {"t": 21, "ramp": {"AccPedalPct": {"to": 0, "over": 0.2}}}
     ],
     "plots": ["AccPedalPct", "PedalTq", "DriverTqReq", "MotorTqAct", "VehSpeedTrue", "DriveModeSel"]
   },
   {
-    "name": "park_shift", "desc": "Đang đạp ga thì về N rồi P (dừng hẳn bằng phanh trước khi vào P).",
+    "name": "park_shift",
+    "desc": "Đang đạp ga thì về N rồi P (dừng hẳn bằng phanh trước khi vào P).",
     "traces": ["DEMO-0202"],
     "duration": 16,
-    "init": { "Gear": "D" },
+    "init": {"Gear": "D"},
     "steps": [
-      { "t": 1, "ramp": { "AccPedalPct": { "to": 30, "over": 0.5 } } },
-      { "t": 5, "set": { "Gear": "N" } },
-      { "t": 8, "set": { "AccPedalPct": 0, "BrakePedalPct": 40 } },
-      { "t": 13, "set": { "Gear": "P" } }
+      {"t": 1, "ramp": {"AccPedalPct": {"to": 30, "over": 0.5}}},
+      {"t": 5, "set": {"Gear": "N"}},
+      {"t": 8, "set": {"AccPedalPct": 0, "BrakePedalPct": 40}},
+      {"t": 13, "set": {"Gear": "P"}}
     ],
     "plots": ["Gear", "AccPedalPct", "MotorTqReq", "VehSpeedTrue"]
   },
   {
-    "name": "batt_limit", "desc": "Đạp hết ga khi pin chỉ cho 40 kW.",
-    "traces": ["DEMO-0204"],
+    "name": "batt_low_soc",
+    "desc": "Pin còn 9 % (SOC thật). Đạp hết ga: BMS giảm công suất xả theo SOC, VCU phải giữ công suất pin dưới giới hạn và áp cell không chạm ngưỡng thấp áp.",
+    "traces": ["DEMO-0204", "DEMO-0402", "DEMO-0404"],
     "duration": 20,
-    "init": { "Gear": "D", "BattDischgPwrLim": 40 },
-    "steps": [{ "t": 1, "set": { "AccPedalPct": 100 } }, { "t": 16, "set": { "AccPedalPct": 0 } }],
-    "plots": ["AccPedalPct", "DriverTqReq", "MotorTqAct", "MotorSpeed", "VehSpeedTrue", "BattDischgPwrLim"]
+    "params": {"BATT_SOC0": 9},
+    "init": {"Gear": "D"},
+    "steps": [{"t": 1, "set": {"AccPedalPct": 100}}, {"t": 16, "set": {"AccPedalPct": 0}}],
+    "plots": [
+      "AccPedalPct",
+      "BattDischgPwrLim",
+      "PackPowerKw",
+      "MotorTqAct",
+      "PackVoltage",
+      "CellVoltageAvg",
+      "BattSocEst",
+      "BattTempPack",
+      "VehSpeedTrue"
+    ]
   },
   {
-    "name": "fault_speed_stuck", "desc": "TIÊM LỖI: tín hiệu tốc độ xe kẹt ở 0 khi đang creep. Chẩn đoán quá tốc độ dùng chính tín hiệu bị kẹt nên KHÔNG phát hiện được — xe tăng tốc mãi. Kịch bản này cố ý trượt hai monitor: nó chứng minh một điểm lỗi đơn mà thiết kế chưa che.",
+    "name": "batt_cold",
+    "desc": "Pin lạnh −10 °C: điện trở gấp ~2.6 lần, BMS giảm công suất theo nhiệt. Đạp hết ga.",
+    "traces": ["DEMO-0204", "DEMO-0402", "DEMO-0404"],
+    "duration": 20,
+    "params": {"BATT_T0": -10},
+    "init": {"Gear": "D", "BattCoolantTemp": -10},
+    "steps": [{"t": 1, "set": {"AccPedalPct": 100}}, {"t": 16, "set": {"AccPedalPct": 0}}],
+    "plots": [
+      "AccPedalPct",
+      "BattDischgPwrLim",
+      "PackPowerKw",
+      "MotorTqAct",
+      "PackVoltage",
+      "CellVoltageAvg",
+      "BattSocEst",
+      "BattTempPack",
+      "VehSpeedTrue"
+    ]
+  },
+  {
+    "name": "batt_hot",
+    "desc": "Pin nóng 50 °C, nước làm mát 45 °C: BMS giảm công suất xả còn ~50 %. Đạp hết ga 25 s.",
+    "traces": ["DEMO-0204", "DEMO-0402"],
+    "duration": 30,
+    "params": {"BATT_T0": 50},
+    "init": {"Gear": "D", "BattCoolantTemp": 45},
+    "steps": [{"t": 1, "set": {"AccPedalPct": 100}}, {"t": 26, "set": {"AccPedalPct": 0}}],
+    "plots": [
+      "AccPedalPct",
+      "BattDischgPwrLim",
+      "PackPowerKw",
+      "MotorTqAct",
+      "PackVoltage",
+      "CellVoltageAvg",
+      "BattSocEst",
+      "BattTempPack",
+      "VehSpeedTrue"
+    ]
+  },
+  {
+    "name": "fault_batt_temp_sensor",
+    "desc": "TIÊM LỖI: cảm biến nhiệt pin báo 75 °C khi đang chạy. BMS phải chốt lỗi quá nhiệt sau debounce, đưa giới hạn công suất về 0 ngay, rồi mở contactor khi dòng đã về gần 0.",
+    "traces": ["DEMO-0403"],
+    "duration": 16,
+    "init": {"Gear": "D"},
+    "steps": [{"t": 1, "ramp": {"AccPedalPct": {"to": 40, "over": 1}}}],
+    "faults": [
+      {
+        "signal": "BattTempPack",
+        "from": 6,
+        "mode": "value",
+        "value": 75,
+        "desc": "cảm biến nhiệt pin báo 75 °C"
+      }
+    ],
+    "plots": [
+      "BattTempPack",
+      "BattTempTrue",
+      "BmsFault",
+      "BattDischgPwrLim",
+      "DriverTqReq",
+      "MotorTqAct",
+      "PackCurrentTrue",
+      "ContactorClosed",
+      "PackVoltage",
+      "VehSpeedTrue"
+    ]
+  },
+  {
+    "name": "fault_current_sensor_offset",
+    "desc": "TIÊM LỖI: cảm biến dòng pack lệch −60 A (đọc thấp hơn thật). BMS đếm Coulomb nên SOC ước lượng trôi lên trên SOC thật — không có kiểm tra hợp lý nào phát hiện. Kịch bản cố ý trượt MON-SOC-EST: một điểm lỗi đơn chưa được che.",
+    "traces": ["DEMO-0401"],
+    "duration": 300,
+    "logDt": 0.1,
+    "init": {"Gear": "D"},
+    "steps": [{"t": 1, "ramp": {"AccPedalPct": {"to": 30, "over": 2}}}],
+    "faults": [{"signal": "PackCurrent", "from": 5, "mode": "offset", "value": -60, "desc": "cảm biến dòng lệch −60 A"}],
+    "expect": {"MON-SOC-EST": "fail"},
+    "plots": ["BattSocTrue", "BattSocEst", "PackCurrentTrue", "PackCurrent", "VehSpeedTrue"]
+  },
+  {
+    "name": "motor_hot",
+    "desc": "Cuộn dây mô-tơ đã nóng 148 °C. Đạp hết ga 25 s: inverter giảm mô-men theo nhiệt, VCU phải bám giới hạn mô-tơ báo lên, cuộn dây không vượt 165 °C.",
+    "traces": ["DEMO-0501", "DEMO-0502"],
+    "duration": 30,
+    "params": {"MOTOR_T_WIND0": 148},
+    "init": {"Gear": "D"},
+    "steps": [{"t": 1, "set": {"AccPedalPct": 100}}, {"t": 26, "set": {"AccPedalPct": 0}}],
+    "plots": [
+      "AccPedalPct",
+      "MotorTempWinding",
+      "MotorTqLimPos",
+      "MotorTqReq",
+      "MotorTqAct",
+      "MotorLossKw",
+      "MotorEff",
+      "VehSpeedTrue"
+    ]
+  },
+  {
+    "name": "hill_hold_stall",
+    "desc": "Giữ xe trên dốc 18 % bằng chân ga (65 %), nhả phanh ở 4 s. Mô-tơ gần như đứng yên với ~190 Nm > mô-men stall liên tục 150 Nm: sau 5 s inverter hạ giới hạn, xe trôi lùi, quay qua quay lại quanh ngưỡng stall — lý do xe thật cần hill-hold bằng phanh.",
+    "traces": ["DEMO-0502", "DEMO-0503"],
+    "duration": 30,
+    "init": {"Gear": "D", "BrakePedalPct": 40, "RoadSlopePct": 18},
+    "steps": [{"t": 1, "ramp": {"AccPedalPct": {"to": 65, "over": 1}}}, {"t": 4, "set": {"BrakePedalPct": 0}}],
+    "plots": ["VehSpeedTrue", "MotorSpeed", "MotorTqReq", "MotorTqAct", "MotorTqLimPos", "MotorTempWinding"]
+  },
+  {
+    "name": "batt_peak_power",
+    "desc": "Đạp hết ga 25 s ở Sport: BMS cho công suất đỉnh 150 kW trong 10 s rồi trượt về mức liên tục 100 kW; VCU phải bám giới hạn.",
+    "traces": ["DEMO-0204", "DEMO-0402"],
+    "duration": 30,
+    "init": {"Gear": "D", "DriveModeSel": "Sport"},
+    "steps": [{"t": 1, "set": {"AccPedalPct": 100}}, {"t": 26, "set": {"AccPedalPct": 0}}],
+    "plots": [
+      "AccPedalPct",
+      "BattDischgPwrLim",
+      "PackPowerKw",
+      "MotorTqAct",
+      "MotorTqLimPos",
+      "PackVoltage",
+      "VehSpeedTrue"
+    ]
+  },
+  {
+    "name": "charge_dc",
+    "desc": "Đỗ ở P, cắm súng sạc DC 50 kW lúc SOC 85 %: CC (bị trạm giới hạn công suất, rồi theo profile SOC) → CV ở 4.15 V/cell → dòng giảm tới ngưỡng kết thúc → Xong.",
+    "traces": ["DEMO-0405", "DEMO-0401"],
+    "duration": 1500,
+    "dt": 0.01,
+    "logDt": 0.5,
+    "params": {"BATT_SOC0": 85},
+    "init": {"Gear": "P", "ChargerMaxKw": 50},
+    "steps": [{"t": 5, "set": {"ChargerPlugged": "On"}}],
+    "plots": [
+      "ChargeState",
+      "BmsChgCurrentReq",
+      "ChargerCurrent",
+      "CellVoltageAvg",
+      "PackPowerKw",
+      "BattSocTrue",
+      "BattSocEst",
+      "BattTempTrue"
+    ]
+  },
+  {
+    "name": "fault_speed_stuck",
+    "desc": "TIÊM LỖI: tín hiệu tốc độ xe kẹt ở 0 khi đang creep. Chẩn đoán quá tốc độ dùng chính tín hiệu bị kẹt nên KHÔNG phát hiện được — xe tăng tốc mãi. Kịch bản này cố ý trượt hai monitor: nó chứng minh một điểm lỗi đơn mà thiết kế chưa che.",
     "traces": ["DEMO-0105"],
     "duration": 15,
-    "init": { "Gear": "D", "BrakePedalPct": 30 },
-    "steps": [{ "t": 1, "set": { "BrakePedalPct": 0 } }],
-    "faults": [{ "signal": "VehicleSpeed", "from": 6, "mode": "value", "value": 0, "desc": "cảm biến tốc độ kẹt 0" }],
-    "expect": { "MON-OVERSPEED-DIAG": "fail", "MON-CREEP-MAXSPD": "fail", "MON-CREEP-SPD-D": "fail" },
+    "init": {"Gear": "D", "BrakePedalPct": 30},
+    "steps": [{"t": 1, "set": {"BrakePedalPct": 0}}],
+    "faults": [{"signal": "VehicleSpeed", "from": 6, "mode": "value", "value": 0, "desc": "cảm biến tốc độ kẹt 0"}],
+    "expect": {"MON-OVERSPEED-DIAG": "fail", "MON-CREEP-MAXSPD": "fail", "MON-CREEP-SPD-D": "fail"},
     "plots": ["VehSpeedTrue", "VehicleSpeed", "CreepState", "CreepTq"]
   },
   {
-    "name": "fake_drive_cycle", "desc": "Hành trình 120 s để sinh LOG GIẢ (cli.js fake-log): tăng tốc, chạy đều, trôi, lên dốc, phanh dừng.",
-    "duration": 120, "logDt": 0.02,
-    "init": { "Gear": "D", "BrakePedalPct": 30, "DriveModeSel": "Normal" },
+    "name": "fake_drive_cycle",
+    "desc": "Hành trình 120 s để sinh LOG GIẢ (cli.js fake-log): tăng tốc, chạy đều, trôi, lên dốc, phanh dừng.",
+    "duration": 120,
+    "logDt": 0.02,
+    "init": {"Gear": "D", "BrakePedalPct": 30, "DriveModeSel": "Normal"},
     "steps": [
-      { "t": 1, "set": { "BrakePedalPct": 0 } },
-      { "t": 4, "ramp": { "AccPedalPct": { "to": 70, "over": 1.5 } } },
-      { "t": 22, "ramp": { "AccPedalPct": { "to": 28, "over": 2 } } },
-      { "t": 40, "set": { "AccPedalPct": 0 } },
-      { "t": 62, "ramp": { "AccPedalPct": { "to": 35, "over": 1 } } },
-      { "t": 85, "set": { "AccPedalPct": 0 } },
-      { "t": 92, "ramp": { "BrakePedalPct": { "to": 25, "over": 1 } } },
-      { "t": 108, "set": { "BrakePedalPct": 0 } }
+      {"t": 1, "set": {"BrakePedalPct": 0}},
+      {"t": 4, "ramp": {"AccPedalPct": {"to": 70, "over": 1.5}}},
+      {"t": 22, "ramp": {"AccPedalPct": {"to": 28, "over": 2}}},
+      {"t": 40, "set": {"AccPedalPct": 0}},
+      {"t": 62, "ramp": {"AccPedalPct": {"to": 35, "over": 1}}},
+      {"t": 85, "set": {"AccPedalPct": 0}},
+      {"t": 92, "ramp": {"BrakePedalPct": {"to": 25, "over": 1}}},
+      {"t": 108, "set": {"BrakePedalPct": 0}}
     ],
-    "tables": { "RoadSlopePct": { "t": [0, 60, 66, 80, 86, 120], "v": [0, 0, 4, 4, 0, 0] } },
-    "plots": ["VehSpeedTrue", "AccPedalPct", "BrakePedalPct", "MotorTqAct", "RoadSlopePct"]
+    "tables": {"RoadSlopePct": {"t": [0, 60, 66, 80, 86, 120], "v": [0, 0, 4, 4, 0, 0]}},
+    "plots": [
+      "VehSpeedTrue",
+      "AccPedalPct",
+      "BrakePedalPct",
+      "MotorTqAct",
+      "RoadSlopePct",
+      "PackPowerKw",
+      "BattSocEst"
+    ]
   },
   {
-    "name": "replay_fake_drive", "model": "plant_replay",
+    "name": "replay_fake_drive",
+    "model": "plant_replay",
     "desc": "Kiểm chứng plant: phát lại mô-men mô-tơ, phanh, độ dốc từ log; so tốc độ mô phỏng với tốc độ đo. Tab 'Log & nhận dạng' khớp khối lượng, CdA, Crr.",
-    "duration": 120, "dt": 0.005, "logDt": 0.02,
-    "replay": { "log": "fake_drive", "signals": ["MotorTqAct", "BrakePedalPct", "RoadSlopePct"] },
-    "compare": { "log": "fake_drive", "signals": ["VehicleSpeed"] },
+    "duration": 120,
+    "dt": 0.005,
+    "logDt": 0.02,
+    "replay": {"log": "fake_drive", "signals": ["MotorTqAct", "BrakePedalPct", "RoadSlopePct"]},
+    "compare": {"log": "fake_drive", "signals": ["VehicleSpeed"]},
     "identify": {
       "params": [
-        { "name": "VEH_MASS", "min": 1600, "max": 3200 },
-        { "name": "VEH_CDA", "min": 0.4, "max": 1.2 },
-        { "name": "VEH_CRR", "min": 0.004, "max": 0.02 }
+        {"name": "VEH_MASS", "min": 1600, "max": 3200},
+        {"name": "VEH_CDA", "min": 0.4, "max": 1.2},
+        {"name": "VEH_CRR", "min": 0.004, "max": 0.02}
       ],
       "maxEval": 120
     },
     "monitors": [],
     "plots": ["VehicleSpeed", "MotorTqAct", "BrakePedalPct", "RoadSlopePct"]
+  },
+  {
+    "name": "replay_battery",
+    "model": "battery_replay",
+    "desc": "Kiểm chứng pin: phát lại dòng pack đo từ log; so điện áp mô phỏng với điện áp đo. Tab 'Log & nhận dạng' khớp hệ số điện trở R0, R1 (lão hóa pin).",
+    "duration": 120,
+    "dt": 0.01,
+    "logDt": 0.02,
+    "replay": {"log": "fake_drive", "signals": ["PackCurrent"]},
+    "compare": {"log": "fake_drive", "signals": ["PackVoltage"]},
+    "identify": {
+      "params": [{"name": "BATT_R0_SCALE", "min": 0.5, "max": 3}, {"name": "BATT_R1_SCALE", "min": 0.5, "max": 3}],
+      "maxEval": 80
+    },
+    "monitors": [],
+    "plots": ["PackVoltage", "PackCurrent", "BattSocTrue"]
   }
 ]

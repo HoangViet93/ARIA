@@ -1,6 +1,6 @@
 {
   "name": "Demo — điều khiển mô-men xe điện (DỮ LIỆU GIẢ)",
-  "desc": "Project mẫu cho aria-sim: bàn đạp ga, creep, giới hạn mô-men, plant dọc xe. Mọi số liệu, tên tín hiệu và yêu cầu đều là giả, không lấy từ tài liệu thật.",
+  "desc": "Project mẫu cho aria-sim: bàn đạp ga, creep, giới hạn mô-men, mô-tơ PMSM, pin 2RC, BMS, plant dọc xe. Mọi số liệu, tên tín hiệu và yêu cầu đều là giả, không lấy từ tài liệu thật.",
   "signals": "signals.json",
   "calibration": "calibration.json",
   "requirements": "requirements.json",
@@ -8,7 +8,8 @@
   "scenarios": "scenarios.json",
   "models": {
     "main": "models/main.json",
-    "plant_replay": "models/plant_replay.json"
+    "plant_replay": "models/plant_replay.json",
+    "battery_replay": "models/battery_replay.json"
   },
   "logs": {
     "fake_drive": "logs/fake_drive.csv"
@@ -19,12 +20,16 @@
       "truth": {
         "VEH_MASS": 2380,
         "VEH_CDA": 0.78,
-        "VEH_CRR": 0.0115
+        "VEH_CRR": 0.0115,
+        "BATT_R0_SCALE": 1.3,
+        "BATT_R1_SCALE": 1.5
       },
       "noise": {
         "VehicleSpeed": 0.15,
         "MotorTqAct": 1.5,
-        "MotorSpeed": 5
+        "MotorSpeed": 5,
+        "PackVoltage": 0.4,
+        "PackCurrent": 0.8
       },
       "every": 0.02,
       "seed": 7,
@@ -43,7 +48,14 @@
         "MotorTqReq",
         "MotorTqAct",
         "MotorSpeed",
-        "VehicleSpeed"
+        "VehicleSpeed",
+        "PackVoltage",
+        "PackCurrent",
+        "CellVoltageAvg",
+        "BattSocEst",
+        "BattTempPack",
+        "BattDischgPwrLim",
+        "MotorTempWinding"
       ]
     }
   }

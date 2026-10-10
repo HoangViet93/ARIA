@@ -1,6 +1,7 @@
 [
   {
-    "id": "MON-CREEP-SPD-D", "req": ["DEMO-0101", "DEMO-0102"],
+    "id": "MON-CREEP-SPD-D",
+    "req": ["DEMO-0101", "DEMO-0102"],
     "title": "Creep tiến đạt và giữ tốc độ mục tiêu ±0.5 km/h trong 8 s",
     "when": "CreepState == CreepSt.Active && Gear == GearPos.D && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0 && abs(RoadSlopePct) < 12",
     "expect": "abs(VehSpeedTrue - CREEP_TARGET_SPD_D) < 0.5",
@@ -8,7 +9,8 @@
     "holdWhile": "CreepState == CreepSt.Active && Gear == GearPos.D && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0"
   },
   {
-    "id": "MON-CREEP-SPD-R", "req": ["DEMO-0102"],
+    "id": "MON-CREEP-SPD-R",
+    "req": ["DEMO-0102"],
     "title": "Creep lùi đạt và giữ tốc độ mục tiêu ±0.5 km/h trong 8 s",
     "when": "CreepState == CreepSt.Active && Gear == GearPos.R && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0 && abs(RoadSlopePct) < 12",
     "expect": "abs(VehSpeedTrue + CREEP_TARGET_SPD_R) < 0.5",
@@ -16,12 +18,14 @@
     "holdWhile": "CreepState == CreepSt.Active && Gear == GearPos.R && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0"
   },
   {
-    "id": "MON-CREEP-MAXSPD", "req": ["DEMO-0101"],
+    "id": "MON-CREEP-MAXSPD",
+    "req": ["DEMO-0101"],
     "title": "Khi creep mà không đạp ga, tốc độ thật không vượt 7.5 km/h (trừ xuống dốc dốc hơn 8 %: creep không phanh được, phần đó do chẩn đoán DEMO-0105 lo)",
     "always": "!(CreepState == CreepSt.Active && AccPedalPct < 1) || RoadSlopePct < -8 || abs(VehSpeedTrue) <= 7.5"
   },
   {
-    "id": "MON-DOOR-STOP", "req": ["DEMO-0103"],
+    "id": "MON-DOOR-STOP",
+    "req": ["DEMO-0103"],
     "title": "Mở cửa khi đang creep: creep tạm dừng và mô-men creep về < 5 Nm trong 1.5 s, giữ đến khi đóng cửa",
     "when": "DoorStatus == Door.Opened && prev(CreepState) == CreepSt.Active",
     "expect": "CreepState == CreepSt.Suspended && abs(CreepTq) < 5",
@@ -29,12 +33,14 @@
     "holdWhile": "DoorStatus == Door.Opened"
   },
   {
-    "id": "MON-RESUME-INTENT", "req": ["DEMO-0103", "DEMO-0106"],
+    "id": "MON-RESUME-INTENT",
+    "req": ["DEMO-0103", "DEMO-0106"],
     "title": "Từ tạm dừng chỉ chạy lại creep khi tài xế đạp bàn đạp",
     "always": "!(CreepState == CreepSt.Active && prev(CreepState) == CreepSt.Suspended) || AccPedalPct > INTENT_ACC_TH || BrakePedalPct > INTENT_BRK_TH"
   },
   {
-    "id": "MON-SETTING-OFF", "req": ["DEMO-0104"],
+    "id": "MON-SETTING-OFF",
+    "req": ["DEMO-0104"],
     "title": "Tắt creep: mô-men creep < 1 Nm trong 1.5 s và giữ đến khi bật lại",
     "when": "CreepSetting == OnOff.Off",
     "expect": "abs(CreepTq) < 1",
@@ -42,33 +48,38 @@
     "holdWhile": "CreepSetting == OnOff.Off"
   },
   {
-    "id": "MON-OFF-NEVER-ACTIVE", "req": ["DEMO-0104"],
+    "id": "MON-OFF-NEVER-ACTIVE",
+    "req": ["DEMO-0104"],
     "title": "Creep không bao giờ Active khi tài xế đã tắt",
     "always": "CreepSetting == OnOff.On || CreepState != CreepSt.Active"
   },
   {
-    "id": "MON-OVERSPEED-DIAG", "req": ["DEMO-0105"],
+    "id": "MON-OVERSPEED-DIAG",
+    "req": ["DEMO-0105"],
     "title": "Creep mà tốc độ thật vượt ngưỡng chẩn đoán + 0.5 km/h thì vào Fault trong 0.1 s",
     "when": "abs(VehSpeedTrue) > CREEP_OVERSPEED_TH + 0.5 && AccPedalPct < 1 && CreepState == CreepSt.Active",
     "expect": "CreepState == CreepSt.Fault",
     "within": 0.1
   },
   {
-    "id": "MON-STILL-SUSPEND", "req": ["DEMO-0106"],
+    "id": "MON-STILL-SUSPEND",
+    "req": ["DEMO-0106"],
     "title": "Creep mà xe đứng yên (không đạp gì) thì tạm dừng trong thời gian cho phép + 0.5 s",
     "when": "CreepState == CreepSt.Active && abs(VehSpeedTrue) < 0.5 && AccPedalPct < 1 && BrakePedalPct < 1",
     "expect": "CreepState == CreepSt.Suspended || !(CreepState == CreepSt.Active && abs(VehSpeedTrue) < 0.5 && AccPedalPct < 1 && BrakePedalPct < 1)",
     "within": 20.5
   },
   {
-    "id": "MON-PEDAL-FOLLOW", "req": ["DEMO-0201"],
+    "id": "MON-PEDAL-FOLLOW",
+    "req": ["DEMO-0201"],
     "title": "Đạp ga ở D: mô-men yêu cầu bám mô-men map (±5 % + 20 Nm) trong 3 s",
-    "when": "AccPedalPct > 20 && Gear == GearPos.D && BattDischgPwrLim >= 150",
+    "when": "AccPedalPct > 20 && Gear == GearPos.D && BattDischgPwrLim >= 149 && MotorTqLimPos >= MOTOR_TQ_MAX - 1",
     "expect": "abs(DriverTqReq - PedalTq) < 0.05 * abs(PedalTq) + 20",
     "within": 3
   },
   {
-    "id": "MON-PN-ZERO", "req": ["DEMO-0202"],
+    "id": "MON-PN-ZERO",
+    "req": ["DEMO-0202"],
     "title": "Ở P hoặc N: mô-men mô-tơ yêu cầu về < 0.5 Nm trong 1 s và giữ",
     "when": "Gear == GearPos.P || Gear == GearPos.N",
     "expect": "abs(MotorTqReq) < 0.5",
@@ -76,14 +87,105 @@
     "holdWhile": "Gear == GearPos.P || Gear == GearPos.N"
   },
   {
-    "id": "MON-RATE-UP", "req": ["DEMO-0203"],
+    "id": "MON-RATE-UP",
+    "req": ["DEMO-0203"],
     "title": "Tốc độ tăng mô-men không vượt giới hạn của drive mode (+2 %)",
     "always": "rate(DriverTqReq) <= select(DriveModeSel, TQ_RATE_UP_ECO, TQ_RATE_UP_NORMAL, TQ_RATE_UP_SPORT) * 1.02 + 20"
   },
   {
-    "id": "MON-BATT-PWR", "req": ["DEMO-0204"],
-    "title": "Công suất cơ của mô-tơ không vượt công suất pin cho phép (+8 % cho tổn hao và trễ)",
-    "always": "MotorTqAct * MotorSpeed * PI / 30 / 1000 <= BattDischgPwrLim * 1.08 + 2",
+    "id": "MON-BATT-PWR",
+    "req": ["DEMO-0204"],
+    "title": "Công suất pack không vượt công suất xả BMS cho phép (+5 % + 3 kW cho trễ lọc). Khi BMS đã báo lỗi thì phản ứng lỗi do MON-BMS-FAULT-PWR kiểm.",
+    "always": "BmsFault != BmsFlt.None || PackPowerKw <= BattDischgPwrLim * 1.05 + 3",
+    "from": 0.5
+  },
+  {
+    "id": "MON-SOC-EST",
+    "req": ["DEMO-0401"],
+    "title": "SOC BMS ước lượng lệch SOC thật không quá 3 %",
+    "always": "abs(BattSocEst - BattSocTrue) <= 3",
     "from": 0.1
+  },
+  {
+    "id": "MON-BMS-DERATE",
+    "req": ["DEMO-0402"],
+    "title": "Pin nóng trên 45 °C hoặc SOC dưới 20 % thì giới hạn xả phải thấp hơn mức danh định (BMS gửi kết quả nhịp trước nên so với giá trị đo của nhịp trước)",
+    "always": "BmsFault != BmsFlt.None || ((prev(BattTempPack) <= 45 || BattDischgPwrLim <= 120.5) && (prev(BattSocEst) >= 20 || BattDischgPwrLim < 149))",
+    "from": 0.1
+  },
+  {
+    "id": "MON-CELL-UV",
+    "req": ["DEMO-0404"],
+    "title": "Áp cell không xuống dưới ngưỡng thấp áp − 50 mV khi lái",
+    "always": "ContactorClosed == OnOff.Off || CellVoltageAvg >= BMS_V_MIN - 0.05"
+  },
+  {
+    "id": "MON-BMS-FAULT-PWR",
+    "req": ["DEMO-0403"],
+    "title": "BMS báo lỗi: giới hạn xả và sạc về 0 trong 1 nhịp, giữ đến hết chu kỳ lái",
+    "when": "BmsFault != BmsFlt.None",
+    "expect": "BattDischgPwrLim == 0 && BattChgPwrLim == 0",
+    "within": 0.02,
+    "holdWhile": "BmsFault != BmsFlt.None"
+  },
+  {
+    "id": "MON-BMS-CONTACTOR",
+    "req": ["DEMO-0403"],
+    "title": "BMS báo lỗi: contactor mở trong 1.2 s",
+    "when": "BmsFault != BmsFlt.None",
+    "expect": "ContactorClosed == OnOff.Off",
+    "within": 1.2,
+    "holdWhile": "BmsFault != BmsFlt.None"
+  },
+  {
+    "id": "MON-CONTACTOR-LOAD",
+    "req": ["DEMO-0403"],
+    "title": "Contactor chỉ mở khi dòng thật dưới 20 A (mở có tải làm cháy tiếp điểm)",
+    "always": "!(ContactorClosed == OnOff.Off && prev(ContactorClosed) == OnOff.On) || abs(prev(PackCurrentTrue)) < 20"
+  },
+  {
+    "id": "MON-MOT-TEMP",
+    "req": ["DEMO-0501"],
+    "title": "Nhiệt cuộn dây mô-tơ không vượt 165 °C",
+    "always": "MotorTempWinding <= 165"
+  },
+  {
+    "id": "MON-VCU-MOT-LIM",
+    "req": ["DEMO-0502"],
+    "title": "Mô-men VCU yêu cầu vượt giới hạn dương mô-tơ báo lên (quá 5 Nm) thì phải về dưới giới hạn trong 0.2 s",
+    "when": "MotorTqReq > MotorTqLimPos + 5 && t >= 0.1",
+    "expect": "MotorTqReq <= MotorTqLimPos + 5",
+    "within": 0.2
+  },
+  {
+    "id": "MON-STALL-CONT",
+    "req": ["DEMO-0503"],
+    "title": "Ở stall, giới hạn mô-tơ không bao giờ thấp hơn mô-men stall liên tục (trừ khi derate nhiệt hoặc mở contactor)",
+    "always": "abs(MotorSpeed) >= MOTOR_STALL_RPM || MotorTqLimPos >= MOTOR_STALL_CONT - 1 || MotorTempWinding > 140 || MotorTempInverter > 85 || ContactorClosed == OnOff.Off",
+    "from": 0.1
+  },
+  {
+    "id": "MON-CHG-OV",
+    "req": ["DEMO-0405"],
+    "title": "Khi sạc, áp cell không vượt ngưỡng quá áp",
+    "always": "ChargerPlugged == OnOff.Off || CellVoltageAvg <= BMS_V_MAX"
+  },
+  {
+    "id": "MON-CHG-CV",
+    "req": ["DEMO-0405"],
+    "title": "Vào CV thì áp cell được giữ trong ±20 mV quanh áp CV sau 30 s, cho tới khi xong",
+    "when": "ChargeState == ChgSt.CV",
+    "expect": "abs(CellVoltageAvg - BMS_V_CV) < 0.02",
+    "within": 30,
+    "holdWhile": "ChargeState == ChgSt.CV"
+  },
+  {
+    "id": "MON-CHG-DONE",
+    "req": ["DEMO-0405"],
+    "title": "Sạc xong: bộ sạc ngừng cấp dòng (< 1 A) trong 3 s",
+    "when": "ChargeState == ChgSt.Done",
+    "expect": "ChargerCurrent < 1",
+    "within": 3,
+    "holdWhile": "ChargeState == ChgSt.Done"
   }
 ]

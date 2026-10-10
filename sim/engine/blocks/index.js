@@ -3,6 +3,7 @@
 import './core.js';
 import './chart.js';
 import './automotive.js';
+import './electric.js';
 import './internal.js';
 
 export { defineBlock, getBlockDef, listBlockTypes } from './registry.js';
