@@ -58,12 +58,29 @@ function download(name, text, type = 'text/plain') {
 
 // ------------------------------------------------------------------ nạp project
 
+// Không có serve.js phía sau (vd. mở như trang tĩnh) thì vẫn chạy được mọi thứ
+// trừ "Lưu vào project" — state.server cho UI biết điều đó.
 async function listProjects() {
   try {
     const r = await fetch('/api/projects');
-    if (r.ok) return r.json();
+    if (r.ok) { state.server = true; return r.json(); }
   } catch { /* server tĩnh khác: dùng mặc định */ }
+  state.server = false;
   return [{ dir: 'demo', name: 'demo' }];
+}
+
+// Xác nhận bằng bấm hai lần (không dùng window.confirm: một số khung nhúng chặn hộp thoại).
+function confirmTwice(btn, text) {
+  if (btn.dataset.armed === '1') {
+    btn.dataset.armed = '';
+    btn.textContent = btn.dataset.label;
+    return true;
+  }
+  btn.dataset.label = btn.textContent;
+  btn.dataset.armed = '1';
+  btn.textContent = text;
+  setTimeout(() => { if (btn.dataset.armed === '1') { btn.dataset.armed = ''; btn.textContent = btn.dataset.label; } }, 4000);
+  return false;
 }
 
 async function loadProject(dir) {
@@ -356,7 +373,7 @@ $('calFile').addEventListener('change', async () => {
 });
 $('calResetAll').addEventListener('click', () => {
   if (!calEditor.dirtyNames().length) return;
-  if (!window.confirm('Bỏ mọi chỉnh sửa calibration chưa lưu?')) return;
+  if (!confirmTwice($('calResetAll'), 'Bấm lần nữa để bỏ mọi chỉnh sửa')) return;
   state.cal = JSON.parse(JSON.stringify(state.calBase));
   calEditor.load(state.calBase, state.cal);
   updateCalDirty();
@@ -366,7 +383,11 @@ $('calSave').addEventListener('click', async () => {
   if (!names.length) { $('calErrors').innerHTML = '<div class="warnbox">Chưa có gì để lưu.</div>'; return; }
   const problems = E.validateCalibration(state.cal);
   if (problems.length) { $('calErrors').innerHTML = `<div class="errbox">${esc(problems.join('\n'))}</div>`; return; }
-  if (!window.confirm(`Ghi ${names.length} mục đã sửa vào projects/${state.dir}/calibration.json?\n\n${names.join('\n')}`)) return;
+  if (!state.server) {
+    $('calErrors').innerHTML = '<div class="warnbox">Bản đang mở không có server cục bộ nên không ghi được vào project. Chạy <code>npm run sim</code> trên máy để lưu, hoặc dùng Xuất JSON / Xuất DCM.</div>';
+    return;
+  }
+  if (!confirmTwice($('calSave'), `Bấm lần nữa để ghi ${names.length} mục`)) return;
   try {
     const r = await fetch(`/api/projects/${encodeURIComponent(state.dir)}/calibration.json`, { method: 'PUT', body: JSON.stringify(state.cal) });
     if (!r.ok) throw new Error(await r.text());
