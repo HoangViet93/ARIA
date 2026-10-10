@@ -122,6 +122,70 @@ async function loadProject(dir) {
 const plot = new Plot($('plot'), { emptyText: 'Chọn kịch bản rồi bấm ▶ Chạy' });
 const logPlot = new Plot($('logPlot'), { emptyText: 'Chạy replay để so sánh đo ↔ mô phỏng.' });
 
+// Giá trị hiển thị kèm đơn vị của tín hiệu (enum hiện nhãn).
+function sigVal(sig, v) {
+  const m = state.P.signals[sig] || {};
+  if (m.enum && typeof v === 'number') v = (state.P.enums[m.enum] || [])[v] ?? v;
+  return `${esc(v)}${m.unit && !m.enum ? ` <span class="muted">${esc(m.unit)}</span>` : ''}`;
+}
+const sigName = (sig) => `<span class="mono" title="${esc((state.P.signals[sig] || {}).desc || '')}">${esc(sig)}</span>`;
+
+// Toàn bộ nội dung một kịch bản, đọc được, kèm JSON gốc.
+function scenarioDetails(sc) {
+  const parts = [];
+  const init = Object.entries(sc.init || {});
+  parts.push(`<h3>Điều kiện đầu (t = 0)</h3>${init.length ? `<table class="t"><thead><tr><th>Tín hiệu</th><th>Giá trị</th><th>Ý nghĩa</th></tr></thead><tbody>${init.map(([k, v]) => `<tr><td>${sigName(k)}</td><td>${sigVal(k, v)}</td><td class="muted">${esc((state.P.signals[k] || {}).desc || '')}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Không đặt gì.</p>'}
+    <p class="muted" style="margin:4px 0 0">Tín hiệu đầu vào không ghi ở đây giữ giá trị mặc định khai báo trong signals.json (thường là 0).</p>`);
+  const steps = (sc.steps || []).slice().sort((a, b) => a.t - b.t);
+  if (steps.length) {
+    parts.push(`<h3>Các bước theo thời gian</h3><table class="t"><thead><tr><th class="num">t (s)</th><th>Thao tác</th><th>Ghi chú</th></tr></thead><tbody>${steps.map((st) => {
+      const acts = [
+        ...Object.entries(st.set || {}).map(([k, v]) => `đặt ${sigName(k)} = <b>${sigVal(k, v)}</b>`),
+        ...Object.entries(st.ramp || {}).map(([k, r]) => `tăng/giảm đều ${sigName(k)} tới <b>${sigVal(k, r.to)}</b> trong ${r.over} s`),
+      ];
+      return `<tr><td class="num">${st.t}</td><td>${acts.join('<br>')}</td><td class="muted">${esc(st.note || '')}</td></tr>`;
+    }).join('')}</tbody></table>`);
+  }
+  for (const [k, tb] of Object.entries(sc.tables || {})) {
+    parts.push(`<h3>Bảng theo thời gian: ${esc(k)}</h3><table class="t"><thead><tr><th class="num">t (s)</th>${tb.t.map((t) => `<th class="num">${t}</th>`).join('')}</tr></thead><tbody><tr><td>${sigName(k)}</td>${tb.v.map((v) => `<td class="num">${esc(v)}</td>`).join('')}</tr></tbody></table><p class="muted" style="margin:4px 0 0">Nội suy tuyến tính giữa các điểm.</p>`);
+  }
+  if (sc.replay) parts.push(`<h3>Phát lại từ log</h3><p>Log <code>${esc(sc.replay.log)}</code>, các tín hiệu: ${sc.replay.signals.map(sigName).join(', ')}.</p>`);
+  if ((sc.faults || []).length) {
+    parts.push(`<h3>Lỗi tiêm</h3><table class="t"><thead><tr><th>Tín hiệu</th><th>Kiểu</th><th>Giá trị</th><th>Từ – đến (s)</th><th>Mô tả</th></tr></thead><tbody>${sc.faults.map((f) => `<tr><td>${sigName(f.signal)}</td><td>${esc(f.mode)}</td><td>${f.value !== undefined ? sigVal(f.signal, f.value) : '—'}</td><td class="num">${f.from ?? 0} – ${f.to ?? 'hết'}</td><td class="muted">${esc(f.desc || '')}</td></tr>`).join('')}</tbody></table>`);
+  }
+  const ov = Object.entries(sc.params || {});
+  if (ov.length) {
+    parts.push(`<h3>Ghi đè calibration cho riêng kịch bản này</h3><table class="t"><thead><tr><th>Calibration</th><th>Giá trị</th><th>Gốc</th></tr></thead><tbody>${ov.map(([k, v]) => `<tr><td class="mono">${esc(k)}</td><td>${esc(JSON.stringify(v))}</td><td class="muted">${esc(state.calBase[k] && state.calBase[k].kind === 'scalar' ? state.calBase[k].value : (state.calBase[k] || {}).kind || '?')}</td></tr>`).join('')}</tbody></table>`);
+  }
+  const mons = sc.monitors ? sc.monitors : state.P.monitors.map((m) => m.id);
+  parts.push(`<h3>Monitor áp dụng</h3><p>${sc.monitors && !sc.monitors.length ? 'Không áp monitor nào.' : `${sc.monitors ? '' : 'Tất cả '}${mons.length} monitor: ${mons.map((m) => `<code>${esc(m)}</code>`).join(' ')}`}${sc.expect ? `<br>Kỳ vọng <b>trượt</b> (kịch bản tiêm lỗi): ${Object.keys(sc.expect).map((k) => `<code>${esc(k)}</code>`).join(' ')}` : ''}</p>`);
+  if (sc.compare) parts.push(`<h3>So với log</h3><p>Log <code>${esc(sc.compare.log)}</code>, tín hiệu: ${sc.compare.signals.map(sigName).join(', ')}.${sc.identify ? ` Nhận dạng: ${sc.identify.params.map((p) => `<code>${esc(p.name)}</code> [${p.min}, ${p.max}]`).join(', ')}.` : ''}</p>`);
+  parts.push(`<h3>Cài đặt chạy</h3><p>Model <code>${esc(sc.model || 'main')}</code> · dài ${sc.duration} s · bước tích phân ${(sc.dt ?? 0.001) * 1000} ms · ghi log mỗi ${(sc.logDt ?? 0.01) * 1000} ms.</p>`);
+  parts.push(`<h3>JSON gốc <span class="muted" style="text-transform:none;letter-spacing:0">(projects/${esc(state.dir)}/scenarios.json)</span></h3><pre class="json">${esc(JSON.stringify(sc, null, 2))}</pre>`);
+  return parts.join('');
+}
+
+// Định nghĩa một monitor ở dạng đọc được.
+function monitorDetails(id) {
+  const m = state.P.monitors.find((x) => x.id === id);
+  if (!m) return '';
+  const row = (k, v) => (v === undefined ? '' : `<tr><td class="muted" style="white-space:nowrap">${k}</td><td>${v}</td></tr>`);
+  const code = (x) => `<code class="expr">${esc(x)}</code>`;
+  const kind = m.always !== undefined ? 'Luôn đúng (kiểm trên mọi mẫu)' : 'Khi … thì trong … phải …';
+  return `<h3>Định nghĩa ${esc(m.id)}</h3><table class="t">
+    ${row('Yêu cầu', (m.req || []).map((r) => `<code>${esc(r)}</code>`).join(' '))}
+    ${row('Nội dung', esc(m.title || ''))}
+    ${row('Kiểu', kind)}
+    ${row('Luôn đúng', m.always !== undefined ? code(m.always) : undefined)}
+    ${row('Bắt đầu kiểm từ', m.from !== undefined ? `${m.from} s` : undefined)}
+    ${row('Khi (sườn lên)', m.when !== undefined ? code(m.when) : undefined)}
+    ${row('Thì phải', m.expect !== undefined ? code(m.expect) : undefined)}
+    ${row('Trong vòng', m.within !== undefined ? `${m.within} s` : undefined)}
+    ${row('Và giữ thêm', m.holdFor !== undefined ? `${m.holdFor} s` : undefined)}
+    ${row('Và giữ chừng nào', m.holdWhile !== undefined ? code(m.holdWhile) : undefined)}
+  </table><p class="muted" style="margin:6px 0 0">Tên viết hoa không phải tín hiệu (vd. CREEP_TARGET_SPD_D) là calibration — đổi ở tab Calibration thì monitor đổi theo.</p>`;
+}
+
 function selectScenario(name) {
   const sc = state.P.scenarios.find((s) => s.name === name);
   state.scenario = sc || null;
@@ -132,7 +196,9 @@ function selectScenario(name) {
       <span class="muted">model ${esc(sc.model || 'main')} · ${sc.duration} s · dt ${(sc.dt ?? 0.001) * 1000} ms</span></div>
     <div>${esc(sc.desc || '')}</div>
     ${sc.traces ? `<div class="muted" style="margin-top:4px">Truy vết: ${sc.traces.map((t) => `<code>${esc(t)}</code>`).join(' ')}</div>` : ''}
-    ${faults ? `<div class="warnbox" style="margin-top:6px">Tiêm lỗi:<ul style="margin:4px 0 0 18px;padding:0">${faults}</ul>${sc.expect ? `Kỳ vọng trượt: ${Object.keys(sc.expect).map((k) => `<code>${esc(k)}</code>`).join(' ')}` : ''}</div>` : ''}`;
+    ${faults ? `<div class="warnbox" style="margin-top:6px">Tiêm lỗi:<ul style="margin:4px 0 0 18px;padding:0">${faults}</ul>${sc.expect ? `Kỳ vọng trượt: ${Object.keys(sc.expect).map((k) => `<code>${esc(k)}</code>`).join(' ')}` : ''}</div>` : ''}
+    <details class="scdetail" ${state.detailsOpen ? 'open' : ''}><summary>Chi tiết kịch bản: ${Object.keys(sc.init || {}).length} điều kiện đầu, ${(sc.steps || []).length} bước${(sc.faults || []).length ? `, ${sc.faults.length} lỗi tiêm` : ''}${sc.replay ? ', phát lại log' : ''} — bấm để xem</summary>${scenarioDetails(sc)}</details>`;
+  $('scenarioInfo').querySelector('details').addEventListener('toggle', (e) => { state.detailsOpen = e.target.open; });
   if (!state.userPicked) state.selected = (sc.plots || []).slice();
 }
 
@@ -223,6 +289,7 @@ function renderRun() {
   drawPlot();
   plot.setMarks([]);
   const vs = run.verdicts;
+  $('monDef').innerHTML = '<p class="muted" style="margin:8px 0 0">Bấm một monitor để xem định nghĩa và vùng kiểm tra trên đồ thị.</p>';
   $('verdicts').innerHTML = vs.length ? `<table class="t"><thead><tr><th>Kết quả</th><th>Monitor</th><th>Yêu cầu</th><th>Chi tiết</th></tr></thead><tbody>${vs.map((v, k) => {
     const exp = v.expected ? ` <span class="muted">kỳ vọng ${esc(v.expected)}: ${v.asExpected ? 'đúng' : '<b>SAI</b>'}</span>` : '';
     const detail = v.failures.length ? esc(v.failures[0].reason) + (v.failures.length > 1 ? ` (+${v.failures.length - 1})` : '')
@@ -234,6 +301,7 @@ function renderRun() {
     $('verdicts').querySelectorAll('tr').forEach((x) => x.classList.remove('sel'));
     tr.classList.add('sel');
     plot.setMarks(v.windows);
+    $('monDef').innerHTML = monitorDetails(v.id);
     const bad = v.windows.find((w) => w.ok === false) || v.windows[0];
     if (bad) plot.focus(bad.t0, bad.t1);
   }));

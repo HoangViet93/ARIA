@@ -186,3 +186,12 @@ table.t td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .tab { padding: 10px 16px; }
 }
 #diagram text.tag { fill: var(--muted); font-size: 10.5px; font-family: var(--mono); }
+
+/* chi tiết kịch bản / monitor */
+details.scdetail { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+details.scdetail > summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details.scdetail table.t { margin-top: 2px; }
+details.scdetail h3:first-of-type { margin-top: 10px; }
+pre.json { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-family: var(--mono); font-size: 12px; max-height: 360px; margin: 0; }
+code.expr { white-space: pre-wrap; word-break: break-word; }
+#monDef table.t td { border-bottom: 1px solid var(--border); }
