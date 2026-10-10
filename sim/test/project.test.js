@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { checkProject, runAll, runScenario, identifyFromLog, monitorsOnLog, makeFakeLog } from '../engine/index.js';
+import { checkProject, runAll, runScenario, identifyFromLog, monitorsOnLog, makeFakeLog, applyOverrides } from '../engine/index.js';
 import { loadDemo, SIM } from './helpers.js';
 
 const P = await loadDemo();
@@ -56,4 +56,12 @@ test('demo: monitor chạy thẳng trên log, monitor thiếu tín hiệu đư�
   assert.ok(r.verdicts.length > 0);
   assert.ok(r.skipped.some((s) => s.id === 'MON-CREEP-MAXSPD' && /VehSpeedTrue/.test(s.reason)));
   for (const v of r.verdicts) assert.notEqual(v.status, 'error', `${v.id}: ${v.message}`);
+});
+
+test('demo: câu chuyện README bước 5–6 — plant nhận dạng làm creep_uphill trượt, nâng CREEP_TQ_MAX thì hết', () => {
+  const identified = { VEH_MASS: 2380.2, VEH_CDA: 0.77955, VEH_CRR: 0.011448 };
+  const bad = runAll(P, { calibration: applyOverrides(P.calibration, identified) });
+  assert.deepEqual(bad.runs.filter((x) => !x.ok).map((x) => x.scenario), ['creep_uphill']);
+  const fixed = runAll(P, { calibration: applyOverrides(P.calibration, { ...identified, CREEP_TQ_MAX: { y: [1000, 1000, 900, 250, 0] } }) });
+  assert.deepEqual(fixed.runs.filter((x) => !x.ok).map((x) => x.scenario), []);
 });

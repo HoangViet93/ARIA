@@ -10,7 +10,7 @@ Quy tắc của ARIA (`../CLAUDE.md`) vẫn áp dụng khi đụng tới `data.t
 Sau mọi thay đổi trong `sim/`:
 
 ```bash
-npm --prefix sim test          # 54 test, ~15 s — phải sạch
+npm --prefix sim test          # 55 test, ~15 s — phải sạch
 node sim/cli.js run sim/projects/demo   # mọi kịch bản demo phải "OK"
 ```
 

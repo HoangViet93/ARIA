@@ -237,7 +237,7 @@ npm run perf        # đo hiệu năng trên tài liệu 288 trang
 npm run check      # lint data.tex của cả hai project mẫu
 npm run sample     # sinh lại hai project mẫu
 npm run dist:win   # đóng gói bản Windows — xem "Đóng gói bản Windows" trong README.md
-npm run sim:test   # 54 ca của aria-sim (thư mục sim/) — xem sim/CLAUDE.md
+npm run sim:test   # 55 ca của aria-sim (thư mục sim/) — xem sim/CLAUDE.md
 ```
 
 ## `sim/` — engine mô phỏng (aria-sim)

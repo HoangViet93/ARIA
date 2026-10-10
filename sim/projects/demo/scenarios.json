@@ -67,7 +67,7 @@
   {
     "name": "creep_downhill", "desc": "Creep xuống dốc 15 %: mô-men ngược chiều của creep không giữ nổi xe. Kịch bản này được viết để kích hoạt chẩn đoán quá tốc độ (DEMO-0105) — nhưng monitor báo 'chưa kích hoạt' và transition Enabled → Fault không bao giờ chạy: creep tự tắt ở CREEP_ENABLE_MAX_SPD = 7 km/h, TRƯỚC khi chạm CREEP_OVERSPEED_TH = 8 km/h. Chẩn đoán là logic chết với bộ calibration này. Phát hiện cố ý để lại trong demo — xem README.",
     "traces": ["DEMO-0105"],
-    "duration": 16,
+    "duration": 24,
     "init": { "Gear": "D", "BrakePedalPct": 30, "RoadSlopePct": -15 },
     "steps": [
       { "t": 1, "set": { "BrakePedalPct": 0 } },

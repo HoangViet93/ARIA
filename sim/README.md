@@ -27,7 +27,7 @@ node sim/cli.js run sim/projects/demo                 # chạy mọi kịch bả
 node sim/cli.js identify sim/projects/demo replay_fake_drive
 node sim/cli.js import-aria projects/BCM-Door-Lock/data.tex sim/projects/bcm
 
-npm run sim:test             # 54 test, ~15 s
+npm run sim:test             # 55 test, ~15 s
 npm run sim:smoke            # mở UI trong Electron, bấm qua mọi tab, thoát 0/1
 ```
 
