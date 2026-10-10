@@ -1,0 +1,447 @@
+{
+  "ACC_PRESS_TH": {
+    "kind": "scalar",
+    "value": 5,
+    "unit": "%",
+    "desc": "Bàn đạp ga từ mức này trở lên coi là đang đạp.",
+    "group": "controller",
+    "min": 0,
+    "max": 100,
+    "sw": "DemoReq_percAccPressed_C"
+  },
+  "PEDAL_MAP": {
+    "kind": "map",
+    "group": "controller",
+    "unit": "Nm",
+    "desc": "Mô-men bánh theo bàn đạp ga và tốc độ, gear D; một map cho mỗi drive mode.",
+    "x": [0, 10, 20, 40, 60, 80, 100, 120, 140, 160, 180],
+    "xName": "Tốc độ xe",
+    "xUnit": "km/h",
+    "y": [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "yName": "Bàn đạp ga",
+    "yUnit": "%",
+    "z": [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [25, 25, 25, 25, 25, 20, 16, 14, 12, 10, 0],
+      [75, 75, 75, 75, 75, 62, 49, 41, 35, 31, 0],
+      [229, 229, 229, 229, 229, 188, 150, 125, 107, 94, 0],
+      [437, 437, 437, 437, 437, 359, 287, 239, 205, 179, 0],
+      [693, 693, 693, 693, 693, 568, 455, 379, 325, 284, 0],
+      [990, 990, 990, 990, 990, 812, 650, 542, 464, 406, 0],
+      [1326, 1326, 1326, 1326, 1326, 1087, 870, 725, 621, 544, 0],
+      [1697, 1697, 1697, 1697, 1697, 1392, 1113, 928, 795, 696, 0],
+      [2101, 2101, 2101, 2101, 2101, 1723, 1378, 1149, 985, 862, 0],
+      [2536, 2536, 2536, 2536, 2536, 2080, 1664, 1387, 1189, 1040, 0],
+      [3002, 3002, 3002, 3002, 3002, 2462, 1970, 1642, 1407, 1231, 0]
+    ],
+    "variantDefault": "Eco",
+    "variants": {
+      "Normal": {
+        "z": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [82, 82, 82, 82, 82, 68, 54, 45, 39, 34, 0],
+          [189, 189, 189, 189, 189, 155, 124, 104, 89, 78, 0],
+          [435, 435, 435, 435, 435, 357, 286, 238, 204, 178, 0],
+          [708, 708, 708, 708, 708, 581, 465, 387, 332, 290, 0],
+          [1000, 1000, 1000, 1000, 1000, 820, 656, 547, 469, 410, 0],
+          [1307, 1307, 1307, 1307, 1307, 1072, 857, 715, 612, 536, 0],
+          [1626, 1626, 1626, 1626, 1626, 1334, 1067, 889, 762, 667, 0],
+          [1957, 1957, 1957, 1957, 1957, 1605, 1284, 1070, 917, 803, 0],
+          [2297, 2297, 2297, 2297, 2297, 1884, 1507, 1256, 1077, 942, 0],
+          [2645, 2645, 2645, 2645, 2645, 2170, 1736, 1447, 1240, 1085, 0],
+          [3002, 3002, 3002, 3002, 3002, 2462, 1970, 1642, 1407, 1231, 0]
+        ]
+      },
+      "Sport": {
+        "z": [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [235, 235, 235, 235, 235, 193, 154, 129, 110, 96, 0],
+          [424, 424, 424, 424, 424, 348, 278, 232, 199, 174, 0],
+          [764, 764, 764, 764, 764, 627, 502, 418, 358, 313, 0],
+          [1079, 1079, 1079, 1079, 1079, 885, 708, 590, 506, 442, 0],
+          [1378, 1378, 1378, 1378, 1378, 1130, 904, 753, 646, 565, 0],
+          [1665, 1665, 1665, 1665, 1665, 1366, 1093, 911, 781, 683, 0],
+          [1945, 1945, 1945, 1945, 1945, 1595, 1276, 1063, 911, 798, 0],
+          [2217, 2217, 2217, 2217, 2217, 1818, 1455, 1212, 1039, 909, 0],
+          [2483, 2483, 2483, 2483, 2483, 2037, 1630, 1358, 1164, 1018, 0],
+          [2745, 2745, 2745, 2745, 2745, 2251, 1801, 1501, 1287, 1126, 0],
+          [3002, 3002, 3002, 3002, 3002, 2462, 1970, 1642, 1407, 1231, 0]
+        ]
+      }
+    },
+    "sw": {
+      "Eco": "DemoReq_tqWhlEco_M",
+      "Normal": "DemoReq_tqWhlNormal_M",
+      "Sport": "DemoReq_tqWhlSport_M"
+    }
+  },
+  "PEDAL_MAP_R": {
+    "kind": "map",
+    "group": "controller",
+    "unit": "Nm",
+    "desc": "Độ lớn mô-men bánh khi lùi (gear R) theo bàn đạp ga và tốc độ.",
+    "x": [0, 5, 10, 20, 30],
+    "xName": "Tốc độ xe",
+    "xUnit": "km/h",
+    "y": [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "yName": "Bàn đạp ga",
+    "yUnit": "%",
+    "z": [
+      [0, 0, 0, 0, 0],
+      [75, 66, 56, 38, 0],
+      [150, 131, 113, 75, 0],
+      [300, 263, 225, 150, 0],
+      [450, 394, 338, 225, 0],
+      [600, 525, 450, 300, 0],
+      [750, 656, 563, 375, 0],
+      [900, 788, 675, 450, 0],
+      [1050, 919, 788, 525, 0],
+      [1200, 1050, 900, 600, 0],
+      [1350, 1181, 1013, 675, 0],
+      [1500, 1313, 1125, 750, 0]
+    ],
+    "sw": "DemoReq_tqWhlRvs_M"
+  },
+  "BRK_TQ_FACTOR": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "-",
+    "desc": "Hệ số nhân mô-men bàn đạp khi đạp phanh cùng lúc.",
+    "x": [0, 3, 5, 10, 20, 30],
+    "xName": "Bàn đạp phanh",
+    "xUnit": "%",
+    "y": [1, 0.6, 0.4, 0.25, 0.1, 0],
+    "sw": "DemoReq_facDblPedl_T"
+  },
+  "CREEP_TARGET_SPD_D": {
+    "kind": "scalar",
+    "value": 5,
+    "unit": "km/h",
+    "desc": "Tốc độ creep mục tiêu khi tiến (gear D).",
+    "group": "controller",
+    "min": 0,
+    "max": 10
+  },
+  "CREEP_TARGET_SPD_R": {
+    "kind": "scalar",
+    "value": 3,
+    "unit": "km/h",
+    "desc": "Độ lớn tốc độ creep mục tiêu khi lùi (gear R).",
+    "group": "controller",
+    "min": 0,
+    "max": 10
+  },
+  "CREEP_KP": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "Nm/(km/h)",
+    "desc": "Hệ số P của vòng tốc độ creep theo sai số tốc độ.",
+    "x": [-3, -1, 0, 1, 3],
+    "xName": "Sai số tốc độ",
+    "xUnit": "km/h",
+    "y": [250, 280, 300, 300, 250]
+  },
+  "CREEP_KI": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "Nm/(km/h·s)",
+    "desc": "Hệ số I của vòng tốc độ creep theo sai số tốc độ.",
+    "x": [-3, -1, 0, 1, 3],
+    "xName": "Sai số tốc độ",
+    "xUnit": "km/h",
+    "y": [45, 55, 55, 55, 45]
+  },
+  "CREEP_TQ_MAX": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "Nm",
+    "desc": "Mô-men bánh creep lớn nhất theo chiều chạy, theo tốc độ.",
+    "x": [0, 3, 6, 7, 7.5],
+    "xName": "Tốc độ xe",
+    "xUnit": "km/h",
+    "y": [900, 900, 700, 200, 0]
+  },
+  "CREEP_OPP_DIR_FRAC": {
+    "kind": "scalar",
+    "value": 0.3,
+    "unit": "-",
+    "desc": "Mô-men creep ngược chiều tối đa, tính theo tỉ lệ của mô-men lớn nhất.",
+    "group": "controller",
+    "min": 0,
+    "max": 1
+  },
+  "CREEP_SLOPE_FF": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "Nm",
+    "desc": "Mô-men creep tiến trước (feedforward) theo độ dốc, lên dốc là dương.",
+    "x": [-20, -10, 0, 10, 20],
+    "xName": "Độ dốc",
+    "xUnit": "%",
+    "y": [-1450, -700, 70, 840, 1590]
+  },
+  "CREEP_BRK_FACTOR": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "-",
+    "desc": "Hệ số nhân mô-men creep theo bàn đạp phanh.",
+    "x": [0, 5, 10, 20, 30],
+    "xName": "Bàn đạp phanh",
+    "xUnit": "%",
+    "y": [1, 0.7, 0.4, 0.1, 0]
+  },
+  "CREEP_TQ_FILTER_TAU": {
+    "kind": "scalar",
+    "value": 0.1,
+    "unit": "s",
+    "desc": "Hằng thời gian lọc mô-men creep.",
+    "group": "controller",
+    "min": 0,
+    "max": 5
+  },
+  "CREEP_BLEND_ACC": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "-",
+    "desc": "Tỉ lệ mô-men creep được cộng vào, theo bàn đạp ga.",
+    "x": [0, 5, 20],
+    "xName": "Bàn đạp ga",
+    "xUnit": "%",
+    "y": [1, 1, 0]
+  },
+  "CREEP_ENABLE_MAX_SPD": {
+    "kind": "scalar",
+    "value": 7,
+    "unit": "km/h",
+    "desc": "Trên tốc độ này (gear D) creep không bật.",
+    "group": "controller",
+    "min": 0,
+    "max": 20
+  },
+  "CREEP_ENABLE_HYST": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "km/h",
+    "desc": "Hysteresis: creep đã tắt vì quá tốc độ chỉ bật lại dưới ngưỡng trừ đi giá trị này.",
+    "group": "controller",
+    "min": 0,
+    "max": 5
+  },
+  "CREEP_ENABLE_MAX_SPD_R": {
+    "kind": "scalar",
+    "value": 4,
+    "unit": "km/h",
+    "desc": "Trên tốc độ này (gear R) creep không bật.",
+    "group": "controller",
+    "min": 0,
+    "max": 20
+  },
+  "INTENT_ACC_TH": {
+    "kind": "scalar",
+    "value": 5,
+    "unit": "%",
+    "desc": "Bàn đạp ga trên mức này = tài xế muốn đi tiếp sau khi creep tạm dừng.",
+    "group": "controller",
+    "min": 0,
+    "max": 100
+  },
+  "INTENT_BRK_TH": {
+    "kind": "scalar",
+    "value": 5,
+    "unit": "%",
+    "desc": "Bàn đạp phanh trên mức này = tài xế muốn đi tiếp sau khi creep tạm dừng.",
+    "group": "controller",
+    "min": 0,
+    "max": 100
+  },
+  "CREEP_NOT_MOVING_TIME": {
+    "kind": "scalar",
+    "value": 20,
+    "unit": "s",
+    "desc": "Đứng yên khi creep (không đạp gì) quá thời gian này thì tạm dừng creep.",
+    "group": "controller",
+    "min": 0,
+    "max": 600
+  },
+  "VEH_MOVING_SPD": {
+    "kind": "scalar",
+    "value": 1,
+    "unit": "km/h",
+    "desc": "Trên tốc độ này coi là xe đang chạy (đặt lại đồng hồ đứng yên).",
+    "group": "controller",
+    "min": 0,
+    "max": 10
+  },
+  "CREEP_OVERSPEED_TH": {
+    "kind": "scalar",
+    "value": 8,
+    "unit": "km/h",
+    "desc": "Chẩn đoán: creep mà xe vượt tốc độ này (không đạp ga) là lỗi.",
+    "group": "controller",
+    "min": 0,
+    "max": 20
+  },
+  "TQ_RATE_UP_ECO": {
+    "kind": "scalar",
+    "value": 2000,
+    "unit": "Nm/s",
+    "desc": "Tốc độ tăng mô-men lớn nhất, Eco.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_RATE_UP_NORMAL": {
+    "kind": "scalar",
+    "value": 3500,
+    "unit": "Nm/s",
+    "desc": "Tốc độ tăng mô-men lớn nhất, Normal.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_RATE_UP_SPORT": {
+    "kind": "scalar",
+    "value": 6000,
+    "unit": "Nm/s",
+    "desc": "Tốc độ tăng mô-men lớn nhất, Sport.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_RATE_DOWN_ECO": {
+    "kind": "scalar",
+    "value": 4000,
+    "unit": "Nm/s",
+    "desc": "Tốc độ giảm mô-men lớn nhất, Eco.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_RATE_DOWN_NORMAL": {
+    "kind": "scalar",
+    "value": 5000,
+    "unit": "Nm/s",
+    "desc": "Tốc độ giảm mô-men lớn nhất, Normal.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_RATE_DOWN_SPORT": {
+    "kind": "scalar",
+    "value": 7000,
+    "unit": "Nm/s",
+    "desc": "Tốc độ giảm mô-men lớn nhất, Sport.",
+    "group": "controller",
+    "min": 100,
+    "max": 50000
+  },
+  "TQ_FILTER_TAU": {
+    "kind": "scalar",
+    "value": 0.05,
+    "unit": "s",
+    "desc": "Hằng thời gian lọc mô-men sau giới hạn tốc độ thay đổi.",
+    "group": "controller",
+    "min": 0,
+    "max": 2
+  },
+  "DRIVE_TQ_MAX": {
+    "kind": "curve",
+    "group": "controller",
+    "unit": "Nm",
+    "desc": "Mô-men bánh lớn nhất theo tốc độ (gear D).",
+    "x": [0, 20, 40, 60, 80, 100, 120, 140, 160, 175, 180],
+    "xName": "Tốc độ xe",
+    "xUnit": "km/h",
+    "y": [3002, 3002, 3002, 3002, 2462, 1970, 1642, 1407, 1231, 1126, 0]
+  },
+  "GEAR_RATIO": {
+    "kind": "scalar",
+    "value": 7.9,
+    "unit": "-",
+    "desc": "Tỉ số truyền mô-tơ → bánh.",
+    "group": "plant",
+    "min": 1,
+    "max": 20
+  },
+  "DRIVELINE_EFF": {
+    "kind": "scalar",
+    "value": 0.95,
+    "unit": "-",
+    "desc": "Hiệu suất truyền động.",
+    "group": "plant",
+    "min": 0.5,
+    "max": 1
+  },
+  "WHEEL_RADIUS": {
+    "kind": "scalar",
+    "value": 0.36,
+    "unit": "m",
+    "desc": "Bán kính lăn của bánh xe.",
+    "group": "plant",
+    "min": 0.2,
+    "max": 0.6
+  },
+  "VEH_MASS": {
+    "kind": "scalar",
+    "value": 2200,
+    "unit": "kg",
+    "desc": "Khối lượng xe (kể cả người).",
+    "group": "plant",
+    "min": 1500,
+    "max": 3500
+  },
+  "VEH_CDA": {
+    "kind": "scalar",
+    "value": 0.7,
+    "unit": "m²",
+    "desc": "Hệ số cản gió × diện tích chính diện.",
+    "group": "plant",
+    "min": 0.4,
+    "max": 1.2
+  },
+  "VEH_CRR": {
+    "kind": "scalar",
+    "value": 0.009,
+    "unit": "-",
+    "desc": "Hệ số cản lăn.",
+    "group": "plant",
+    "min": 0.004,
+    "max": 0.02
+  },
+  "BRAKE_TQ_MAX": {
+    "kind": "scalar",
+    "value": 8000,
+    "unit": "Nm",
+    "desc": "Mô-men phanh (cả xe) ở 100 % bàn đạp phanh.",
+    "group": "plant",
+    "min": 1000,
+    "max": 20000
+  },
+  "MOTOR_TQ_MAX": {
+    "kind": "scalar",
+    "value": 400,
+    "unit": "Nm",
+    "desc": "Mô-men đỉnh của mô-tơ.",
+    "group": "plant",
+    "min": 50,
+    "max": 1000
+  },
+  "MOTOR_PWR_MAX": {
+    "kind": "scalar",
+    "value": 160,
+    "unit": "kW",
+    "desc": "Công suất đỉnh của mô-tơ.",
+    "group": "plant",
+    "min": 10,
+    "max": 500
+  },
+  "MOTOR_TAU": {
+    "kind": "scalar",
+    "value": 0.03,
+    "unit": "s",
+    "desc": "Hằng thời gian đáp ứng mô-men của mô-tơ.",
+    "group": "plant",
+    "min": 0.001,
+    "max": 0.5
+  }
+}

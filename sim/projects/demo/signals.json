@@ -1,0 +1,30 @@
+{
+  "enums": {
+    "GearPos": ["P", "R", "N", "D"],
+    "DriveMode": ["Eco", "Normal", "Sport"],
+    "OnOff": ["Off", "On"],
+    "Door": ["Closed", "Opened"],
+    "CreepSt": ["Disabled", "Inhibited", "Active", "Suspended", "Fault"]
+  },
+  "signals": {
+    "AccPedalPct":      { "unit": "%", "min": 0, "max": 100, "desc": "Vị trí bàn đạp ga" },
+    "BrakePedalPct":    { "unit": "%", "min": 0, "max": 100, "desc": "Vị trí bàn đạp phanh" },
+    "Gear":             { "enum": "GearPos", "desc": "Số đang gài" },
+    "DriveModeSel":     { "enum": "DriveMode", "desc": "Drive mode" },
+    "CreepSetting":     { "enum": "OnOff", "initial": 1, "desc": "Cài đặt creep của tài xế (mặc định bật)" },
+    "DoorStatus":       { "enum": "Door", "desc": "Cửa tài xế" },
+    "RoadSlopePct":     { "unit": "%", "min": -30, "max": 30, "desc": "Độ dốc theo chiều tiến, LÊN DỐC LÀ DƯƠNG" },
+    "BattDischgPwrLim": { "unit": "kW", "min": 0, "max": 400, "initial": 200, "desc": "Công suất xả cho phép của pin" },
+    "ObstacleHoldN":    { "unit": "N", "min": 0, "max": 100000, "desc": "Lực giữ ngoài (chèn bánh, gờ) — chỉ có trong mô phỏng" },
+    "PedalTq":          { "unit": "Nm", "desc": "Mô-men bánh từ bàn đạp ga" },
+    "CreepTq":          { "unit": "Nm", "desc": "Mô-men bánh creep" },
+    "CreepState":       { "enum": "CreepSt", "desc": "Trạng thái creep" },
+    "DriverTqReq":      { "unit": "Nm", "min": -4000, "max": 4000, "desc": "Mô-men bánh yêu cầu sau giới hạn và lọc" },
+    "MotorTqReq":       { "unit": "Nm", "min": -400, "max": 400, "desc": "Mô-men mô-tơ yêu cầu" },
+    "MotorTqAct":       { "unit": "Nm", "min": -400, "max": 400, "desc": "Mô-men mô-tơ thực tế" },
+    "MotorSpeed":       { "unit": "rpm", "desc": "Tốc độ mô-tơ" },
+    "VehicleSpeed":     { "unit": "km/h", "min": -50, "max": 250, "desc": "Tốc độ xe controller nhận được (bị ảnh hưởng bởi lỗi tiêm)" },
+    "VehSpeedTrue":     { "unit": "km/h", "desc": "Tốc độ vật lý thật của xe — chỉ dùng cho monitor, không có trên xe" },
+    "VehAccel":         { "unit": "m/s²", "desc": "Gia tốc dọc" }
+  }
+}

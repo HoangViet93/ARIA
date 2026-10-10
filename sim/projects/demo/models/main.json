@@ -1,0 +1,23 @@
+{
+  "name": "main",
+  "desc": "Model kín vòng: controller CVC (rời rạc 10 ms) + mô-tơ + plant dọc xe (liên tục).",
+  "blocks": {
+    "CVC": { "type": "Subsystem", "ref": "cvc.json" },
+    "Motor": {
+      "type": "Subsystem",
+      "desc": "Mô-tơ trước: bám mô-men yêu cầu, giới hạn mô-men và công suất.",
+      "blocks": {
+        "EM": {
+          "type": "ElectricMotor",
+          "params": { "tau": "@MOTOR_TAU", "tqMax": "@MOTOR_TQ_MAX", "pwrMaxKw": "@MOTOR_PWR_MAX" }
+        }
+      },
+      "lines": [
+        ["bus:MotorTqReq", "EM.tqReq"],
+        ["bus:MotorSpeed", "EM.speedRpm"],
+        ["EM.tq", "bus:MotorTqAct"]
+      ]
+    },
+    "Vehicle": { "type": "Subsystem", "ref": "vehicle.json" }
+  }
+}

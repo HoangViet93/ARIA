@@ -1,0 +1,14 @@
+{
+  "name": "aria-sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Engine mô phỏng kiểu sơ đồ khối (Simulink-like) cho MIL theo system requirement và desktop calibration. Không phụ thuộc thư viện ngoài.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node --test \"test/*.test.js\"",
+    "check": "node cli.js check projects/demo",
+    "run-all": "node cli.js run projects/demo --all",
+    "fake-log": "node cli.js fake-log projects/demo"
+  }
+}

@@ -35,6 +35,10 @@ gọn, chạy offline, và **lưu dữ liệu thẳng trong LaTeX** để versio
 - Zoom khung tài liệu (`Ctrl` + con lăn), tối đa là mức vừa bề rộng trang
 - Chịu được sách dài: 288 trang / 1 150 item vẫn cuộn 60 fps — xem
   `docs/PERFORMANCE.md`
+- **aria-sim** (`sim/`): mô phỏng sơ đồ khối kiểu Simulink cho MIL theo yêu
+  cầu và desktop calibration — monitor yêu cầu chạy trên cả kết quả mô phỏng
+  lẫn log xe, nhận dạng tham số plant từ log, nhập/xuất DCM, nhập thẳng từ
+  sách ARIA. Xem `sim/README.md`; chạy `npm run sim`.
 
 Đọc `docs/FEATURES.md` (phân tích + feature requirement), `docs/DESIGN.md`
 (thiết kế chi tiết) và `docs/PERFORMANCE.md` (đo và tối ưu hiệu năng).

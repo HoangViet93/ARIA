@@ -237,7 +237,16 @@ npm run perf        # đo hiệu năng trên tài liệu 288 trang
 npm run check      # lint data.tex của cả hai project mẫu
 npm run sample     # sinh lại hai project mẫu
 npm run dist:win   # đóng gói bản Windows — xem "Đóng gói bản Windows" trong README.md
+npm run sim:test   # 54 ca của aria-sim (thư mục sim/) — xem sim/CLAUDE.md
 ```
+
+## `sim/` — engine mô phỏng (aria-sim)
+
+Dự án con độc lập: mô phỏng sơ đồ khối cho MIL theo yêu cầu, desktop
+calibration và vòng log xe → kiểm chứng. Có `CLAUDE.md` và `README.md` riêng —
+**đọc `sim/CLAUDE.md` trước khi sửa bất cứ gì trong `sim/`**. Nó đọc `data.tex`
+qua chính `lib/itemModel.js` (`sim/bridge/aria-import.js`), nên đổi parser của
+ARIA thì chạy lại `npm run sim:test`. `dist:win` không đóng gói `sim/`.
 
 Node cài ở `~/.local/node/bin`, TeX Live ở `~/texlive/cur/bin/x86_64-linux` —
 thêm vào PATH nếu lệnh không chạy.

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>aria-sim</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">aria-sim <span>mô phỏng MIL · calibration</span></div>
+    <select id="projectSel" title="Project"></select>
+    <span id="fakeBadge" class="fakebadge hidden">DỮ LIỆU GIẢ</span>
+    <select id="scenarioSel" title="Kịch bản"></select>
+    <button id="runBtn" class="primary">▶ Chạy</button>
+    <div id="status">Đang nạp…</div>
+    <button id="themeBtn" title="Đổi giao diện sáng/tối">◐</button>
+  </header>
+
+  <div class="layout">
+    <aside id="side">
+      <div class="head">
+        <input id="sigFilter" type="search" placeholder="Lọc tín hiệu…">
+        <button id="sigClear" title="Bỏ chọn tất cả">✕</button>
+      </div>
+      <div id="signalList"></div>
+    </aside>
+
+    <section id="content">
+      <nav class="tabs" id="tabs">
+        <button data-tab="results" class="on">Kết quả</button>
+        <button data-tab="diagram">Sơ đồ khối</button>
+        <button data-tab="cal">Calibration</button>
+        <button data-tab="log">Log &amp; nhận dạng</button>
+        <button data-tab="req">Yêu cầu &amp; độ phủ</button>
+      </nav>
+
+      <div class="tab" id="tab-results">
+        <div class="card" id="scenarioInfo"></div>
+        <div id="runError"></div>
+        <div id="plot"><div class="plot-empty">Chọn kịch bản rồi bấm ▶ Chạy</div></div>
+        <div class="split" style="margin-top:12px">
+          <div class="card">
+            <h2>Monitor yêu cầu</h2>
+            <div id="verdicts" class="muted">Chưa chạy.</div>
+          </div>
+          <div class="card">
+            <h2>Chuyển trạng thái</h2>
+            <div id="events" class="muted">Chưa chạy.</div>
+            <div id="runWarnings"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab hidden" id="tab-diagram">
+        <div class="row" style="margin-bottom:8px">
+          <label>Model <select id="modelSel"></select></label>
+          <div class="crumbs grow" id="crumbs"></div>
+        </div>
+        <div id="diagramWrap">
+          <div id="diagram"></div>
+          <div id="blockInfo" class="muted">Bấm vào một khối để xem tham số. Bấm đúp vào subsystem để mở.</div>
+        </div>
+      </div>
+
+      <div class="tab hidden" id="tab-cal">
+        <div class="row" style="margin-bottom:10px">
+          <input id="calFilter" type="search" placeholder="Lọc tên / mô tả…">
+          <select id="calGroup"><option value="">Mọi nhóm</option></select>
+          <span id="calDirty" class="muted"></span>
+          <div class="spacer grow"></div>
+          <button id="calImport">Nhập DCM…</button>
+          <button id="calExportDcm">Xuất DCM</button>
+          <button id="calExportJson">Xuất JSON</button>
+          <button id="calSave">Lưu vào project</button>
+          <button id="calResetAll">Khôi phục tất cả</button>
+          <input id="calFile" type="file" accept=".dcm,.DCM,.txt" class="hidden">
+        </div>
+        <div id="calErrors"></div>
+        <div id="calWrap">
+          <div class="card" id="calTable"></div>
+          <div class="card" id="calDetail"><span class="muted">Chọn một calibration để xem và sửa.</span></div>
+        </div>
+      </div>
+
+      <div class="tab hidden" id="tab-log">
+        <div class="card">
+          <div class="row">
+            <label>Log <select id="logSel"></select></label>
+            <button id="logUpload">Nạp CSV…</button>
+            <input id="logFile" type="file" accept=".csv,.txt" class="hidden">
+            <button id="logMonitors">Chạy monitor trên log</button>
+          </div>
+          <div id="logMeta" class="muted" style="margin-top:6px"></div>
+        </div>
+        <div class="card">
+          <div class="row">
+            <label>Kịch bản replay <select id="replaySel"></select></label>
+            <button id="replayBtn" class="primary">Chạy replay &amp; so sánh</button>
+          </div>
+          <div id="replayMetrics" style="margin-top:8px"></div>
+        </div>
+        <div class="plotbox" id="logPlot"><div class="plot-empty">Chạy replay để so sánh đo ↔ mô phỏng.</div></div>
+        <div class="split" style="margin-top:12px">
+          <div class="card">
+            <h2>Nhận dạng tham số plant</h2>
+            <div id="identParams"></div>
+            <div class="row" style="margin-top:8px">
+              <button id="identBtn" class="primary">Nhận dạng</button>
+              <span id="identStatus" class="muted"></span>
+            </div>
+            <div class="progress"><div id="identBar"></div></div>
+            <div id="identResult"></div>
+          </div>
+          <div class="card">
+            <h2>Monitor trên log</h2>
+            <div id="logVerdicts" class="muted">Bấm "Chạy monitor trên log" — kiểm yêu cầu thẳng trên dữ liệu đo, không mô phỏng.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab hidden" id="tab-req">
+        <div class="row" style="margin-bottom:10px">
+          <button id="runAllBtn" class="primary">Chạy tất cả kịch bản</button>
+          <span id="runAllStatus" class="muted"></span>
+        </div>
+        <div class="progress"><div id="runAllBar"></div></div>
+        <div id="reqSummary"></div>
+        <div class="card" style="overflow:auto"><div id="reqMatrix" class="muted">Chưa chạy.</div></div>
+        <div class="card"><h2>Độ phủ transition của Chart</h2><div id="transCov" class="muted">Chưa chạy.</div></div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

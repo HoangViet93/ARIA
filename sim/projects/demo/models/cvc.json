@@ -1,0 +1,191 @@
+{
+  "desc": "Controller giả 'CVC': bàn đạp ga, creep, phân xử, giới hạn, độ mượt. Chạy ở nhịp 10 ms như một task ECU.",
+  "ts": 0.01,
+  "blocks": {
+    "SpdAbs": { "type": "Expr", "inputs": ["v"], "outputs": { "abs": "abs(v)" } },
+
+    "PedalMapD": {
+      "type": "Lookup2D", "implements": ["DEMO-0201"],
+      "params": { "tables": ["@PEDAL_MAP:Eco", "@PEDAL_MAP:Normal", "@PEDAL_MAP:Sport"] }
+    },
+    "PedalMapR": { "type": "Lookup2D", "implements": ["DEMO-0201"], "params": { "table": "@PEDAL_MAP_R" } },
+    "BrkFactor": { "type": "Lookup1D", "params": { "table": "@BRK_TQ_FACTOR" } },
+    "PedalTq": {
+      "type": "Expr", "implements": ["DEMO-0201", "DEMO-0202"],
+      "inputs": ["gear", "acc", "tqD", "tqR", "fBrk"],
+      "outputs": { "tq": "acc < ACC_PRESS_TH ? 0 : (gear == GearPos.D ? tqD : gear == GearPos.R ? -tqR : 0) * fBrk" },
+      "params": { "ACC_PRESS_TH": "@ACC_PRESS_TH" }
+    },
+
+    "StillCond": {
+      "type": "Expr", "implements": ["DEMO-0106"],
+      "desc": "Đồng hồ đứng yên chạy khi creep Active và không đạp gì; về 0 khi đạp phanh, đạp ga hoặc xe chạy.",
+      "inputs": ["st", "acc", "brk", "v"],
+      "outputs": {
+        "run": "st == CreepSt.Active && acc < ACC_PRESS_TH && brk < 1",
+        "reset": "brk >= 1 || acc >= ACC_PRESS_TH || abs(v) > VEH_MOVING_SPD"
+      },
+      "params": { "ACC_PRESS_TH": "@ACC_PRESS_TH", "VEH_MOVING_SPD": "@VEH_MOVING_SPD" }
+    },
+    "StillTimer": { "type": "Timer", "implements": ["DEMO-0106"] },
+
+    "CreepChart": {
+      "type": "Chart", "implements": ["DEMO-0101", "DEMO-0103", "DEMO-0104", "DEMO-0105", "DEMO-0106"],
+      "inputs": ["setting", "gear", "v", "acc", "brk", "door", "still"],
+      "params": {
+        "vMaxD": "@CREEP_ENABLE_MAX_SPD", "vMaxR": "@CREEP_ENABLE_MAX_SPD_R",
+        "accIntent": "@INTENT_ACC_TH", "brkIntent": "@INTENT_BRK_TH",
+        "stillMax": "@CREEP_NOT_MOVING_TIME", "vFault": "@CREEP_OVERSPEED_TH", "accPress": "@ACC_PRESS_TH",
+        "hyst": "@CREEP_ENABLE_HYST"
+      },
+      "conditions": {
+        "COND": "(gear == GearPos.D && v <= vMaxD) || (gear == GearPos.R && v >= -vMaxR)",
+        "COND_IN": "(gear == GearPos.D && v <= vMaxD - hyst) || (gear == GearPos.R && v >= -(vMaxR - hyst))",
+        "INTENT": "acc > accIntent || brk > brkIntent"
+      },
+      "states": {
+        "Disabled": {},
+        "Enabled": {
+          "initial": "Inhibited",
+          "states": { "Inhibited": {}, "Active": {}, "SuspDoor": {}, "SuspStill": {} }
+        },
+        "Fault": {}
+      },
+      "initial": "Enabled",
+      "transitions": [
+        { "from": "Enabled", "to": "Disabled", "guard": "setting == OnOff.Off", "req": "DEMO-0104" },
+        { "from": "Enabled", "to": "Fault", "guard": "inState('Enabled.Active') && abs(v) > vFault && acc < accPress", "req": "DEMO-0105" },
+        { "from": "Disabled", "to": "Enabled", "guard": "setting == OnOff.On", "req": "DEMO-0104" },
+        { "from": "Fault", "to": "Enabled", "guard": "gear == GearPos.P", "req": "DEMO-0105" },
+        { "from": "Enabled.Inhibited", "to": "Enabled.Active", "guard": "COND_IN && door == Door.Closed", "req": "DEMO-0101" },
+        { "from": "Enabled.Active", "to": "Enabled.SuspDoor", "guard": "door == Door.Opened", "req": "DEMO-0103" },
+        { "from": "Enabled.Active", "to": "Enabled.SuspStill", "guard": "still >= stillMax", "req": "DEMO-0106" },
+        { "from": "Enabled.Active", "to": "Enabled.Inhibited", "guard": "!COND", "req": "DEMO-0101" },
+        { "from": "Enabled.SuspDoor", "to": "Enabled.Active", "guard": "door == Door.Closed && COND_IN && INTENT", "req": "DEMO-0103" },
+        { "from": "Enabled.SuspDoor", "to": "Enabled.Inhibited", "guard": "!COND", "req": "DEMO-0103" },
+        { "from": "Enabled.SuspStill", "to": "Enabled.Active", "guard": "COND_IN && INTENT", "req": "DEMO-0106" },
+        { "from": "Enabled.SuspStill", "to": "Enabled.Inhibited", "guard": "!COND", "req": "DEMO-0106" }
+      ],
+      "stateOutput": {
+        "enum": "CreepSt",
+        "map": {
+          "Disabled": "Disabled", "Enabled.Inhibited": "Inhibited", "Enabled.Active": "Active",
+          "Enabled.SuspDoor": "Suspended", "Enabled.SuspStill": "Suspended", "Fault": "Fault"
+        }
+      },
+      "outputs": { "active": "inState('Enabled.Active')" }
+    },
+
+    "CreepRef": {
+      "type": "Expr", "implements": ["DEMO-0102"],
+      "desc": "Sai số tốc độ tính theo chiều chạy (dương = chậm hơn mục tiêu). PI chỉ tích phân khi không đạp phanh — tránh windup lúc tài xế còn giữ phanh.",
+      "inputs": ["gear", "v", "slope", "active", "brk"],
+      "outputs": {
+        "piOn": "active >= 0.5 && brk < 1",
+        "dir": "gear == GearPos.R ? -1 : 1",
+        "target": "dir > 0 ? TGT_D : -TGT_R",
+        "e": "(target - v) * dir",
+        "hi": "lut(TQ_MAX, abs(v))",
+        "lo": "-OPP * hi",
+        "ff": "lut(FF, slope * dir)",
+        "piHi": "hi - ff",
+        "piLo": "lo - ff"
+      },
+      "params": {
+        "TGT_D": "@CREEP_TARGET_SPD_D", "TGT_R": "@CREEP_TARGET_SPD_R",
+        "TQ_MAX": "@CREEP_TQ_MAX", "OPP": "@CREEP_OPP_DIR_FRAC", "FF": "@CREEP_SLOPE_FF"
+      }
+    },
+    "CreepPI": {
+      "type": "PI", "implements": ["DEMO-0102"], "limitInputs": true,
+      "params": { "kp": "@CREEP_KP", "ki": "@CREEP_KI" }
+    },
+    "CreepRaw": {
+      "type": "Expr", "implements": ["DEMO-0102", "DEMO-0301"],
+      "inputs": ["active", "pi", "ff", "lo", "hi", "brk", "dir"],
+      "outputs": { "tq": "active >= 0.5 ? dir * clamp(ff + pi, lo, hi) * lut(BRK_F, brk) : 0" },
+      "params": { "BRK_F": "@CREEP_BRK_FACTOR" }
+    },
+    "CreepFilt": { "type": "PT1Discrete", "params": { "tau": "@CREEP_TQ_FILTER_TAU" } },
+
+    "Arb": {
+      "type": "Expr",
+      "inputs": ["pedalTq", "creepTq", "acc"],
+      "outputs": { "tq": "pedalTq + creepTq * lut(BLEND, acc)" },
+      "params": { "BLEND": "@CREEP_BLEND_ACC" }
+    },
+    "TqLimit": {
+      "type": "Expr", "implements": ["DEMO-0202", "DEMO-0204"],
+      "desc": "Giới hạn mô-men bánh theo curve tốc độ và theo công suất pin (P/ω bánh).",
+      "inputs": ["tq", "v", "gear", "pBat"],
+      "outputs": {
+        "lim": "min(lut(DRV_MAX, abs(v)), pBat * 1000 * EFF / max(abs(v) / 3.6 / R, 2))",
+        "y": "(gear == GearPos.D || gear == GearPos.R) ? clamp(tq, -lim, lim) : 0"
+      },
+      "params": { "DRV_MAX": "@DRIVE_TQ_MAX", "R": "@WHEEL_RADIUS", "EFF": "@DRIVELINE_EFF" }
+    },
+    "RateSel": {
+      "type": "Expr", "implements": ["DEMO-0203"],
+      "inputs": ["mode"],
+      "outputs": {
+        "up": "select(mode, UP_ECO, UP_NORMAL, UP_SPORT)",
+        "down": "select(mode, DN_ECO, DN_NORMAL, DN_SPORT)"
+      },
+      "params": {
+        "UP_ECO": "@TQ_RATE_UP_ECO", "UP_NORMAL": "@TQ_RATE_UP_NORMAL", "UP_SPORT": "@TQ_RATE_UP_SPORT",
+        "DN_ECO": "@TQ_RATE_DOWN_ECO", "DN_NORMAL": "@TQ_RATE_DOWN_NORMAL", "DN_SPORT": "@TQ_RATE_DOWN_SPORT"
+      }
+    },
+    "TqRate": { "type": "RateLimiter", "rateInputs": true, "implements": ["DEMO-0203"] },
+    "TqFilt": { "type": "PT1Discrete", "params": { "tau": "@TQ_FILTER_TAU" } },
+    "MotReq": {
+      "type": "Expr",
+      "inputs": ["tq"],
+      "outputs": { "m": "tq / RATIO" },
+      "params": { "RATIO": "@GEAR_RATIO" }
+    }
+  },
+  "lines": [
+    ["bus:VehicleSpeed", ["SpdAbs.v", "StillCond.v", "CreepChart.v", "CreepRef.v", "TqLimit.v"]],
+    ["bus:AccPedalPct", ["PedalMapD.y", "PedalMapR.y", "PedalTq.acc", "StillCond.acc", "CreepChart.acc", "Arb.acc"]],
+    ["bus:BrakePedalPct", ["BrkFactor.x", "StillCond.brk", "CreepChart.brk", "CreepRaw.brk", "CreepRef.brk"]],
+    ["bus:Gear", ["PedalTq.gear", "CreepChart.gear", "CreepRef.gear", "TqLimit.gear"]],
+    ["bus:DriveModeSel", ["PedalMapD.sel", "RateSel.mode"]],
+    ["bus:CreepSetting", "CreepChart.setting"],
+    ["bus:DoorStatus", "CreepChart.door"],
+    ["bus:RoadSlopePct", "CreepRef.slope"],
+    ["bus:BattDischgPwrLim", "TqLimit.pBat"],
+
+    ["SpdAbs", ["PedalMapD.x", "PedalMapR.x"]],
+    ["PedalMapD", "PedalTq.tqD"],
+    ["PedalMapR", "PedalTq.tqR"],
+    ["BrkFactor", "PedalTq.fBrk"],
+    ["PedalTq", ["Arb.pedalTq", "bus:PedalTq"]],
+
+    ["CreepChart.state", ["StillCond.st", "bus:CreepState"]],
+    ["StillCond.run", "StillTimer.run"],
+    ["StillCond.reset", "StillTimer.reset"],
+    ["StillTimer", "CreepChart.still"],
+
+    ["CreepRef.e", "CreepPI.e"],
+    ["CreepChart.active", ["CreepRef.active", "CreepRaw.active"]],
+    ["CreepRef.piOn", "CreepPI.enable"],
+    ["CreepRef.piLo", "CreepPI.lo"],
+    ["CreepRef.piHi", "CreepPI.hi"],
+    ["CreepPI", "CreepRaw.pi"],
+    ["CreepRef.ff", "CreepRaw.ff"],
+    ["CreepRef.lo", "CreepRaw.lo"],
+    ["CreepRef.hi", "CreepRaw.hi"],
+    ["CreepRef.dir", "CreepRaw.dir"],
+    ["CreepRaw", "CreepFilt"],
+    ["CreepFilt", ["Arb.creepTq", "bus:CreepTq"]],
+
+    ["Arb", "TqLimit.tq"],
+    ["TqLimit.y", "TqRate.u"],
+    ["RateSel.up", "TqRate.up"],
+    ["RateSel.down", "TqRate.down"],
+    ["TqRate", "TqFilt"],
+    ["TqFilt", ["MotReq", "bus:DriverTqReq"]],
+    ["MotReq", "bus:MotorTqReq"]
+  ]
+}

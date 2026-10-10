@@ -1,0 +1,13 @@
+[
+  { "code": "DEMO-0101", "type": "function", "title": "Xe bò ở tốc độ đi bộ khi không đạp bàn đạp nào" },
+  { "code": "DEMO-0102", "type": "design", "title": "Mô-men creep giữ tốc độ mục tiêu (tiến và lùi)" },
+  { "code": "DEMO-0103", "type": "design", "title": "Mở cửa tài xế thì dừng creep; chỉ chạy lại khi tài xế đạp bàn đạp" },
+  { "code": "DEMO-0104", "type": "design", "title": "Tài xế tắt creep thì không có mô-men creep" },
+  { "code": "DEMO-0105", "type": "design", "title": "Chẩn đoán creep quá tốc độ" },
+  { "code": "DEMO-0106", "type": "design", "title": "Đứng yên quá lâu khi creep thì tạm dừng creep" },
+  { "code": "DEMO-0201", "type": "design", "title": "Mô-men bàn đạp ga theo map của drive mode" },
+  { "code": "DEMO-0202", "type": "design", "title": "Không có mô-men ở P và N" },
+  { "code": "DEMO-0203", "type": "design", "title": "Giới hạn tốc độ tăng mô-men theo drive mode" },
+  { "code": "DEMO-0204", "type": "design", "title": "Công suất mô-tơ không vượt công suất pin cho phép" },
+  { "code": "DEMO-0301", "type": "design", "title": "Đạp phanh làm giảm mô-men creep" }
+]

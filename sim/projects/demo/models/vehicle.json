@@ -1,0 +1,36 @@
+{
+  "desc": "Plant dọc xe: truyền động + thân xe 1 DOF. Dùng chung cho model kín vòng và model replay log.",
+  "blocks": {
+    "WheelTq": {
+      "type": "Expr",
+      "desc": "Mô-men mô-tơ → mô-men bánh. Hiệu suất làm giảm mô-men khi kéo, tăng mô-men bánh cần thiết khi tái sinh.",
+      "inputs": ["motTq"],
+      "outputs": { "tq": "motTq * RATIO * (motTq >= 0 ? EFF : 1 / EFF)" },
+      "params": { "RATIO": "@GEAR_RATIO", "EFF": "@DRIVELINE_EFF" }
+    },
+    "Body": {
+      "type": "VehicleLongitudinal",
+      "params": {
+        "mass": "@VEH_MASS", "CdA": "@VEH_CDA", "Crr": "@VEH_CRR",
+        "rWheel": "@WHEEL_RADIUS", "brakeTqMax": "@BRAKE_TQ_MAX"
+      }
+    },
+    "MotSpd": {
+      "type": "Expr",
+      "inputs": ["w"],
+      "outputs": { "rpm": "w * RATIO * 30 / PI" },
+      "params": { "RATIO": "@GEAR_RATIO" }
+    }
+  },
+  "lines": [
+    ["bus:MotorTqAct", "WheelTq.motTq"],
+    ["WheelTq", "Body.tqWheel"],
+    ["bus:BrakePedalPct", "Body.brakePct"],
+    ["bus:RoadSlopePct", "Body.slopePct"],
+    ["bus:ObstacleHoldN", "Body.holdN"],
+    ["Body.v_kmh", ["bus:VehicleSpeed", "bus:VehSpeedTrue"]],
+    ["Body.accel", "bus:VehAccel"],
+    ["Body.wWheel", "MotSpd.w"],
+    ["MotSpd", "bus:MotorSpeed"]
+  ]
+}

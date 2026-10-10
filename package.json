@@ -15,13 +15,17 @@
     "sample:workspace": "node scripts/make-vf9-workspace.js",
     "check": "node scripts/check.js projects/BCM-Door-Lock/data.tex projects/EPB-Park-Brake/data.tex",
     "test:editor": "SRS_TEST=1 electron test/editor-audit.js",
-    "test:all": "npm test && npm run test:ui && npm run test:editor && npm run test:git && npm run test:cache && npm run test:workspace",
+    "test:all": "npm test && npm run test:ui && npm run test:editor && npm run test:git && npm run test:cache && npm run test:workspace && npm run sim:test",
     "test:git": "SRS_TEST=1 electron test/git-ui.js",
     "test:workspace": "node scripts/make-vf9-workspace.js --force && SRS_TEST=1 electron test/workspace-ui.js",
     "seed-history": "node scripts/seed-history.js",
     "perf": "SRS_TEST=1 electron test/perf.js",
     "predist:win": "npm run build && npm run version:write",
-    "dist:win": "node scripts/build-portable-win.js"
+    "dist:win": "node scripts/build-portable-win.js",
+    "sim": "node sim/serve.js",
+    "sim:app": "electron sim/electron-main.cjs",
+    "sim:test": "npm --prefix sim test",
+    "sim:smoke": "SIM_SMOKE=1 electron sim/electron-main.cjs"
   },
   "devDependencies": {
     "electron": "^31.0.0",

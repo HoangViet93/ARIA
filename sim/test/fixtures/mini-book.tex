@@ -1,0 +1,147 @@
+% Sách ARIA TỔNG HỢP cho test cầu nối — số liệu giả, cùng định dạng sách thật.
+\docname{MINI}
+\doctitle{Mini torque book}
+\docsubtitle{}
+\docno{MINI-1}
+\docrevision{0.1}
+\docdate{2026-10-10}
+\docclass{Test}
+\docnextid{20}
+
+\begin{srsitem}{MINI-0001}{function}{The vehicle creeps}
+\itemdesc{Creep.}
+\begin{itemprops}
+\itemfield{deployMaster}{ECU}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0002}{design}{Creep torque}
+\itemdesc{Design.}
+\begin{itemprops}
+\itemfield{functionCode}{MINI-0001}
+\itemfield{asil}{QM}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0003}{interface}{Veh\_Speed}
+\itemdesc{Vehicle speed. Physical value = raw × 0.05 + 0, range 0 to 300 km/h. Network: CAN.}
+\begin{itemprops}
+\itemfield{unit}{km/h}
+\itemfield{defaultValue}{0}
+\itemfield{physical}{CAN}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0004}{interface}{Slope\_Grade}
+\itemdesc{Slope, uphill negative. Physical value = raw × 1 + -30, range -30 to 30 \%.}
+\begin{itemprops}
+\itemfield{unit}{\%}
+\itemfield{defaultValue}{-30}
+\itemfield{physical}{CAN}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0005}{interface}{Brake\_Switch}
+\itemdesc{Brake switch.}
+\begin{itemprops}
+\itemfield{values}{Reserved; Not pressed; Pressed; Invalid}
+\itemfield{defaultValue}{Reserved}
+\itemfield{physical}{CAN}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0006}{calibration}{GAIN\_CURVE}
+\itemdesc{Gain over speed error.
+
+Curve over Speed error (km/h); values 1 to 3.
+
+\srshrule
+
+Software name: \texttt{Demo\_facGain\_T} (model x).
+
+Break points: Speed error (km/h) → value (-).
+
+\begin{tabularx}{\linewidth}{|X|X|X|X|}
+\hline
+\srsth{km/h} & \srsth{-1} & \srsth{0} & \srsth{1} \\
+\hline
+- & 2 & 1 & 3 \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|X|X|X|}
+\hline
+\srsth{km/h} & \srsth{4} & \srsth{} \\
+\hline
+- & 1.5 &  \\
+\hline
+\end{tabularx}}
+\begin{itemprops}
+\itemfield{symbol}{GAIN\_CURVE}
+\itemfield{unit}{-}
+\itemfield{minValue}{-100}
+\itemfield{maxValue}{100}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0007}{calibration}{TQ\_MAX\_CURVE}
+\itemdesc{Largest torque; A = gear D, B = gear R.
+
+Curve over Vehicle speed (km/h); values 0 to 800 Nm.
+
+Break points: Vehicle speed (km/h) → A = gear D, B = gear R.
+
+\begin{tabularx}{\linewidth}{|X|X|X|X|}
+\hline
+\srsth{km/h} & \srsth{0} & \srsth{3} & \srsth{7} \\
+\hline
+A (Nm) & 800 & 600 & 0 \\
+\hline
+B (Nm) & 0 & -300 & -800 \\
+\hline
+\end{tabularx}}
+\begin{itemprops}
+\itemfield{symbol}{TQ\_MAX\_CURVE}
+\itemfield{unit}{Nm}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0008}{calibration}{PEDAL\_MAP}
+\itemdesc{Pedal map.
+
+Map over Vehicle speed (km/h) and Accelerator pedal (\%); values 0 to 3000 Nm.
+
+Software name: \texttt{Demo\_tqA\_M}, \texttt{Demo\_tqB\_M} (model y).}
+\begin{itemprops}
+\itemfield{symbol}{PEDAL\_MAP}
+\itemfield{unit}{Nm}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0009}{calibration}{FILTER\_TIME}
+\itemdesc{Filter.}
+\begin{itemprops}
+\itemfield{symbol}{FILTER\_TIME}
+\itemfield{unit}{s}
+\itemfield{defaultValue}{0.3}
+\itemfield{minValue}{0}
+\itemfield{maxValue}{10}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0010}{calibration}{SLOPE\_TH}
+\itemdesc{No value yet.}
+\begin{itemprops}
+\itemfield{symbol}{SLOPE\_TH}
+\itemfield{unit}{\%}
+\itemfield{defaultValue}{TBD}
+\end{itemprops}
+\end{srsitem}
+
+\begin{srsitem}{MINI-0011}{dvp}{Creep test}
+\itemdesc{Test.}
+\begin{itemprops}
+\itemfield{verifies}{MINI-0001; MINI-0002}
+\itemfield{testLevel}{HIL}
+\end{itemprops}
+\end{srsitem}

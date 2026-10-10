@@ -1,0 +1,89 @@
+[
+  {
+    "id": "MON-CREEP-SPD-D", "req": ["DEMO-0101", "DEMO-0102"],
+    "title": "Creep tiến đạt và giữ tốc độ mục tiêu ±0.5 km/h trong 8 s",
+    "when": "CreepState == CreepSt.Active && Gear == GearPos.D && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0 && abs(RoadSlopePct) < 12",
+    "expect": "abs(VehSpeedTrue - CREEP_TARGET_SPD_D) < 0.5",
+    "within": 8,
+    "holdWhile": "CreepState == CreepSt.Active && Gear == GearPos.D && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0"
+  },
+  {
+    "id": "MON-CREEP-SPD-R", "req": ["DEMO-0102"],
+    "title": "Creep lùi đạt và giữ tốc độ mục tiêu ±0.5 km/h trong 8 s",
+    "when": "CreepState == CreepSt.Active && Gear == GearPos.R && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0 && abs(RoadSlopePct) < 12",
+    "expect": "abs(VehSpeedTrue + CREEP_TARGET_SPD_R) < 0.5",
+    "within": 8,
+    "holdWhile": "CreepState == CreepSt.Active && Gear == GearPos.R && AccPedalPct < 1 && BrakePedalPct < 1 && ObstacleHoldN == 0"
+  },
+  {
+    "id": "MON-CREEP-MAXSPD", "req": ["DEMO-0101"],
+    "title": "Khi creep mà không đạp ga, tốc độ thật không vượt 7.5 km/h (trừ xuống dốc dốc hơn 8 %: creep không phanh được, phần đó do chẩn đoán DEMO-0105 lo)",
+    "always": "!(CreepState == CreepSt.Active && AccPedalPct < 1) || RoadSlopePct < -8 || abs(VehSpeedTrue) <= 7.5"
+  },
+  {
+    "id": "MON-DOOR-STOP", "req": ["DEMO-0103"],
+    "title": "Mở cửa khi đang creep: creep tạm dừng và mô-men creep về < 5 Nm trong 1.5 s, giữ đến khi đóng cửa",
+    "when": "DoorStatus == Door.Opened && prev(CreepState) == CreepSt.Active",
+    "expect": "CreepState == CreepSt.Suspended && abs(CreepTq) < 5",
+    "within": 1.5,
+    "holdWhile": "DoorStatus == Door.Opened"
+  },
+  {
+    "id": "MON-RESUME-INTENT", "req": ["DEMO-0103", "DEMO-0106"],
+    "title": "Từ tạm dừng chỉ chạy lại creep khi tài xế đạp bàn đạp",
+    "always": "!(CreepState == CreepSt.Active && prev(CreepState) == CreepSt.Suspended) || AccPedalPct > INTENT_ACC_TH || BrakePedalPct > INTENT_BRK_TH"
+  },
+  {
+    "id": "MON-SETTING-OFF", "req": ["DEMO-0104"],
+    "title": "Tắt creep: mô-men creep < 1 Nm trong 1.5 s và giữ đến khi bật lại",
+    "when": "CreepSetting == OnOff.Off",
+    "expect": "abs(CreepTq) < 1",
+    "within": 1.5,
+    "holdWhile": "CreepSetting == OnOff.Off"
+  },
+  {
+    "id": "MON-OFF-NEVER-ACTIVE", "req": ["DEMO-0104"],
+    "title": "Creep không bao giờ Active khi tài xế đã tắt",
+    "always": "CreepSetting == OnOff.On || CreepState != CreepSt.Active"
+  },
+  {
+    "id": "MON-OVERSPEED-DIAG", "req": ["DEMO-0105"],
+    "title": "Creep mà tốc độ thật vượt ngưỡng chẩn đoán + 0.5 km/h thì vào Fault trong 0.1 s",
+    "when": "abs(VehSpeedTrue) > CREEP_OVERSPEED_TH + 0.5 && AccPedalPct < 1 && CreepState == CreepSt.Active",
+    "expect": "CreepState == CreepSt.Fault",
+    "within": 0.1
+  },
+  {
+    "id": "MON-STILL-SUSPEND", "req": ["DEMO-0106"],
+    "title": "Creep mà xe đứng yên (không đạp gì) thì tạm dừng trong thời gian cho phép + 0.5 s",
+    "when": "CreepState == CreepSt.Active && abs(VehSpeedTrue) < 0.5 && AccPedalPct < 1 && BrakePedalPct < 1",
+    "expect": "CreepState == CreepSt.Suspended || !(CreepState == CreepSt.Active && abs(VehSpeedTrue) < 0.5 && AccPedalPct < 1 && BrakePedalPct < 1)",
+    "within": 20.5
+  },
+  {
+    "id": "MON-PEDAL-FOLLOW", "req": ["DEMO-0201"],
+    "title": "Đạp ga ở D: mô-men yêu cầu bám mô-men map (±5 % + 20 Nm) trong 3 s",
+    "when": "AccPedalPct > 20 && Gear == GearPos.D && BattDischgPwrLim >= 150",
+    "expect": "abs(DriverTqReq - PedalTq) < 0.05 * abs(PedalTq) + 20",
+    "within": 3
+  },
+  {
+    "id": "MON-PN-ZERO", "req": ["DEMO-0202"],
+    "title": "Ở P hoặc N: mô-men mô-tơ yêu cầu về < 0.5 Nm trong 1 s và giữ",
+    "when": "Gear == GearPos.P || Gear == GearPos.N",
+    "expect": "abs(MotorTqReq) < 0.5",
+    "within": 1,
+    "holdWhile": "Gear == GearPos.P || Gear == GearPos.N"
+  },
+  {
+    "id": "MON-RATE-UP", "req": ["DEMO-0203"],
+    "title": "Tốc độ tăng mô-men không vượt giới hạn của drive mode (+2 %)",
+    "always": "rate(DriverTqReq) <= select(DriveModeSel, TQ_RATE_UP_ECO, TQ_RATE_UP_NORMAL, TQ_RATE_UP_SPORT) * 1.02 + 20"
+  },
+  {
+    "id": "MON-BATT-PWR", "req": ["DEMO-0204"],
+    "title": "Công suất cơ của mô-tơ không vượt công suất pin cho phép (+8 % cho tổn hao và trễ)",
+    "always": "MotorTqAct * MotorSpeed * PI / 30 / 1000 <= BattDischgPwrLim * 1.08 + 2",
+    "from": 0.1
+  }
+]

@@ -1,0 +1,50 @@
+{
+  "name": "Demo — điều khiển mô-men xe điện (DỮ LIỆU GIẢ)",
+  "desc": "Project mẫu cho aria-sim: bàn đạp ga, creep, giới hạn mô-men, plant dọc xe. Mọi số liệu, tên tín hiệu và yêu cầu đều là giả, không lấy từ tài liệu thật.",
+  "signals": "signals.json",
+  "calibration": "calibration.json",
+  "requirements": "requirements.json",
+  "monitors": "monitors.json",
+  "scenarios": "scenarios.json",
+  "models": {
+    "main": "models/main.json",
+    "plant_replay": "models/plant_replay.json"
+  },
+  "logs": {
+    "fake_drive": "logs/fake_drive.csv"
+  },
+  "fakeLogs": {
+    "fake_drive": {
+      "scenario": "fake_drive_cycle",
+      "truth": {
+        "VEH_MASS": 2380,
+        "VEH_CDA": 0.78,
+        "VEH_CRR": 0.0115
+      },
+      "noise": {
+        "VehicleSpeed": 0.15,
+        "MotorTqAct": 1.5,
+        "MotorSpeed": 5
+      },
+      "every": 0.02,
+      "seed": 7,
+      "columns": [
+        "AccPedalPct",
+        "BrakePedalPct",
+        "Gear",
+        "DriveModeSel",
+        "CreepSetting",
+        "DoorStatus",
+        "RoadSlopePct",
+        "CreepState",
+        "CreepTq",
+        "PedalTq",
+        "DriverTqReq",
+        "MotorTqReq",
+        "MotorTqAct",
+        "MotorSpeed",
+        "VehicleSpeed"
+      ]
+    }
+  }
+}

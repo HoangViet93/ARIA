@@ -1,0 +1,7 @@
+{
+  "name": "plant_replay",
+  "desc": "Chỉ plant dọc xe, đầu vào lấy từ log (mô-men mô-tơ đo, phanh, độ dốc). Dùng để kiểm chứng và nhận dạng tham số plant.",
+  "blocks": {
+    "Vehicle": { "type": "Subsystem", "ref": "vehicle.json" }
+  }
+}
