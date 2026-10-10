@@ -165,16 +165,22 @@ export function renderDiagram(container, model, path, { onSelect, onOpen, select
       for (const n of arr) { n.y = y; n.h = height(n); y += n.h + GAP_Y; }
     }
   }
-  let x = 150;
+  // Khoảng cách cột đủ chỗ cho nhãn bus ra của cột trái + nhãn bus vào của
+  // cột phải (nhãn nằm ngoài khối) — nếu không nhãn hai cột đè lên nhau.
+  const TAG_CH = 6.8;
+  const tagW = (tags) => tags.reduce((m, t) => Math.max(m, short(t.sig).length * TAG_CH + 34), 0);
+  const inW = (l) => Math.max(0, ...layers.get(l).map((n) => tagW(n.inTags)));
+  const outW = (l) => Math.max(0, ...layers.get(l).map((n) => tagW(n.outTags)));
+  let x = Math.max(40, inW(L[0]) + 10);
   let W = 0;
   let H = 0;
-  for (const l of L) {
+  L.forEach((l, k) => {
     const arr = layers.get(l);
-    const w = BW;
     for (const n of arr) { n.x = x; n.w = BW; H = Math.max(H, n.y + n.h); }
-    x += w + GAP_X;
+    const next = L[k + 1];
+    x += BW + (next === undefined ? outW(l) + 10 : Math.max(GAP_X, outW(l) + inW(next) + 24));
     W = x;
-  }
+  });
 
   const rowY = (n, k) => n.y + headerH(n) + k * 14 + 8;
   const portY = (n, list, port) => {
