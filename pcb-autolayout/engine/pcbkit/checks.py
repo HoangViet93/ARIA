@@ -18,7 +18,7 @@ def _poly_area(pts):
 
 
 class Checker:
-    def __init__(self, design, floorplan, pos, tracks, drc=None, board=None, hot_loops=()):
+    def __init__(self, design, floorplan, pos, tracks, drc=None, board=None, hot_loops=(), vias=()):
         self.d = design
         self.fp = floorplan
         self.pos = pos
@@ -26,6 +26,7 @@ class Checker:
         self.drc = drc
         self.board = board
         self.hot_loops = hot_loops
+        self.vias = vias
         self.parts = {p["ref"]: p for p in design["parts"]}
         self.width = {}
         for nc in design["netclasses"].values():
@@ -142,6 +143,38 @@ class Checker:
                     if n > rule["threshold"]["max"]:
                         bad.append("%s: %d mảnh" % (self.board.GetLayerName(lid), n))
         return worst, bad
+
+    def edge_stitch(self, rule):
+        """EMC-021: điểm dọc mép (cách mép `inset`) không nằm trong courtyard hay
+        vùng lỗ vít phải có via GND trong bán kính max/2."""
+        inset = rule.get("inset", 1.2)
+        gv = [(x, y) for (x, y, n) in self.vias if n == "GND"]
+        courts = [fplib.placed_court(self.parts[r]["footprint"], *self.pos[r]) for r in self.pos]
+        b = self.fp["board"]
+        W, H = b["w"], b["h"]
+        pts = []
+        t = 0.0
+        per = 2 * (W - 2 * inset) + 2 * (H - 2 * inset)
+        while t < per:
+            if t < W - 2 * inset:
+                pts.append((inset + t, inset))
+            elif t < W - 2 * inset + H - 2 * inset:
+                pts.append((W - inset, inset + t - (W - 2 * inset)))
+            elif t < 2 * (W - 2 * inset) + H - 2 * inset:
+                pts.append((W - inset - (t - (W - 2 * inset + H - 2 * inset)), H - inset))
+            else:
+                pts.append((inset, H - inset - (t - (2 * (W - 2 * inset) + H - 2 * inset))))
+            t += 0.5
+        half = rule["threshold"]["max"] / 2
+        worst, bad = 0.0, []
+        for (x, y) in pts:
+            if any(c[0] - 0.5 <= x <= c[2] + 0.5 and c[1] - 0.5 <= y <= c[3] + 0.5 for c in courts):
+                continue
+            d = min((math.hypot(x - vx, y - vy) for vx, vy in gv), default=99.0)
+            worst = max(worst, d * 2)
+            if d > half:
+                bad.append("(%.1f,%.1f) khoảng hở %.1f mm" % (x, y, 2 * d))
+        return round(worst, 2), bad
 
     def run(self, rules_path):
         rules = yaml.safe_load(open(rules_path))

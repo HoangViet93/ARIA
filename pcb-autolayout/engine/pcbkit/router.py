@@ -169,12 +169,13 @@ class Router:
             bbox = np.array([max(0, ys.min() - mc), max(0, xs.min() - mc),
                              min(self.H - 1, ys.max() + mc), min(self.W - 1, xs.max() + mc)], np.int64)
             self.cur += 1
-            path = rc.astar(self.fixed, self.occ, self.hist, self.padmask, neck, nid, self.viablock, self.closed,
+            path = rc.astar(self.fixed, self.occ, self.hist_use, self.padmask, neck, nid, self.viablock, self.closed,
                             offs_main, offs_neck, offs_via, offs_viapad,
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
                             self.via_cost, self.pres_fac, allow_via,
-                            self.hf, self.hc, self.hs, tb, 1.3, self.max_pops)
+                            self.hf, self.hc, self.hs, tb, 1.3, self.max_pops,
+                            self.hard, self.bend1, self.bend2)
             if len(path):
                 return path
         return None
@@ -304,6 +305,8 @@ class Router:
     def run(self, max_iter=25):
         self.neck_w = 0.5
         self.max_pops = 6_000_000
+        self.hard, self.bend1, self.bend2 = False, 0.35, 1.2
+        self.hist_use = self.hist
         self.via_cost = 1.6 / RES       # một via ≈ 1.6 mm đường đi
         nets = {}
         for p in self.pads:
@@ -359,7 +362,56 @@ class Router:
                 if over[self.fp_cells[net]].any() or self.result[net][1]:
                     dirty.add(net)
         self.overuse = n_over
+        self.polish(order)
         return self.result
+
+    def _rip(self, net):
+        flat_occ = self.occ.reshape(-1)
+        np.subtract.at(flat_occ, self.fp_cells[net], 1)
+        for v in self.net_vias.get(net, []):
+            self._via_block(v, -1)
+
+    def _put(self, net, conns, fails, cells, vias):
+        flat_occ = self.occ.reshape(-1)
+        np.add.at(flat_occ, cells, 1)
+        for v in vias:
+            self._via_block(v, +1)
+        self.fp_cells[net] = cells
+        self.net_vias[net] = vias
+        self.result[net] = (conns, fails)
+
+    def polish(self, order, passes=2):
+        """T24 (bản đầu): nắn đường. Đi lại từng net với vật cản cứng — không được
+        chạm dấu chân của net khác, không có chi phí lịch sử, phạt bẻ góc mạnh —
+        rồi chỉ giữ nếu nối đủ chân và ngắn hơn. Xoá vết vòng tránh "bậc thang" của
+        PathFinder. Tất định: thứ tự net cố định."""
+        zero = np.zeros_like(self.hist)
+        self.hard, self.bend1, self.bend2 = True, 1.0, 3.0
+        self.hist_use = zero
+        saved_pf = self.pres_fac
+        self.pres_fac = 0.0
+        kept = 0
+        for _ in range(passes):
+            for net in order:
+                old = (self.result[net], self.fp_cells[net], self.net_vias.get(net, []))
+                if old[0][1]:
+                    continue                    # net còn lỗi: không đụng
+                self._rip(net)
+                self._pending_vias = []
+                conns, fails = self.route_net(net)
+                vias = self._pending_vias
+                for v in vias:                  # route_net đã cộng viablock trong lúc tìm
+                    self._via_block(v, -1)
+                if fails or _length(conns) >= _length(old[0][0]) - 1e-6:
+                    self._put(net, old[0][0], old[0][1], old[1], old[2])
+                    continue
+                cells = self._footprint(conns)
+                self._put(net, conns, fails, cells, vias)
+                kept += 1
+        self.hard, self.bend1, self.bend2 = False, 0.35, 1.2
+        self.hist_use = self.hist
+        self.pres_fac = saved_pf
+        self.log("nắn đường: %d lượt đi lại được giữ" % kept)
 
     # ---- xuất ----------------------------------------------------------------
     def segments(self):
@@ -383,6 +435,25 @@ class Router:
                         run = [pts[k]]
         vias = sorted(set(vias))
         return tracks, vias
+
+
+def _length(conns):
+    """Tổng chiều dài (ô) + phạt via, để so hai phương án của cùng một net."""
+    tot = 0.0
+    for path, w, neck in conns:
+        prev = None
+        for k in range(1, len(path)):
+            a, b = path[k - 1], path[k]
+            if a[0] != b[0]:
+                tot += 32.0
+                prev = None
+                continue
+            d = (int(b[1]) - int(a[1]), int(b[2]) - int(a[2]))
+            tot += math.hypot(*d)
+            if prev is not None and d != prev:
+                tot += 2.0          # mỗi lần bẻ góc ≈ 0.1 mm
+            prev = d
+    return tot
 
 
 def _simplify(run, net):
@@ -412,3 +483,51 @@ def _simplify(run, net):
         prev_dir = d
     emit(a, run[-1], run[-1][3])
     return out
+
+
+def stitch_vias(router, net="GND", pitch=4.0, edge_inset=1.2, edge_pitch=3.0):
+    """T22 (phần khâu): via GND trên lưới `pitch` ở chỗ trống + một vòng dọc mép
+    board cách mép `edge_inset` (EMC-021: khoảng cách ≤ λ/20). Chỉ đặt ở nơi đĩa
+    via không chạm đồng net khác, không chạm pad, đủ xa lỗ via có sẵn. Tất định."""
+    r = router
+    nid = r.net_ids[net]
+    flat_occ = r.occ.reshape(-1)
+    np.subtract.at(flat_occ, r.fp_cells[net], 1)     # chỉ gỡ dấu chân; viablock của via GND cũ GIỮ NGUYÊN
+    offs_via = r.offs(r.via_d / 2 + r.clr_int / 2)
+    offs_pad = r.offs(r.via_d / 2 + 0.1)
+    b = r.fp["board"]
+    pts = []
+    k = 0.0
+    while k <= b["w"] - 2 * edge_inset + 1e-9:            # mép trên, dưới
+        pts += [(edge_inset + k, edge_inset), (edge_inset + k, b["h"] - edge_inset)]
+        k += edge_pitch
+    k = edge_pitch
+    while k < b["h"] - 2 * edge_inset - 1e-9:             # mép trái, phải
+        pts += [(edge_inset, edge_inset + k), (b["w"] - edge_inset, edge_inset + k)]
+        k += edge_pitch
+    y = 2.0
+    while y < b["h"] - 2.0:
+        x = 2.0
+        while x < b["w"] - 2.0:
+            pts.append((x, y))
+            x += pitch
+        y += pitch
+    placed = []
+    for (x, y) in pts:
+        cy, cx = r.cell(y), r.cell(x)
+        if r.viablock[cy, cx] > 0:
+            continue
+        ok = True
+        for l in range(r.L):
+            if rc._probe(r.fixed, r.occ, r.padmask, nid, l, cy, cx, offs_via, False) != 0.0:
+                ok = False
+                break
+            if rc._probe(r.fixed, r.occ, r.padmask, nid, l, cy, cx, offs_pad, True) < 0.0:
+                ok = False
+                break
+        if not ok:
+            continue
+        r._via_block((cy, cx), +1)
+        placed.append((cy * RES, cx * RES))
+    np.add.at(flat_occ, r.fp_cells[net], 1)
+    return [(x, y, net) for (y, x) in placed]

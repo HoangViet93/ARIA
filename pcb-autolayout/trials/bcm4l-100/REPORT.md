@@ -1,5 +1,29 @@
 # Luyện tập #1 — BCM-mini 12 V, 4 lớp, 120 linh kiện
 
+## Vòng 2 (cập nhật mới nhất)
+
+Thêm theo plan: **T24** nắn đường (59 net đi lại gọn hơn, 1 069 → 802 đoạn),
+**T22** pour GND hai lớp ngoài + 221 via khâu (lưới 4 mm + vòng mép 3 mm),
+**bộ đặt silkscreen** tất định (96/120 tên lên silk, 24 sang F.Fab vì hết chỗ),
+**T36** `rules_lint` + test cho mọi checker, **rule EMC-021** (khâu mép),
+**SKILL.md** (`.claude/skills/pcb-autolayout/`). Hiện trạng đầy đủ: `../../CONFORMANCE.md`.
+
+Kết quả: DRC KiCad **0 lỗi, 0 cảnh báo, 0 chân chưa nối**; 11/11 rule đạt;
+~190 s; hai lần chạy cùng hash `6d422c6c43cd2b98`.
+
+Lỗi gặp thêm ở vòng 2 và đã sửa: via khâu đè via GND cũ (gỡ nhầm viablock khi
+kiểm) → `hole_near_hole`; pad SMD nhỏ chỉ có 1 chân thermal vào pour ngoài →
+`starved_thermal` (pour ngoài: SMD nối đặc, xuyên lỗ dùng thermal).
+
+Điểm yếu còn thấy trên ảnh: **vùng trống trong pour** (đảo đồng không có via
+GND bị KiCad xoá — cần đặt via khâu theo đảo sau khi fill), **đường chéo dài**
+từ MCU (cần T41 gợi ý đổi chân), CAN chưa đi kiểu cặp vi sai, 24 tên linh kiện
+chưa lên được silk.
+
+---
+
+## Vòng 1
+
 **Kết quả:** từ mô tả mạch → board KiCad 4 lớp hoàn chỉnh, **DRC KiCad 0 lỗi,
 0 chân chưa nối**, 10/10 rule đạt, chạy **~110 s**, **tất định** (hai lần chạy ra
 file `.kicad_pcb` giống hệt từng byte). Không có bước nào gọi AI trong pipeline.

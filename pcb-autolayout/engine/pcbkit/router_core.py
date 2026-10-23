@@ -96,7 +96,7 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
           src, tgt, tgt_layer, bbox,
           g, par, stamp, cur, memo, memo_stamp,
           via_cost, pres_fac, allow_via,
-          hf, hc, hs, tb, hweight, max_pops):
+          hf, hc, hs, tb, hweight, max_pops, hard, bend1, bend2):
     """src/tgt: mảng (k, 3) [l, y, x]. tgt_layer ≥ 0: đích = bất kỳ ô nào trên
     lớp đó (dùng để thả via xuống plane). tb = hộp bao của đích (y0,x0,y1,x1)
     cho heuristic. Trả về mảng trạng thái của đường đi (rỗng nếu thất bại)."""
@@ -163,7 +163,7 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
                     turn = 8 - turn
                 if turn >= 3:
                     continue
-                bend = 0.0 if turn == 0 else (0.35 if turn == 1 else 1.2)
+                bend = 0.0 if turn == 0 else (bend1 if turn == 1 else bend2)
             else:
                 bend = 0.0
             nx = x + DX[nd]
@@ -179,7 +179,7 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
                 else:
                     memo[0, nc] = _probe(fixed, occ, padmask, net, l, ny, nx, offs_main, False)
             pv = memo[0, nc]
-            if pv < 0.0:
+            if pv < 0.0 or (hard and pv > 0.0):
                 continue
             mult = (1.0 + hist[l, ny, nx]) * (1.0 + pres_fac * pv)
             ng = gs + STEP[nd] * mult + bend
@@ -222,7 +222,7 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
                     ok = -1.0
                 memo[1, c] = -1.0 if ok < 0.0 else m
             pv = memo[1, c]
-            if pv >= 0.0:
+            if pv >= 0.0 and not (hard and pv > 0.0):
                 for ll in range(L):
                     if ll == l:
                         continue

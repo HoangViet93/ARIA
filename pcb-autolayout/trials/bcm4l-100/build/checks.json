@@ -98,5 +98,15 @@
   "status": "ok",
   "violations": [],
   "n": 0
+ },
+ {
+  "rule": "EMC-021",
+  "severity": "M",
+  "title": "Via khâu GND dọc mép board (ngoài vùng connector/lỗ vít)",
+  "value": 3.0,
+  "max": 5.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
  }
 ]

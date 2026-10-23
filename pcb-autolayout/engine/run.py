@@ -58,6 +58,10 @@ def main():
     r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
     res = r.run(max_iter=a.iters)
     tracks, vias = r.segments()
+    from pcbkit.router import stitch_vias
+    stitch = stitch_vias(r)
+    vias = sorted(set(vias) | set(stitch))
+    print("[route] via khâu GND: %d" % len(stitch))
     fails = {n: f for n, (c, f) in sorted(res.items()) if f}
     print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
           % (len(tracks), len(vias), r.overuse, fails or "không", time.time() - t))
@@ -70,11 +74,14 @@ def main():
     pcb = os.path.join(bdir, design["name"] + ".kicad_pcb")
     board = kicad_board.build(design, fp, pos, tracks, vias, pcb)
     kicad_board.canonicalize(pcb)
+    sr = board.silk_report
+    print("[silk] %d tên trên silkscreen, %d không có chỗ → F.Fab %s" % (sr["silk"], len(sr["fab"]), sr["fab"][:12]))
     drc = kicad_board.drc(pcb, os.path.join(bdir, "drc.rpt"))
     print("[kicad] DRC: %d vi phạm, %d chưa nối, %.1fs" % (len(drc["violations"]), len(drc["unconnected"]),
                                                           time.time() - t))
 
-    ck = Checker(design, fp, pos, tracks, drc=drc, board=board, hot_loops=extra.get("hot_loops", []))
+    ck = Checker(design, fp, pos, tracks, drc=drc, board=board, hot_loops=extra.get("hot_loops", []),
+                 vias=vias)
     results = ck.run(os.path.join(ENGINE, "rules", "core.yaml"))
     json.dump(results, open(os.path.join(bdir, "checks.json"), "w"), indent=1, ensure_ascii=False)
     for x in results:

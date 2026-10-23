@@ -66,9 +66,6 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         fp.SetReference(ref)
         fp.SetValue(p["value"])
         fp.SetFPID(pcbnew.LIB_ID(lib, name))
-        # Chưa có bộ đặt chữ silk (DFM-006): đưa tên linh kiện sang lớp Fab
-        # (bản vẽ lắp ráp) thay vì để đè lên pad/linh kiện khác.
-        fp.Reference().SetLayer(pcbnew.F_Fab)
         board.Add(fp)
         fp.SetPosition(_v(x, y))
         fp.SetOrientationDegrees(rot)
@@ -76,6 +73,8 @@ def build(design, floorplan, pos, tracks, vias, out_path):
             n = p["pins"].get(pad.GetNumber())
             if n:
                 pad.SetNet(nets[n])
+
+    silk_report = place_silk(board, floorplan)
 
     # track & via
     lid = {0: pcbnew.F_Cu, 1: pcbnew.B_Cu}
@@ -98,13 +97,17 @@ def build(design, floorplan, pos, tracks, vias, out_path):
 
     # plane GND ở hai lớp trong
     layer_ids = {"In1.Cu": pcbnew.In1_Cu, "In2.Cu": pcbnew.In2_Cu, "F.Cu": pcbnew.F_Cu, "B.Cu": pcbnew.B_Cu}
-    for lname, net in sorted(floorplan["stackup"]["planes"].items()):
+    zones = sorted(floorplan["stackup"]["planes"].items())
+    zones += sorted(floorplan["stackup"].get("pours", {}).items())
+    for lname, net in zones:
         z = pcbnew.ZONE(board)
         z.SetLayer(layer_ids[lname])
         z.SetNet(nets[net])
         z.SetLocalClearance(pcbnew.FromMM(0.25))
         z.SetMinThickness(pcbnew.FromMM(0.2))
-        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        # plane trong: thermal relief; pour ngoài: SMD nối đặc, xuyên lỗ thermal (dễ hàn)
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL if lname.startswith("In")
+                           else pcbnew.ZONE_CONNECTION_THT_THERMAL)
         z.SetThermalReliefGap(pcbnew.FromMM(0.3))
         z.SetThermalReliefSpokeWidth(pcbnew.FromMM(0.4))
         ol = z.Outline()
@@ -119,7 +122,76 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     filler.Fill(board.Zones())
     board.BuildConnectivity()
     pcbnew.SaveBoard(out_path, board)
+    board.silk_report = silk_report
     return board
+
+
+def _bb(item, pad=0.0):
+    b = item.GetBoundingBox()
+    mm = pcbnew.ToMM
+    return (mm(b.GetX()) - pad, mm(b.GetY()) - pad, mm(b.GetX() + b.GetWidth()) + pad,
+            mm(b.GetY() + b.GetHeight()) + pad)
+
+
+def _hit(a, boxes):
+    for b in boxes:
+        if a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]:
+            return True
+    return False
+
+
+def place_silk(board, floorplan, size=0.8, thick=0.15):
+    """DFM-006 (bản đầu): đặt tên linh kiện lên F.SilkS. Thử vị trí theo thứ tự cố
+    định quanh courtyard; chọn vị trí đầu tiên không đè pad (+0.15 mm), không đè
+    nét silk/tên khác (+0.1 mm), nằm trong board. Không có chỗ → sang F.Fab."""
+    fps = sorted(board.GetFootprints(), key=lambda f: natkey(f.GetReference()))
+    pads = [_bb(p, 0.15) for f in fps for p in f.Pads()]
+    silk = []
+    for f in fps:
+        for it in f.GraphicalItems():
+            if it.GetLayer() == pcbnew.F_SilkS and it.GetClass() != "PCB_TEXT" and it.GetClass() != "FP_TEXT":
+                silk.append(_bb(it, 0.1))
+    bw, bh = floorplan["board"]["w"], floorplan["board"]["h"]
+    inside = (ORIGIN[0] + 0.3, ORIGIN[1] + 0.3, ORIGIN[0] + bw - 0.3, ORIGIN[1] + bh - 0.3)
+    placed, hidden = [], []
+    for f in fps:
+        t = f.Reference()
+        t.SetLayer(pcbnew.F_SilkS)
+        t.SetTextSize(pcbnew.VECTOR2I(pcbnew.FromMM(size), pcbnew.FromMM(size)))
+        t.SetTextThickness(pcbnew.FromMM(thick))
+        t.SetKeepUpright(True)
+        cy = None
+        for it in f.GraphicalItems():
+            if it.GetLayer() == pcbnew.F_CrtYd:
+                b = _bb(it)
+                cy = b if cy is None else (min(cy[0], b[0]), min(cy[1], b[1]), max(cy[2], b[2]), max(cy[3], b[3]))
+        if cy is None:
+            cy = _bb(f)
+        cx, cyy = (cy[0] + cy[2]) / 2, (cy[1] + cy[3]) / 2
+        cands = []
+        for gap in (0.25, 0.9, 1.6):
+            h = size / 2 + gap
+            cands += [(cx, cy[1] - h, 0), (cx, cy[3] + h, 0),
+                      (cy[0] - h, cyy, 90), (cy[2] + h, cyy, 90),
+                      (cy[0] - h - 0.6, cy[1] - h, 0), (cy[2] + h + 0.6, cy[1] - h, 0),
+                      (cy[0] - h - 0.6, cy[3] + h, 0), (cy[2] + h + 0.6, cy[3] + h, 0)]
+        cands.append((cx, cyy, 0))           # giữa thân (linh kiện lớn)
+        done = False
+        for (x, y, ang) in cands:
+            t.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(x), pcbnew.FromMM(y)))
+            t.SetTextAngleDegrees(ang)
+            b = _bb(t, 0.1)
+            if b[0] < inside[0] or b[1] < inside[1] or b[2] > inside[2] or b[3] > inside[3]:
+                continue
+            if _hit(b, pads) or _hit(b, silk) or _hit(b, placed):
+                continue
+            placed.append(b)
+            done = True
+            break
+        if not done:
+            t.SetLayer(pcbnew.F_Fab)
+            hidden.append(f.GetReference())
+    return {"silk": len(placed), "fab": hidden}
 
 
 def drc(board_path, report_path):

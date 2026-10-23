@@ -6,6 +6,7 @@ board: {w: 80, h: 60, edge_clear: 0.3}
 stackup:   # SIG / GND / GND / SIG — mọi lớp tín hiệu tham chiếu GND (knowledge/01 §3)
   layers: [F.Cu, In1.Cu, In2.Cu, B.Cu]
   planes: {In1.Cu: GND, In2.Cu: GND}
+  pours: {F.Cu: GND, B.Cu: GND}     # pour GND lớp ngoài, khâu bằng via (EMC-021/023)
   routing: [F.Cu, B.Cu]
 
 rules: {clearance: 0.15, track: 0.2, via_dia: 0.6, via_drill: 0.3}

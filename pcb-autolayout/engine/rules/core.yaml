@@ -73,3 +73,11 @@
   threshold: {max: 1}
   checker: plane_islands
   knowledge: knowledge/05-emc-esd-automotive.md#2-gnd
+- id: EMC-021
+  severity: M
+  title: Via khâu GND dọc mép board (ngoài vùng connector/lỗ vít)
+  metric: max_gap_mm
+  inset: 1.2
+  threshold: {max: 5.0}
+  checker: edge_stitch
+  knowledge: knowledge/05-emc-esd-automotive.md#4-mép-board--stitching
