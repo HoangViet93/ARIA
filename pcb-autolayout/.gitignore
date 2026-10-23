@@ -1,0 +1,6 @@
+__pycache__/
+*.nbi
+*.nbc
+trials/*/build/*.svg
+trials/*/build/*.kicad_prl
+trials/*/build/t.kicad_*

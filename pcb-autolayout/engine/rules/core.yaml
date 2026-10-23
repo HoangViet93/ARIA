@@ -1,0 +1,75 @@
+# Bộ rule máy đọc được — bản đầu (ROLES.md §5). Mỗi rule: một ngưỡng số,
+# một checker trong pcbkit/checks.py. Mức: C (dừng), M (cần duyệt), m (ghi nhận).
+- id: PLC-011
+  severity: C
+  title: Tụ decoupling gần chân nguồn được gán
+  applies_to: {role: decap}
+  metric: pad_to_pin_mm
+  threshold: {max: 2.5}
+  checker: near_distance
+  knowledge: knowledge/02-placement.md#3-decoupling
+- id: PLC-034
+  severity: C
+  title: Linh kiện bảo vệ/lọc sát thân connector
+  applies_to: {role: esd}
+  # v1 đo tới tâm chân (6 mm) — không đạt được về hình học với connector 2 hàng
+  # (chân hàng mép nằm sâu ~6 mm trong courtyard). v2: đo tới mép thân connector.
+  metric: pad_to_connector_body_mm
+  to: connector_body
+  threshold: {max: 3.0}
+  checker: near_distance
+  knowledge: knowledge/02-placement.md#5-termination--linh-kiện-thụ-động-tín-hiệu
+- id: PLC-NEAR
+  severity: M
+  title: Linh kiện có chỉ định "near" nằm gần đích
+  applies_to: {role: other}
+  metric: pad_to_pin_mm
+  threshold: {max: 6.0}
+  checker: near_distance
+- id: PLC-OVL
+  severity: C
+  title: Không chồng courtyard
+  metric: overlaps
+  threshold: {max: 0}
+  checker: courtyard_overlap
+- id: RT-OPEN
+  severity: C
+  title: Mọi chân đã nối (theo connectivity của KiCad)
+  metric: unconnected
+  threshold: {max: 0}
+  checker: kicad_unconnected
+- id: DRC-ERR
+  severity: C
+  title: DRC KiCad sạch
+  metric: violations
+  threshold: {max: 0}
+  checker: kicad_drc
+  drc_severity: error
+- id: DRC-WARN
+  severity: m
+  title: Cảnh báo DRC KiCad (silkscreen…)
+  metric: warnings
+  threshold: {max: 0}
+  checker: kicad_drc
+  drc_severity: warning
+- id: PWR-001
+  severity: C
+  title: Bề rộng đường đủ cho dòng (trừ đoạn cổ chai ≤ 1 mm quanh pad)
+  metric: narrow_segments
+  threshold: {max: 0}
+  checker: track_width
+  knowledge: knowledge/03-power-pdn-thermal.md#2-bề-rộng-đường-theo-dòng
+- id: SMPS-002
+  severity: C
+  title: Diện tích hot loop bộ buck
+  metric: loop_area_mm2
+  threshold: {max: 15}
+  checker: hot_loop
+  knowledge: knowledge/03-power-pdn-thermal.md#4-nguồn-xung-smps
+- id: EMC-001
+  severity: C
+  title: Plane GND liền một khối (không bị via/antipad cắt rời)
+  metric: islands
+  threshold: {max: 1}
+  checker: plane_islands
+  knowledge: knowledge/05-emc-esd-automotive.md#2-gnd

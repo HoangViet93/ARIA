@@ -1,0 +1,102 @@
+[
+ {
+  "rule": "PLC-011",
+  "severity": "C",
+  "title": "Tụ decoupling gần chân nguồn được gán",
+  "value": 2.2249999999999943,
+  "max": 2.5,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-034",
+  "severity": "C",
+  "title": "Linh kiện bảo vệ/lọc sát thân connector",
+  "value": 2.730000000000004,
+  "max": 3.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-NEAR",
+  "severity": "M",
+  "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
+  "value": 4.8400025826439395,
+  "max": 6.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-OVL",
+  "severity": "C",
+  "title": "Không chồng courtyard",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "RT-OPEN",
+  "severity": "C",
+  "title": "Mọi chân đã nối (theo connectivity của KiCad)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "DRC-ERR",
+  "severity": "C",
+  "title": "DRC KiCad sạch",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "DRC-WARN",
+  "severity": "m",
+  "title": "Cảnh báo DRC KiCad (silkscreen…)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PWR-001",
+  "severity": "C",
+  "title": "Bề rộng đường đủ cho dòng (trừ đoạn cổ chai ≤ 1 mm quanh pad)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "SMPS-002",
+  "severity": "C",
+  "title": "Diện tích hot loop bộ buck",
+  "value": 1.65,
+  "max": 15,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "EMC-001",
+  "severity": "C",
+  "title": "Plane GND liền một khối (không bị via/antipad cắt rời)",
+  "value": 1,
+  "max": 1,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ }
+]

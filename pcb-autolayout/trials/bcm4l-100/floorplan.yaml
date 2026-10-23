@@ -1,0 +1,33 @@
+# Quyết định floorplan (tầng B: Claude đề xuất — kỹ sư duyệt).
+# Toạ độ mm, gốc góc trên-trái board, y hướng xuống. Rect = [x0, y0, x1, y1].
+# T33 floorplan_gen chưa có — file này viết tay cho lần luyện đầu.
+board: {w: 80, h: 60, edge_clear: 0.3}
+
+stackup:   # SIG / GND / GND / SIG — mọi lớp tín hiệu tham chiếu GND (knowledge/01 §3)
+  layers: [F.Cu, In1.Cu, In2.Cu, B.Cu]
+  planes: {In1.Cu: GND, In2.Cu: GND}
+  routing: [F.Cu, B.Cu]
+
+rules: {clearance: 0.15, track: 0.2, via_dia: 0.6, via_drill: 0.3}
+
+fixed:   # linh kiện cố định theo cơ khí: [x, y, góc]
+  J2: [8, 52.8, 0]       # hàng 1 (ra) phía trong, hàng 2 (vào) phía mép
+  J1: [58, 52.8, 0]
+  J3: [30, 2.6, 90]      # header SWD dọc mép trên
+  H1: [3.5, 3.5, 0]
+  H2: [76.5, 3.5, 0]
+  H3: [3.5, 40, 0]
+  H4: [76.5, 40, 0]
+
+# Thứ tự đặt khối = thứ tự trong danh sách.
+blocks:
+  - {name: mcu,      rect: [18, 5, 56, 36], anchor: {ref: U5, at: [37, 18], rot: 0}}
+  - {name: pwr_in,   rect: [62, 12, 80, 50]}
+  - {name: buck,     rect: [50, 0, 80, 16]}
+  - {name: ldo,      rect: [44, 0, 66, 14]}
+  - {name: out,      rect: [27, 34, 48, 59.6], channels: 4, axis: x}
+  - {name: in,       rect: [8, 24, 28, 43],  channels: 6, grid: [3, 2]}
+  - {name: io_strip, rect: [3, 43, 28, 50]}
+  - {name: lin,      rect: [48, 26, 58.5, 50]}
+  - {name: can,      rect: [56, 26, 70, 50]}
+  - {name: swd,      rect: [20, 0, 46, 6]}
