@@ -40,9 +40,14 @@ ra `.kicad_pcb` mà:
 
 ## 1. Nguyên tắc thiết kế skill
 
-1. **Claude quyết định — script tính.** Claude làm phần cần hiểu ý đồ: đọc
-   schematic/datasheet, suy ra ràng buộc, chọn floorplan, chẩn đoán lỗi. Script
-   làm phần cần chính xác hình học: đặt, legalize, đo, đi dây, DRC.
+> **Phân vai, luật chặt và tính tái lập: xem `ROLES.md`.** File đó thay thế mọi
+> chỗ dưới đây nói Claude quyết định trong vòng lặp. Tóm tắt: AI chỉ quyết định ở
+> điểm có tên, người duyệt, đóng băng; pipeline còn lại là hàm tất định.
+
+0. **Tất định.** Cùng đầu vào → cùng board từng byte (`ROLES.md` §1, §8).
+1. **Claude đề xuất ở điểm có tên — script làm phần còn lại.** Claude soạn luật từ
+   datasheet, ngoại lệ net class, chọn floorplan theo rubric, chẩn đoán lỗi mà
+   `repair` không sửa được. Script làm mọi tính toán và hình học, kể cả vòng sửa lỗi.
 2. **Claude không bao giờ đọc file thô** (`.kicad_pcb` vài MB). Mọi script trả về
    JSON/Markdown tóm tắt **≤ ~2 000 token**, có `--detail <id>` khi cần xem sâu.
 3. **Claude nhìn bằng ảnh.** `render` xuất PNG (floorplan, từng lớp, heatmap tắc
@@ -144,7 +149,9 @@ P0 Môi trường ─► P1 Hiểu mạch ─► P2 Ràng buộc & stackup ─�
 
 ---
 
-## 4. Danh mục công cụ — 32 công cụ, 8 nhóm
+## 4. Danh mục công cụ — 36 công cụ, 9 nhóm
+
+(Nhóm I — T33–T36 — thêm theo `ROLES.md`, liệt kê ở cuối mục này.)
 
 Ký hiệu độ khó: **S** ≤ 1 ngày, **M** 2–5 ngày, **L** 1–3 tuần, **XL** > 3 tuần.
 
@@ -219,6 +226,15 @@ Ký hiệu độ khó: **S** ≤ 1 ngày, **M** 2–5 ngày, **L** 1–3 tuần,
 |---|---|---|---|---|
 | T31 | `render` | board + chế độ → PNG | Chế độ: floorplan (khối cụm có nhãn), layer, vùng zoom quanh vi phạm, heatmap (tắc nghẽn/IR drop/nhiệt). Dùng `kicad-cli pcb export svg` → PNG, hoặc matplotlib cho floorplan/heatmap | M |
 | T32 | `report_export` | toàn bộ → final.md + fab outputs | Điểm số, vi phạm còn lại theo mức, việc cho kỹ sư; Gerber, drill, BOM, CPL qua `kicad-cli` | S |
+
+### Nhóm I — Tất định & luật (theo `ROLES.md`)
+
+| ID | Tên | Input → Output | Thuật toán / ghi chú | Khó |
+|---|---|---|---|---|
+| T33 | `floorplan_gen` | clusters + mech + rules → 3–5 phương án floorplan có điểm | Slicing tree / min-cut theo diện tích cụm, kết nối giữa cụm, cạnh connector cố định, ràng buộc tách nhiễu–nhạy; chấm điểm bằng HPWL ước tính + vi phạm tách. Thay cho việc Claude tự viết floorplan | L |
+| T34 | `repair` | vi phạm + bảng chiến lược → board | Áp chiến lược theo thứ tự, có giới hạn (`ROLES.md` §6); hết chiến lược → trạng thái `needs_decision` | M |
+| T35 | `determinism_check` | pipeline × 2 → so hash | Chạy hai lần trên cùng đầu vào, so file đã chuẩn hoá; báo bước đầu tiên lệch | S |
+| T36 | `rules_lint` | `rules/` → lỗi | Mỗi rule có id duy nhất, ngưỡng số, checker, test, link knowledge | S |
 
 ### 4.1 Hàm chi phí placement (T14/T15)
 
@@ -316,7 +332,10 @@ signal_flow: [io_zone, power, mcu, analog]
 
 ## 6. Vòng lặp, điều kiện dừng, ngân sách token
 
-### Vòng lặp
+> **Đã thay thế bởi `ROLES.md` §6 (vòng sửa tất định bằng T34) và §9 (token).**
+> Phần dưới giữ lại để so sánh với thiết kế cũ, có Claude trong vòng lặp.
+
+### Vòng lặp (thiết kế cũ)
 - **P5 placement:** tối đa 8 vòng. Mỗi vòng Claude đọc `metrics` + 1–2 ảnh, sửa
   1–3 chỗ trong `floorplan.yaml`/`weights`, ghi `log.md`. Dừng khi đạt gate hoặc
   2 vòng liền không cải thiện cost > 2 % → báo người.
@@ -366,11 +385,13 @@ signal_flow: [io_zone, power, mcu, analog]
 
 | Mốc | Công cụ | Kết quả kiểm chứng được |
 |---|---|---|
-| **M0** Nền | T01, `pcbkit` (sexpr, board_io, geom), T31 cơ bản, KiCad trong container | Mở/ghi `.kicad_pcb`, render PNG một board mẫu |
+| **M0** Nền | T01, `pcbkit` (sexpr, board_io, geom, rng), T31 cơ bản, T35, KiCad trong container | Mở/ghi `.kicad_pcb`, render PNG một board mẫu; **kiểm Freerouting và zone fill có tất định không** (quyết định thiết kế cache) |
+| **M0.5** Bộ luật | `rules/` cho các luật mức C của placement/power, T36 | `rules_lint` sạch; mỗi rule có test |
 | **M1** Hiểu mạch | T02, T03, T04, T05, T13 | Từ schematic ra board có footprint + net, đúng 100 % pad–net so với KiCad GUI |
-| **M2** Tính toán & ràng buộc | T06, T07, T08, T09, T25 | Stackup + `.kicad_dru` sinh ra được KiCad DRC chấp nhận; unit test calc đạt |
-| **M3** Placement | T10, T11, T12, T14, T15, T17, T18 | 3 board mẫu: 0 chồng lấn, vi phạm khoảng cách decap = 0 |
-| **M4** Routing cơ bản | T22 (zone đơn giản), T23, T24 | Board 2 lớp đơn giản: 100 % net, DRC 0 — **mốc MVP, đo token thật** |
+| **M2** Tính toán & ràng buộc | T06, T07, T08, T09, T25; skill `/pcb-verify` bản đầu | Stackup + `.kicad_dru` sinh ra được KiCad DRC chấp nhận; unit test calc đạt; **chạy `/pcb-verify` trên board vẽ tay để hiệu chỉnh luật** |
+| **M3** Placement | T10, T11, T12, T14, T15, T17, T18, T33, T34 | 3 board mẫu: 0 chồng lấn, vi phạm khoảng cách decap = 0; T35 tất định |
+| **M4** Routing cơ bản | T22 (zone đơn giản), T23, T24 | Board 2 lớp đơn giản: 100 % net, DRC 0, T35 tất định — **mốc MVP, đo token thật** |
+| **M4.5** ECO | Tập bẩn + ghim (`ROLES.md` §7) | Thêm 1–5 linh kiện → ≥ 90 % linh kiện giữ nguyên vị trí |
 | **M5** Khối mẫu & nguồn | T16 + templates, T22 đầy đủ, T08 tích hợp, T29 | Buck/LDO đạt luật hot loop + thermal via |
 | **M6** Critical routing | T20, T21, T19 | USB2/CAN/clock đạt skew, Zdiff, via_max; RF feedline GCPW đúng hình học |
 | **M7** Phân tích | T26, T27, T28, T30 | Bắt 100 % lỗi cài trên board lỗi |

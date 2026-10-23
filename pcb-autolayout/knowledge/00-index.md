@@ -4,6 +4,10 @@ Mỗi luật có mã `<NHÓM>-<số>`. Công cụ kiểm tra báo vi phạm kèm
 mục. Mức độ: **C** = critical (gần như chắc chắn gây lỗi chức năng/EMC),
 **M** = major (rủi ro cao), **m** = minor (thói quen tốt).
 
+**Đây là guideline, không phải rule.** Pipeline tự động chỉ áp dụng luật trong
+`rules/*.yaml` (đo được, có một ngưỡng số, có checker và test) — xem `ROLES.md` §5.
+Khoảng giá trị ở đây ("3–5 mm") được chốt thành một số khi chuyển sang `rules/`.
+
 **Thứ tự ưu tiên khi mâu thuẫn:** datasheet/reference design của linh kiện >
 yêu cầu OEM/khách hàng > `constraints.yaml` của project > các file ở đây.
 Số liệu ở đây là **giá trị điển hình**, không phải chuẩn bắt buộc.
