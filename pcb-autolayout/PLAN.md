@@ -4,6 +4,10 @@ Skill để Claude **tự vận hành** quy trình layout PCB trên KiCad: từ 
 netlist → gom cụm → floorplan → placement → đi dây (RF, high-speed, nguồn, còn
 lại) → kiểm tra SI/PI/EMC/nhiệt/DFM → báo cáo cho kỹ sư.
 
+> **Mục tiêu cuối: board 6 lớp zonal ECU/BCM automotive — xem `TARGET-BCM.md`.**
+> Lộ trình ở đó thay thế §8 bên dưới. Router: **engine riêng (T20) cho mọi net**,
+> Freerouting chỉ còn làm thước đo benchmark (T23).
+
 Tài liệu kiến thức nằm ở `knowledge/` — đó là `reference/` của skill. Mỗi công
 cụ trong kế hoạch này nói rõ nó hiện thực luật nào trong file kiến thức nào.
 
@@ -28,6 +32,7 @@ ra `.kicad_pcb` mà:
 | v1 | 2–4 lớp, ≤ 150 linh kiện, digital/mixed tốc độ thấp, nguồn LDO/buck ≤ 5 A, CAN/LIN/UART/SPI/I²C/USB 2.0 |
 | v2 | 4–6 lớp, ≤ 400 linh kiện, USB 3, Ethernet 100/1000 + 100BASE-T1, MIPI, QSPI, RF có module/chip antenna theo reference design |
 | v3 | 6–10 lớp, DDR3/4/LPDDR4, PCIe, BGA ≤ 0.65 mm pitch, back-drill |
+| **Mục tiêu cuối** | **6 lớp zonal ECU/BCM, ≤ 1 500 linh kiện, dòng lớn, nhân bản kênh — `TARGET-BCM.md`** |
 | Ngoài phạm vi | Radar mm-wave, RF rời rạc tự thiết kế, HV ≥ 60 V DC (chỉ cảnh báo creepage), flex/rigid-flex |
 
 ### Không hứa
@@ -59,7 +64,7 @@ ra `.kicad_pcb` mà:
 6. **Checkpoint người** ở 3 chỗ: stackup + fab, floorplan, bản cuối. Không tự
    vượt checkpoint.
 7. **Dữ liệu mật ở cục bộ.** Không gọi dịch vụ cloud nào (autorouter online,
-   plantuml.com, AI layout SaaS). Freerouting chạy local.
+   plantuml.com, AI layout SaaS). Mọi engine chạy local.
 8. **Mỗi luật trong `knowledge/` có mã** (vd `PWR-012`). Báo cáo vi phạm trích mã
    luật → Claude tra đúng đoạn, không phải đọc lại cả file.
 
@@ -122,7 +127,7 @@ P0 Môi trường ─► P1 Hiểu mạch ─► P2 Ràng buộc & stackup ─�
 
 | Pha | Công cụ | Claude làm gì | Cổng ra (gate) |
 |---|---|---|---|
-| **P0** Môi trường | T01 | Đọc kết quả, cài thiếu hoặc báo | KiCad ≥ 9, Java ≥ 17, Freerouting, Python libs |
+| **P0** Môi trường | T01 | Đọc kết quả, cài thiếu hoặc báo | KiCad ≥ 9, Python libs (Java + Freerouting chỉ cho benchmark) |
 | **P1** Hiểu mạch | T02, T03, T04, T05 | Đọc tóm tắt, xác định khối chức năng, đọc datasheet IC quan trọng → `parts/*.yaml` | Mọi IC có ≥ 1 luật layout hoặc ghi "không có yêu cầu đặc biệt" |
 | **P2** Ràng buộc & stackup | T06, T07, T08, T09 | Chọn số lớp, fab; phân net class; khai diff pair, nhóm length, dòng mỗi net nguồn; viết `constraints.yaml` | `constraint_compile` chạy sạch; **CP1** |
 | **P3** Gom cụm | T10, T11 | Đặt tên cụm, sửa cụm sai (vd tụ gán nhầm IC), đánh dấu cụm nhiễu/nhạy | Mọi linh kiện thuộc đúng 1 cụm |
@@ -144,7 +149,7 @@ P0 Môi trường ─► P1 Hiểu mạch ─► P2 Ràng buộc & stackup ─�
 5. **Nhóm cần length matching** (DDR, RGMII, QSPI…).
 6. **Nguồn**: plane/pour, đường rộng theo dòng, mảng via.
 7. **Analog nhạy** (ADC input, sense, reference).
-8. **Phần còn lại** → Freerouting, với mọi đường trên đã khoá.
+8. **Phần còn lại** → engine router T20 (chế độ thương lượng tắc nghẽn), mọi đường trên đã khoá.
 9. **GND stitching, via fence, teardrop, refill zone.**
 
 ---
@@ -159,7 +164,7 @@ Ký hiệu độ khó: **S** ≤ 1 ngày, **M** 2–5 ngày, **L** 1–3 tuần,
 
 | ID | Tên | Input → Output | Thuật toán / ghi chú | Khó |
 |---|---|---|---|---|
-| T01 | `env_check` | — → env.json | Phiên bản KiCad, `pcbnew` import được không, IPC API, Java, Freerouting jar, shapely/rtree/numpy/scipy | S |
+| T01 | `env_check` | — → env.json | Phiên bản KiCad, `pcbnew` import được không, IPC API, (Java + Freerouting jar cho benchmark), shapely/rtree/numpy/scipy | S |
 | T02 | `netlist_export` | `.kicad_sch` → `.net` | `kicad-cli sch export netlist --format kicadsexpr`; ERC trước (`kicad-cli sch erc`) | S |
 | T03 | `summarize_design` | `.net` + lib → design.json + tóm tắt | Linh kiện (ref, value, footprint, MPN, sheet), pin→net, net (fanout, loại chân), kích thước courtyard từ footprint | M |
 | T04 | `net_classify` | design.json → đề xuất net class | Heuristic: tên net (`GND`, `+3V3`, `_P/_N`, `DP/DM`, `CLK`, `RF_`), loại chân (power_in/out), fanout, linh kiện nối (cuộn cảm → nguồn xung; balun/antenna → RF). Claude duyệt | M |
@@ -203,10 +208,10 @@ Ký hiệu độ khó: **S** ≤ 1 ngày, **M** 2–5 ngày, **L** 1–3 tuần,
 | ID | Tên | Input → Output | Thuật toán / ghi chú | Khó |
 |---|---|---|---|---|
 | T19 | `route_rf` | net RF + stackup → feedline GCPW + via fence | Đường ngắn nhất từ pad tới pad theo hình học cố định (bề rộng/khe từ T07), bo góc cong/45°, via fence ≤ λ/20, keepout dưới antenna mọi lớp | M |
-| T20 | `route_critical` | net/cặp quan trọng → track đã khoá | Router A* trên lưới nhiều lớp có chi phí via, chi phí đổi mặt tham chiếu, cấm vượt khe plane; chế độ **cặp vi sai** (đi đường tâm rồi offset ±(w+s)/2, xử lý chỗ tách/nhập ở pad). Đây là công cụ khó nhất | XL |
+| T20 | `router` | net → track/via (mọi net) | **Engine router chính.** A* trên lưới nhiều lớp có chi phí via, chi phí đổi mặt tham chiếu, cấm vượt khe plane; chế độ **cặp vi sai** (đi đường tâm rồi offset ±(w+s)/2, xử lý chỗ tách/nhập ở pad); chế độ toàn board: thương lượng tắc nghẽn kiểu PathFinder (rip-up & reroute), tất định. Chạy theo thứ tự §3: net quan trọng trước, khoá, rồi phần còn lại. Đây là công cụ khó nhất | XL |
 | T21 | `length_tune` | nhóm length + track → meander | Chèn meander (trombone/sawtooth) tại đoạn thẳng có không gian, biên độ/khoảng cách theo knowledge/04 §7; tune skew nội cặp gần chỗ gây lệch | L |
 | T22 | `power_route` | net nguồn + dòng → zone, track rộng, mảng via | Sinh zone/pour theo vùng cụm tiêu thụ, track rộng theo T08, mảng via theo dòng, thermal via dưới exposed pad, GND stitching | L |
-| T23 | `freeroute` | board (đường quan trọng đã khoá) → board đã đi dây | Xuất DSN (track khoá → `protect`), chạy Freerouting headless, nhập SES; giới hạn số pass/thời gian | M |
+| T23 | `freeroute_bench` | placement → chỉ số so sánh | **Chỉ dùng trong benchmark, không nằm trong pipeline.** Xuất DSN, chạy Freerouting headless trên cùng placement, so số net đi được/via/chiều dài với T20 | S |
 | T24 | `route_cleanup` | board → board | Xoá dây treo, gộp đoạn, sửa góc nhọn, teardrop, refill zone, gỡ via thừa | M |
 
 ### Nhóm G — Kiểm tra & phân tích
@@ -383,6 +388,8 @@ signal_flow: [io_zone, power, mcu, analog]
 
 ## 8. Lộ trình
 
+> **Đã thay bằng lộ trình ở `TARGET-BCM.md` §9.** Bảng dưới giữ lại để tham chiếu nội dung từng mốc.
+
 | Mốc | Công cụ | Kết quả kiểm chứng được |
 |---|---|---|
 | **M0** Nền | T01, `pcbkit` (sexpr, board_io, geom, rng), T31 cơ bản, T35, KiCad trong container | Mở/ghi `.kicad_pcb`, render PNG một board mẫu; **kiểm Freerouting và zone fill có tất định không** (quyết định thiết kế cache) |
@@ -390,7 +397,7 @@ signal_flow: [io_zone, power, mcu, analog]
 | **M1** Hiểu mạch | T02, T03, T04, T05, T13 | Từ schematic ra board có footprint + net, đúng 100 % pad–net so với KiCad GUI |
 | **M2** Tính toán & ràng buộc | T06, T07, T08, T09, T25; skill `/pcb-verify` bản đầu | Stackup + `.kicad_dru` sinh ra được KiCad DRC chấp nhận; unit test calc đạt; **chạy `/pcb-verify` trên board vẽ tay để hiệu chỉnh luật** |
 | **M3** Placement | T10, T11, T12, T14, T15, T17, T18, T33, T34 | 3 board mẫu: 0 chồng lấn, vi phạm khoảng cách decap = 0; T35 tất định |
-| **M4** Routing cơ bản | T22 (zone đơn giản), T23, T24 | Board 2 lớp đơn giản: 100 % net, DRC 0, T35 tất định — **mốc MVP, đo token thật** |
+| **M4** Routing cơ bản | T20 (chế độ toàn board, chưa diff pair), T22 (zone đơn giản), T24, T23 để so sánh | Board 2 lớp đơn giản: 100 % net, DRC 0, T35 tất định — **mốc MVP, đo token thật** |
 | **M4.5** ECO | Tập bẩn + ghim (`ROLES.md` §7) | Thêm 1–5 linh kiện → ≥ 90 % linh kiện giữ nguyên vị trí |
 | **M5** Khối mẫu & nguồn | T16 + templates, T22 đầy đủ, T08 tích hợp, T29 | Buck/LDO đạt luật hot loop + thermal via |
 | **M6** Critical routing | T20, T21, T19 | USB2/CAN/clock đạt skew, Zdiff, via_max; RF feedline GCPW đúng hình học |
@@ -408,8 +415,8 @@ tích phía sau không có board thật để chạy.
 | Rủi ro | Mức | Giảm thiểu |
 |---|---|---|
 | `pcbnew` SWIG bị khai tử (KiCad 9 đánh dấu deprecated), IPC API cần KiCad đang chạy | Cao | `board_io.py` trừu tượng hoá; phần lớn đọc/ghi bằng `sexpr.py` riêng; chỉ zone fill/DRC/xuất DSN mới cần KiCad, gọi qua `kicad-cli` khi có thể |
-| Freerouting không hiểu diff pair/length → phá đường quan trọng | Cao | Đi dây quan trọng trước bằng T20/T21, khoá thành `protect` trong DSN |
-| T20 router cặp vi sai quá khó | Cao | v1 chỉ cặp ngắn, ít vật cản (USB2, CAN); cặp dài để Freerouting đi rồi T26 kiểm, Claude báo người nếu fail |
+| Engine router tự viết kém Freerouting trên board dày | Cao | Benchmark T23 trên mọi board để biết khoảng cách; nhân bản kênh + floorplan theo pinout giảm tải cho router |
+| Chế độ cặp vi sai của T20 quá khó | Cao | Làm trước cặp ngắn, ít vật cản (CAN, T1 MDI, USB2); cặp dài fail → tầng B, kỹ sư đi tay |
 | Claude đọc ảnh không đủ chi tiết | TB | Ảnh luôn kèm số liệu; render vùng zoom quanh vi phạm thay vì cả board |
 | Công thức giải tích sai lệch so với fab | TB | Ghi rõ là xấp xỉ; trở kháng cuối cùng lấy theo stackup do fab tính; tolerance ±10 % |
 | Luật chung mâu thuẫn datasheet | TB | Thứ tự ưu tiên: `parts/*.yaml` (datasheet) > `constraints.yaml` > `knowledge/` |

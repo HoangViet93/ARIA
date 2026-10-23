@@ -23,7 +23,8 @@ Số liệu ở đây là **giá trị điển hình**, không phải chuẩn b�
 | `07-analog-mixed-signal.md` | ADC, reference, Kelvin, guard ring, op-amp | `ANA` |
 | `08-interfaces.md` | Bảng luật cho từng chuẩn giao tiếp | `IF` |
 | `09-dfm-dfa-dft.md` | Năng lực fab, lắp ráp, test point | `DFM`, `DFA`, `DFT` |
-| `10-kicad-toolchain.md` | Định dạng file, kicad-cli, Python API, luật DRC tùy biến, Freerouting | — |
+| `10-kicad-toolchain.md` | Định dạng file, kicad-cli, Python API, luật DRC tùy biến, Freerouting (benchmark) | — |
+| `11-zonal-ecu-bcm.md` | VBAT, high-side switch, H-bridge, ngõ vào, connector/pin-FMEA/press-fit, giao tiếp, MCU/SBC, nhiệt | `BCM` |
 
 ## Hằng số & quy đổi dùng chung
 

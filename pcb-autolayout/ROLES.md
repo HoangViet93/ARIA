@@ -12,7 +12,7 @@
 | 1 | **AI quyết định trong vòng lặp** | Vòng 3 Claude dời cụm ADC sang phải, lần chạy khác lại dời lên trên |
 | 2 | **Luật viết bằng văn xuôi, ngưỡng mơ hồ** | "≥ 3–5 mm", "càng gần càng tốt" → mỗi lần diễn giải một kiểu |
 | 3 | **Thuật toán ngẫu nhiên, thứ tự duyệt không cố định** | Simulated annealing, Louvain, duyệt `dict`/`set` theo thứ tự băm |
-| 4 | **Công cụ ngoài không tất định** | Freerouting đa luồng, giới hạn theo thời gian; khác phiên bản KiCad |
+| 4 | **Công cụ ngoài không tất định** | Freerouting đa luồng, giới hạn theo thời gian (đã loại khỏi pipeline); khác phiên bản KiCad |
 | 5 | **Định danh sinh ngẫu nhiên** | UUID mới mỗi lần tạo track/zone → file khác dù hình học giống |
 
 Thiết kế dưới đây xử lý từng nguồn một. Nguyên tắc gốc:
@@ -36,7 +36,7 @@ Thiết kế dưới đây xử lý từng nguồn một. Nguyên tắc gốc:
 | Quyết định đóng băng | `layout/decisions/*.yaml` | AI đề xuất → **người duyệt** |
 | Miễn trừ luật | `layout/waivers.yaml` | **Người** |
 | Bộ luật | `rules/` @ phiên bản | Đội skill |
-| Công cụ | `layout.lock` (KiCad, Freerouting, Python libs, seed) | Script |
+| Công cụ | `layout.lock` (KiCad, Python libs, seed) | Script |
 
 **Cam kết:** cùng đầu vào → `.kicad_pcb` **giống hệt từng byte** sau chuẩn hoá
 (T35 `determinism_check` chạy hai lần, so hash). Lệch = bug, chặn phát hành skill.
@@ -79,7 +79,7 @@ pipeline dừng ở trạng thái `waiting_approval` kèm danh sách file chờ 
 | Chọn floorplan | B | AI so phương án theo rubric (§5.4) → đề xuất 1 | `decisions/floorplan.yaml` | Đóng băng (lưu hash phương án) | Kỹ sư (CP2) |
 | Placement | A | T14–T17 | board | Seed, lưới, phá hoà | — |
 | Vòng sửa placement | A | **T34 `repair`** theo bảng chiến lược (§6) | board | Bảng tất định, số bước giới hạn | — |
-| Đi dây | A | T19–T24 | board | Thứ tự net cố định; Freerouting 1 luồng, số pass cố định | — |
+| Đi dây | A | T19–T22, T24 (engine T20) | board | Thứ tự net cố định, seed, phá hoà theo tên net | — |
 | Vòng sửa đi dây | A | T34 | board | Như trên | — |
 | Kiểm tra | A | T25–T30 | `reports/*.json` | Hàm thuần | — |
 | Lỗi còn lại sau repair | B | AI chẩn đoán → đề xuất override **hoặc** waiver | `decisions/*` / `waivers.yaml` | Đóng băng | Kỹ sư |
@@ -240,7 +240,7 @@ thay đổi ≤ 5 % netlist).
 | Phá hoà | Điểm bằng nhau → so ref theo thứ tự tự nhiên (C2 < C10) |
 | Số thực | Toạ độ làm tròn về lưới (nm nguyên) sau mỗi bước; so sánh với epsilon cố định |
 | UUID | `uuid5(namespace_project, "<loại>:<khoá ổn định>")` cho track/via/zone do tool tạo |
-| Freerouting | 1 luồng (`-mt 1`), giới hạn theo **số pass**, không theo thời gian. **Phải kiểm ở M0** xem có thật tất định không; nếu không: cache SES theo hash DSN và coi Freerouting là bước có cache |
+| Router T20 | Engine riêng: thứ tự net cố định, chi phí lịch sử PathFinder tất định, không giới hạn theo thời gian (chỉ theo số vòng) |
 | KiCad | Phiên bản ghim trong lock; khác phiên bản → dừng (trừ `--allow-version-drift`, ghi vào báo cáo) |
 | Zone fill | Cùng phiên bản KiCad + cùng hình học → kiểm tất định ở M0 |
 | Song song hoá | Chỉ song song các việc độc lập; gộp kết quả theo thứ tự cố định |

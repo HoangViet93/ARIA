@@ -89,7 +89,7 @@ SVG → PNG cho Claude xem: `rsvg-convert` hoặc `cairosvg`.
 Một số ràng buộc (vd "có plane liền dưới đường", "ESD trước IC", diện tích hot loop) **không
 biểu diễn được** bằng `.kicad_dru` → do T26/T28 kiểm.
 
-## 6. Freerouting (T23)
+## 6. Freerouting (T23 — chỉ benchmark, không nằm trong pipeline)
 
 - Bản 2.x, Java ≥ 17, chạy headless:
   `java -jar freerouting.jar -de board.dsn -do board.ses -mp 100 -mt 4`
