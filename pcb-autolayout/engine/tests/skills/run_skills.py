@@ -154,6 +154,8 @@ def s_route(a):
 
 
 def s_verify(a):
+    if not a.tool_ok:
+        raise Skip("board mốc do toolchain khác ghi (KiCad mới hơn không mở ngược được)")
     d = work("verify", ("bcm4l-100.kicad_pcb", "bcm4l-100.kicad_pro", "bcm4l-100.kicad_dru", "routes.json"))
     ds = json.load(open(os.path.join(REFB, "design.json")))
     attrs = os.path.join(d, "attrs.yaml")
@@ -184,6 +186,8 @@ def s_verify(a):
 
 
 def s_release(a):
+    if not a.tool_ok:
+        raise Skip("board mốc do toolchain khác ghi (KiCad mới hơn không mở ngược được)")
     d = work("release", ("bcm4l-100.kicad_pcb", "bcm4l-100.kicad_pro", "bcm4l-100.kicad_dru",
                          "checks.json", "hash.txt"))
     board = os.path.join(d, "build", "bcm4l-100.kicad_pcb")

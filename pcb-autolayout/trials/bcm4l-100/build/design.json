@@ -1141,9 +1141,7 @@
    "block": "pwr_in",
    "channel": null,
    "footprint": "Inductor_SMD:L_1812_4532Metric",
-   "lowcur": [
-    "1"
-   ],
+   "lowcur": [],
    "near": null,
    "pins": {
     "1": "VBAT_P",

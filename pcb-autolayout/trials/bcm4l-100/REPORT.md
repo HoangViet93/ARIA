@@ -227,3 +227,21 @@ Kiểm chứng thêm trên KiCad 9: net class trong `.kicad_pro` được nạp 
 Thêm `run.py --reuse-routes`: dùng lại `routes.json` khi khoá (design + floorplan + placement +
 số vòng + mã router) khớp — sửa pha KiCad còn 30 s thay vì 15 phút. Đối chứng: KiCad 7 dùng lại
 routes ra đúng hash `ca42f5ccebc444e9`.
+
+## Vòng 6 — kiểm thử skill, đối chiếu verify ↔ run
+
+`engine/tests/skills/run_skills.py`: 8 skill, mỗi skill một kịch bản chạy thật bằng đúng lệnh
+trong SKILL.md, có ca âm. KiCad 9: 8/8 PASS (~1 phút; `--full` đi dây thật). KiCad 7: 4 PASS,
+4 SKIP có lý do (mốc do KiCad 9 ghi).
+
+Đối chiếu chéo `verify.py` (dựng lại mô hình từ file board) với `run.py` (biết metadata router)
+trên cùng board lần đầu lệch 2 rule. Truy ra:
+
+| # | Phát hiện | Mức | Sửa |
+|---|---|---|---|
+| 1 | **FB1** (ferrite cấp buck, VBAT_P → VBAT_F 1 A) bị khai `lowcur` ở vòng 1 → nhánh VBAT_P→FB1 đi **0.3 mm mang 1 A**. DRC và 16 rule đều đạt vì engine tin `lowcur` tuyệt đối | Lỗi thật (ràng buộc layout do Claude khai sai) | `netclass.lint_lowcur` chặn ở `constraints.py` và `run.py`; bỏ `lowcur` của FB1 (mạch giữ nguyên). Nhánh giờ 1.10 mm |
+| 2 | verify lấy viền board từ bbox có cả độ dày nét → gốc lệch 0.05 mm, EMC-021 ra 4.5 thay vì 4.2 | Lỗi verify | Viền theo hình học Edge.Cuts |
+| 3 | verify không biết đoạn nào là neck/low, via nào là via khâu → báo thừa PWR-001/PWR-005 | Giới hạn | `--routes routes.json`: nhãn router cho đoạn/via còn nguyên vị trí |
+
+Sau sửa: verify khớp run **từng giá trị** trên 12 rule áp dụng được. Kết quả mới: 13/16
+(như cũ), 886 đoạn, 343 via, hash `8610206f44f28438`.
