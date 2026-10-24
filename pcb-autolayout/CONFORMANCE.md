@@ -35,7 +35,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T16 | template_apply | ✅ | `templates.yaml` theo trial + tự kiểm mẫu; sau này chuyển vào parts-db |
 | T18 | placement_metrics | 🟡 | Rule PLC-011/034/NEAR/OVL; chưa có RUDY/HPWL |
 | T19 | route_rf | ❌ | Không có RF trên board này |
-| T20 | router | ✅ | A* numba + PathFinder; **chưa có chế độ cặp vi sai** |
+| T20 | router | ✅ | A* numba + PathFinder; trial luyện route ~128 s (từ 895 s, sửa heuristic via); via net dòng lớn giữ chỗ cụm; **chưa có chế độ cặp vi sai** |
 | T21 | length_tune | ❌ | |
 | T22 | power_synth | 🟡 | Chỉ thả via GND xuống plane + bề rộng theo dòng |
 | T23 | freeroute_bench | ❌ | |
@@ -45,7 +45,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T31 | render | ✅ | matplotlib + `kicad-cli pcb export svg` |
 | T32 | report_export | ✅ | `release.py`: Gerber/drill/CPL/BOM/manifest + cổng chặn rule C chưa miễn trừ |
 | T33 | floorplan_gen | ❌ | Lệch: floorplan viết tay (tầng B, Claude đề xuất) |
-| T34 | repair | ❌ | **Việc kế tiếp**: rip-up đã chứng minh có vùng thiếu dung lượng → cần quay về placement |
+| T34 | repair | ❌ | Chưa cần cho trial luyện: chân hở "thiếu dung lượng" hoá ra là lỗi A\*. Vẫn cần cho board dày (bộ R mật độ cao) |
 | T35 | determinism_check | ✅ | Hai lần chạy → `.kicad_pcb` giống hệt từng byte (`canonicalize`) |
 | T36 | rules_lint | ✅ | 16 rule, mỗi rule có test |
 | T37 | channel_replicate | ✅ | Kênh ra ×4, vào ×6 |

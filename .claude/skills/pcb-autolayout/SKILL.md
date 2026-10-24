@@ -58,7 +58,7 @@ cần một pha hoặc đang chẩn đoán.
    `python3 tests/skills/run_skills.py` (~3 phút; `--full` đi dây thật ~15 phút) — mỗi skill một
    kịch bản thật có ca âm; SKIP khi `toolchain.txt` khác mốc (không phải PASS). Lỗi → dừng, là lỗi engine.
 3. **Đầu vào trial**: `circuit.py`, `floorplan.yaml`, `checks.yaml`, tuỳ chọn `templates.yaml`.
-4. **Chạy** (nền; ~15 phút): `python3 -u run.py ../trials/<tên> > log`. Chỉ sửa pha sau routing
+4. **Chạy** (~2.5 phút): `python3 -u run.py ../trials/<tên> > log`. Chỉ sửa pha sau routing
    → `--reuse-routes` (~30 s, xem `pcb-route`). Theo dõi dòng
    `[class] [place] [route] [silk] [kicad] [check] [done]`.
 5. **Đọc kết quả**: `build/checks.json`; mỗi rule FAIL tra trường `knowledge` của rule.
@@ -81,8 +81,14 @@ cần một pha hoặc đang chẩn đoán.
 - **Thạch anh 4 pad**: pad 1/3 chéo — chọn góc bằng `rots` để đường vòng đi phía trống.
 - **Router**: ô nguồn phải được probe; biên lượng tử 1.5 ô; mọi ô chồng là vi phạm thật →
   gỡ chồng theo **nhóm net**; chân bị nhốt → **rip-up dây chuyền** (đường mềm → gỡ đúng net
-  chạm → đi lại), có phát hiện vòng lặp. Vòng lặp = vùng **thiếu dung lượng** → không phải
-  việc của router, cần T34 quay về placement (chưa có).
+  chạm → đi lại), có phát hiện vòng lặp. Vòng lặp *có thể* là vùng thiếu dung lượng — nhưng
+  **kiểm A\* trước**: chẩn đoán "U5.15 thiếu dung lượng, cần T34" từng sai hoàn toàn; thủ phạm là
+  trạng thái via vào heap với f = g (thiếu heuristic) → A\* thành Dijkstra, hết `max_pops` rồi báo
+  "không có đường". Một dòng sửa: route 895 → 128 s, chân hở biến mất. Hết bước tìm ≠ không có đường.
+- Net ≥ 1 A buộc đổi lớp: A\* chọn vị trí via có chỗ cho **cả cụm via** (`HC_VIA_PITCH`) và giữ
+  chỗ trong dấu chân — gia cố chạy cuối thì chỗ đã bị lấp (`tools/diag_via.py` in lý do loại).
+- PathFinder dừng khi 5 vòng liền không lập kỷ lục ("6 vòng giống hệt" không bao giờ xảy ra).
+- Đo trước khi tối ưu: `tools/prof_route.py <trial> [vòng]` (cProfile pha route).
 - Dòng điện lấy theo **từng net** (`net_attrs`), không theo class.
 - Thắt cổ chỉ sát pad hẹp hơn đường (0.6 mm); net ≥ 1 A tránh via, buộc đổi lớp thì gia cố via.
 - KiCad 7: `ZONE_FILLER` segfault trên board dựng trong bộ nhớ → lưu/nạp lại rồi fill; UUID
