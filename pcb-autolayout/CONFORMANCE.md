@@ -22,7 +22,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T05 | part_rules / parts-db | ❌ | Luật linh kiện nằm tạm trong `near=` của `circuit.py` và `checks.yaml` |
 | T06/T07 | stackup / impedance | ❌ | Stackup cố định SIG/GND/GND/SIG |
 | T08 | current | 🟡 | Bề rộng tính tay theo IPC-2221, chưa có công cụ |
-| T09 | constraint_compile | ❌ | Chưa sinh `.kicad_dru` |
+| T09 | constraint_compile | 🟡 | Sinh `.kicad_dru` (clearance net class, via_count, keep_away); chưa có net class trong `.kicad_pro` |
 | T10/T11 | cluster | 🟡 | Dùng `block` khai trong mạch; chưa gom cụm tự động |
 | T12 | board_setup | 🟡 | Outline + vị trí cố định từ `floorplan.yaml` |
 | T13 | board_from_netlist | ✅ | `kicad_board.build()` qua pcbnew |
