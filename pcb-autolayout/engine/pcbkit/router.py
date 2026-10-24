@@ -414,6 +414,7 @@ class Router:
         flat_hist = self.hist.reshape(-1)
         dirty = set(order)
         hist_log = []
+        t_pf = time.time()
         for it in range(1, max_iter + 1):
             t0 = time.time()
             for net in order:
@@ -450,10 +451,15 @@ class Router:
             for net in order:
                 if over[self.fp_cells[net]].any() or self.result[net][1]:
                     dirty.add(net)
+        t1 = time.time()
         self.resolve_overuse(order)
+        t2 = time.time()
         self._no_shorts(order)          # chốt cuối (rip-up dây chuyền không được để lại chồng)
         self.polish(order)
+        t3 = time.time()
         self.reinforce_vias()
+        self.log("thời gian pha: PathFinder %.0fs, gỡ chồng + rip-up %.0fs, nắn đường %.0fs"
+                 % (t1 - t_pf, t2 - t1, t3 - t2))
         self.overuse = int((self.occ.reshape(-1) > 1).sum())
         if self.overuse:
             over = self.occ.reshape(-1) > 1

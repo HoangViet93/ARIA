@@ -13,7 +13,7 @@
   "rule": "PLC-034",
   "severity": "C",
   "title": "Linh kiện bảo vệ/lọc sát thân connector",
-  "value": 1.4800000000000004,
+  "value": 1.3201893803541969,
   "max": 3.0,
   "status": "ok",
   "violations": [],
@@ -23,13 +23,11 @@
   "rule": "PLC-NEAR",
   "severity": "M",
   "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
-  "value": 8.880000000000003,
+  "value": 3.5455191791894185,
   "max": 4.0,
-  "status": "FAIL",
-  "violations": [
-   "R49→U19.6 8.9 mm"
-  ],
-  "n": 1
+  "status": "ok",
+  "violations": [],
+  "n": 0
  },
  {
   "rule": "PLC-OVL",
@@ -45,17 +43,14 @@
   "rule": "RT-OPEN",
   "severity": "C",
   "title": "Mọi chân đã nối (theo connectivity của KiCad)",
-  "value": 5,
+  "value": 2,
   "max": 0,
   "status": "FAIL",
   "violations": [
-   "Missing connection between items Local override; error @(121.8375 mm, 69.7500 mm): Pad 10 [S2_B] of U1 on F.Cu",
-   "Missing connection between items Local override; error @(126.7500 mm, 72.1625 mm): Pad 20 [S7_B] of U1 on F.Cu",
-   "Missing connection between items Local override; error @(121.3571 mm, 81.4728 mm): Pad 1 [S9_A] of R29 on F.Cu",
-   "Missing connection between items Local override; error @(120.7871 mm, 77.2428 mm): Pad 2 [S9_B] of R49 on F.Cu",
-   "Missing connection between items Local override; error @(115.5882 mm, 89.4517 mm): Pad 2 [S11_B] of R51 on F.Cu"
+   "Missing connection between items Local override; error @(111.1279 mm, 84.0218 mm): Pad 2 [S6_B] of R46 on F.Cu",
+   "Missing connection between items Local override; error @(111.3113 mm, 87.6181 mm): Pad 2 [S11_B] of R51 on F.Cu"
   ],
-  "n": 5
+  "n": 2
  },
  {
   "rule": "DRC-ERR",
@@ -111,22 +106,19 @@
   "rule": "EMC-021",
   "severity": "M",
   "title": "Via khâu GND dọc mép board (ngoài vùng connector/lỗ vít)",
-  "value": 19.7,
+  "value": 8.2,
   "max": 5.0,
   "status": "FAIL",
   "violations": [
-   "(39.0,38.8) khoảng hở 6.9 mm",
-   "(38.5,38.8) khoảng hở 7.9 mm",
-   "(38.0,38.8) khoảng hở 8.8 mm",
-   "(37.5,38.8) khoảng hở 9.8 mm",
-   "(37.0,38.8) khoảng hở 10.7 mm",
-   "(36.5,38.8) khoảng hở 11.7 mm",
-   "(36.0,38.8) khoảng hở 12.6 mm",
-   "(35.5,38.8) khoảng hở 13.5 mm",
-   "(35.0,38.8) khoảng hở 14.4 mm",
-   "(34.5,38.8) khoảng hở 15.3 mm"
+   "(50.7,1.2) khoảng hở 5.0 mm",
+   "(50.8,1.6) khoảng hở 5.3 mm",
+   "(50.8,2.1) khoảng hở 5.6 mm",
+   "(50.8,9.1) khoảng hở 8.2 mm",
+   "(50.8,9.6) khoảng hở 7.2 mm",
+   "(50.8,10.1) khoảng hở 6.2 mm",
+   "(50.8,10.6) khoảng hở 5.2 mm"
   ],
-  "n": 53
+  "n": 7
  },
  {
   "rule": "RT-CLR",
