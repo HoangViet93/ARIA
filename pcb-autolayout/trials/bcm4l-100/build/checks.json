@@ -47,13 +47,11 @@
   "rule": "RT-OPEN",
   "severity": "C",
   "title": "Mọi chân đã nối (theo connectivity của KiCad)",
-  "value": 1,
+  "value": 0,
   "max": 0,
-  "status": "FAIL",
-  "violations": [
-   "Missing connection between items Local override; error @(135.2500 mm, 82.1625 mm): Pad 15 [IN4_M] of U5 on F.Cu"
-  ],
-  "n": 1
+  "status": "ok",
+  "violations": [],
+  "n": 0
  },
  {
   "rule": "DRC-ERR",
@@ -129,13 +127,11 @@
   "rule": "PWR-005",
   "severity": "C",
   "title": "Đổi lớp của net dòng lớn có đủ via song song (1 A/via + 1 dự phòng)",
-  "value": 1,
+  "value": 0,
   "max": 0,
-  "status": "FAIL",
-  "violations": [
-   "+5V via @(57.6,31.6): 1/2"
-  ],
-  "n": 1
+  "status": "ok",
+  "violations": [],
+  "n": 0
  },
  {
   "rule": "DFM-005",

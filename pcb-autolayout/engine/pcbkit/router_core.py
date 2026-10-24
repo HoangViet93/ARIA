@@ -241,7 +241,21 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
                         stamp[ns] = cur
                         g[ns] = ng
                         par[ns] = s
-                        size = _heap_push(hf, hc, hs, size, ng, cnt, ns)
+                        # f = g + h như mọi trạng thái khác (cùng (y, x) → cùng h). Bản cũ đẩy f = g:
+                        # trạng thái via luôn ra trước cả biên → A* thành Dijkstra ở lớp kia.
+                        hy = 0
+                        if y < tb[0]:
+                            hy = tb[0] - y
+                        elif y > tb[2]:
+                            hy = y - tb[2]
+                        hx = 0
+                        if x < tb[1]:
+                            hx = tb[1] - x
+                        elif x > tb[3]:
+                            hx = x - tb[3]
+                        mn = min(hx, hy)
+                        h = (1.41421356 * mn + (max(hx, hy) - mn)) * hweight
+                        size = _heap_push(hf, hc, hs, size, ng + h, cnt, ns)
                         cnt += 1
         if size >= hf.shape[0] - 64:
             break

@@ -14,6 +14,8 @@ from .design import natkey
 
 RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
+STALL_ITERS = 5
+HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)    # PathFinder dừng sau ngần này vòng liền không lập kỷ lục (chân hở, ô chồng)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
 
 
@@ -174,12 +176,14 @@ class Router:
         return cells
 
     # ---- một lượt A* --------------------------------------------------------
-    def _search(self, nid, src, tgt, tgt_layer, w, neck, allow_via=True, margin_list=(6, 20, 200)):
+    def _search(self, nid, src, tgt, tgt_layer, w, neck, allow_via=True, margin_list=(6, 20, 200), via_extra=0.0):
+        """via_extra > 0: vị trí via phải trống thêm ngần ấy mm quanh đĩa via — chỗ cho via song
+        song của net dòng lớn (PWR-005), giữ ngay lúc chọn đường thay vì hy vọng còn chỗ sau."""
         hw = w / 2
         inf = self.infl(self.net_names[nid])
         offs_main = self.offs(hw + inf)
         offs_neck = self.offs(min(hw, self.neckw(self.net_names[nid]) / 2) + inf)
-        offs_via = self.offs(self.via_d / 2 + inf)
+        offs_via = self.offs(self.via_d / 2 + via_extra + inf)
         offs_viapad = self.offs(self.via_d / 2 + VIA_PAD_GAP + 1.5 * RES)   # DFM-005 (+1.5 ô: lượng tử)
         src_a = np.array(src, np.int64).reshape(-1, 3)
         if tgt_layer >= 0:
@@ -295,7 +299,12 @@ class Router:
                 novia = self.via_max.get(net) == 0 or (self.current.get(net, 0) >= 1.0 and gw == w)
                 path = self._search(nid, tree, tgt, -1, gw, gneck, allow_via=not novia)
                 if path is None and novia:
-                    path = self._search(nid, tree, tgt, -1, gw, gneck)   # chấp nhận via, rule PWR-005/SI-070 sẽ báo
+                    # buộc đổi lớp: net dòng lớn cần chỗ cho cả cụm via; không có thì nhận via đơn
+                    # (PWR-005 sẽ báo), net clock (via_max 0) nhận via và SI-070 sẽ báo
+                    if self._hc_main(net, gw):
+                        path = self._search(nid, tree, tgt, -1, gw, gneck, via_extra=HC_VIA_PITCH)
+                    if path is None:
+                        path = self._search(nid, tree, tgt, -1, gw, gneck)
                     if path is not None:
                         self.via_fallback.add(net)
                 if path is None:
@@ -332,7 +341,12 @@ class Router:
             self._offs[key] = rc.disc_offsets(r_cells)
         return self._offs[key]
 
-    def _footprint(self, conns, net):
+    def _hc_main(self, net, w):
+        """Đường chính (đủ bề rộng) của net ≥ 1 A: via của nó cần chỗ cho via song song."""
+        return self.current.get(net, 0) >= 1.0 and w >= self.width.get(net, self.def_w) - 1e-9
+
+    def _footprint(self, conns, net, reserve=True):
+        """reserve=False: chỉ đồng thật (via phụ của reinforce_vias không giữ thêm chỗ)."""
         inf = self.infl(net)
         self.cur += 1
         cells = []
@@ -345,7 +359,9 @@ class Router:
             cells.append(rc.footprint_cells(path, is_via, neck,
                                             self.offs(hw + inf),
                                             self.offs(min(hw, self.neckw(net) / 2) + inf),
-                                            self.offs(self.via_d / 2 + inf),
+                                            # net dòng lớn giữ luôn chỗ cho via song song
+                                            self.offs(self.via_d / 2 + inf +
+                                                      (HC_VIA_PITCH if reserve and self._hc_main(net, w) else 0.0)),
                                             self.mark, self.cur, self.L, self.H, self.W))
         if not cells:
             return np.zeros(0, np.int64)
@@ -401,9 +417,12 @@ class Router:
             self.log("vòng %2d: ô chồng %6d, chân chưa nối %3d, %.1fs" % (it, n_over, n_fail, time.time() - t0))
             if n_over == 0 and n_fail == 0:
                 break
-            hist_log.append((n_over, n_fail))
-            if len(hist_log) >= 6 and len(set(hist_log[-6:])) == 1:
-                self.log("PathFinder dừng: 5 vòng liền không cải thiện — chuyển sang gỡ chồng cứng")
+            # dừng khi 5 vòng liền không lập kỷ lục mới (chân hở trước, rồi ô chồng). Bản cũ
+            # đòi 6 vòng GIỐNG HỆT nhau — số ô chồng dao động 526–585 nên không bao giờ dừng.
+            hist_log.append((n_fail, n_over))
+            if len(hist_log) > STALL_ITERS and min(hist_log[-STALL_ITERS:]) > min(hist_log[:-STALL_ITERS]):
+                self.log("PathFinder dừng: %d vòng liền không lập kỷ lục — chuyển sang gỡ chồng cứng"
+                         % STALL_ITERS)
                 break
             flat_hist[over] += 0.6
             self.pres_fac *= 1.7
@@ -599,7 +618,7 @@ class Router:
     def reinforce_vias(self):
         """PWR-005: via trên đường chính của net dòng lớn được thêm via song song (cách
         0.9 mm, nối bằng đoạn ngắn cùng bề rộng ở cả hai lớp) tới đủ ceil(I)+1. Chỉ đặt
-        khi đĩa via + đoạn nối không chạm dấu chân net khác. Tất định: 8 hướng cố định."""
+        khi đĩa via + đoạn nối không chạm dấu chân net khác. Tất định: 16 hướng × 8 khoảng cố định."""
         self.extra = {}
         added = 0
         for net in sorted(self.result, key=natkey):
@@ -624,14 +643,16 @@ class Router:
                 continue
             self._rip(net)
             ex_tracks, ex_vias = [], []
+            # ứng viên: gần trước, 16 hướng cố định; khoảng lỗ–lỗ do viablock canh, ≤ 1.45 mm để
+            # nằm trong bán kính 1.5 mm của PWR-005. Bản cũ 3 × 8 vị trí → chỗ đông không lọt.
             cand = []
-            for dist in (0.9, 1.2, 1.5):
-                st = int(round(dist / RES))
-                for d in range(8):
-                    if d % 2:
-                        cand.append((int(rc.DY[d] * st / 1.4142), int(rc.DX[d] * st / 1.4142)))
-                    else:
-                        cand.append((int(rc.DY[d] * st), int(rc.DX[d] * st)))
+            for dist in (0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.45):
+                st = dist / RES
+                for d in range(16):
+                    a = d * math.pi / 8
+                    c = (int(round(math.sin(a) * st)), int(round(math.cos(a) * st)))
+                    if c not in cand:
+                        cand.append(c)
             for (vy, vx) in mains:
                 have = 1
                 for (oy, ox) in cand:
@@ -669,7 +690,7 @@ class Router:
                 pseudo.append((np.array([[0, ny, nx], [1, ny, nx]], np.int64), w, np.zeros((self.L, self.H, self.W), np.bool_)))
             cells = self.fp_cells[net]
             if pseudo:
-                cells = np.unique(np.concatenate([cells, self._footprint(pseudo, net)]))
+                cells = np.unique(np.concatenate([cells, self._footprint(pseudo, net, reserve=False)]))
             old = self.result[net]
             self._put(net, old[0], old[1], cells, self.net_vias.get(net, []) + ex_vias)
             self.extra[net] = (ex_tracks, [(x * RES, y * RES, net, "main") for (y, x) in ex_vias])

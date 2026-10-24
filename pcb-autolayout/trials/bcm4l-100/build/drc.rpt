@@ -1,5 +1,5 @@
 ** Drc report for /home/user/ARIA/pcb-autolayout/trials/bcm4l-100/build/bcm4l-100.kicad_pcb **
-** Created on 2026-10-24 09:50:17 **
+** Created on 2026-10-24 13:45:55 **
 
 ** Found 120 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the footprint library 'Button_Switch_SMD'.
@@ -363,11 +363,7 @@
     Local override; warning
     @(161.4467 mm, 90.2338 mm): Footprint R9
 
-** Found 1 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(135.2500 mm, 82.1625 mm): Pad 15 [IN4_M] of U5 on F.Cu
-    @(113.9713 mm, 95.1544 mm): Pad 1 [IN4_M] of C42 on F.Cu
+** Found 0 unconnected pads **
 
 ** Found 0 Footprint errors **
 

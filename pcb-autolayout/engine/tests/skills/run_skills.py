@@ -191,8 +191,13 @@ def s_release(a):
     d = work("release", ("bcm4l-100.kicad_pcb", "bcm4l-100.kicad_pro", "bcm4l-100.kicad_dru",
                          "checks.json", "hash.txt"))
     board = os.path.join(d, "build", "bcm4l-100.kicad_pcb")
-    fails = [r["rule"] for r in json.load(open(os.path.join(REFB, "checks.json")))
-             if r["severity"] == "C" and r["status"] != "ok"]
+    cpath = os.path.join(d, "build", "checks.json")
+    res = json.load(open(cpath))
+    fails = [r["rule"] for r in res if r["severity"] == "C" and r["status"] != "ok"]
+    if not fails:   # board sạch: dựng ca trượt để cổng chặn vẫn được kiểm (không để ca âm rỗng)
+        r0 = next(r for r in res if r["severity"] == "C")
+        r0["status"], fails = "FAIL", [r0["rule"]]
+        json.dump(res, open(cpath, "w"))
     out_dir = os.path.join(d, "out")
     rc, out = sh(sys.executable, "release.py", board, out_dir)
     if fails:

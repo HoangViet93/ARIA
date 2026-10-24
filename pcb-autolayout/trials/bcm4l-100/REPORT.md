@@ -245,3 +245,20 @@ trên cùng board lần đầu lệch 2 rule. Truy ra:
 
 Sau sửa: verify khớp run **từng giá trị** trên 12 rule áp dụng được. Kết quả mới: 13/16
 (như cũ), 886 đoạn, 343 via, hash `8610206f44f28438`.
+
+## Vòng 7 — A1 tốc độ router: 931 s → 150 s, 15/16 rule
+
+Profile (`engine/tools/prof_route.py`): 93 % thời gian nằm trong lõi A*.
+
+| # | Phát hiện | Sửa | Hiệu quả |
+|---|---|---|---|
+| 1 | Trạng thái qua via được đẩy vào heap với **f = g** (thiếu heuristic) → mọi via ra trước cả biên tìm; A* thành Dijkstra ở lớp kia; tìm net khó hết `max_pops` và báo "không có đường" | f = g + h như mọi trạng thái | Route 895 → 128 s; **chân hở U5.15 biến mất** |
+| 2 | PathFinder dừng khi "6 vòng giống hệt" — ô chồng dao động 526–585 nên chạy đủ 30 vòng | Dừng khi 5 vòng không lập kỷ lục | Bớt ~13 vòng thừa |
+| 3 | PWR-005 +5V: router đặt via sát U3 giữa via fanout GND; 128/128 vị trí via song song bị loại (`tools/diag_via.py`) | Net ≥ 1 A buộc đổi lớp: A* chọn vị trí có chỗ cho cụm via, dấu chân giữ chỗ đó | PWR-005 đạt (thêm 8 via) |
+
+**Chẩn đoán cũ sai**: vòng 3–6 kết luận U5.15 là "vùng thiếu dung lượng, cần T34". Thật ra là lỗi
+heuristic. Bài học vào skill: thất bại do hết bước tìm ≠ không có đường — kiểm A* trước khi đổ cho
+placement.
+
+Kết quả: **15/16** (chỉ còn PLC-NEAR mức M), DRC 0, toàn trình **150 s** (tiêu chí A1 ≤ 3 phút),
+hash `9c30d6f3daadd940`. Kiểm skill 8/8 PASS.
