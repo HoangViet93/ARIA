@@ -172,6 +172,10 @@ def write_dru(design, floorplan, path):
         if nc.get("via_max") is not None:
             out.append('(rule "via_count_%s"\n  (condition "%s")\n  (constraint via_count (max %d)))'
                        % (name, cond, nc["via_max"]))
+        if nc.get("outer_only") and len(floorplan["stackup"].get("routing", [])) > 2:
+            # net dòng lớn chỉ đi lớp ngoài: KiCad DRC tự kiểm độc lập với checker của engine
+            out.append('(rule "outer_only_%s"\n  (layer inner)\n  (condition "%s")\n  (constraint disallow track))'
+                       % (name, cond))
     for a, b, mm in design.get("keep_away", []):
         out.append('(rule "keep_%s_%s"\n  (condition "(A.NetName == \'%s\' && B.NetName == \'%s\') || '
                    '(A.NetName == \'%s\' && B.NetName == \'%s\')")\n  (constraint clearance (min %.3fmm)))'

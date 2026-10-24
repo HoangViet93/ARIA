@@ -1,5 +1,8 @@
 """Lõi router (numba): A* trên lưới nhiều lớp, trạng thái = (lớp, y, x, hướng).
 
+Thắt cổ sát pad: `neck[l, y, x]` = k → đĩa `offs_stk[k, :stk_n[k]]`; k = 0 là đĩa chính của đường
+(bề rộng thắt cổ THEO TỪNG PAD — một giá trị cho cả net từng ép 5 A vào 0.5 mm ở pad 1.2 mm).
+
 Mô hình clearance: mỗi net chiếm "dấu chân" = các ô cách đường tâm < hw + clr/2.
 Hai net hợp lệ khi dấu chân không chồng nhau ⇔ khoảng cách tâm ≥ hwA + hwB + clr.
 `fixed`: -1 trống, ≥0 id net của pad (đã nở clr/2), -2 cấm (mép board, lỗ).
@@ -92,12 +95,13 @@ def _heap_pop(hf, hc, hs, size):
 
 @njit(cache=True)
 def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
-          offs_main, offs_neck, offs_via, offs_viapad,
+          offs_stk, stk_n, offs_via, offs_viapad,
           src, tgt, tgt_layer, bbox,
           g, par, stamp, cur, memo, memo_stamp,
-          via_cost, pres_fac, allow_via,
+          via_cost, pres_fac, allow_via, lay_ok,
           hf, hc, hs, tb, hweight, max_pops, hard, bend1, bend2):
-    """src/tgt: mảng (k, 3) [l, y, x]. tgt_layer ≥ 0: đích = bất kỳ ô nào trên
+    """lay_ok[l] = 0: net không được đi trên lớp l (net dòng lớn chỉ đi lớp ngoài) — không xuất
+    phát, không qua via sang lớp đó. src/tgt: mảng (k, 3) [l, y, x]. tgt_layer ≥ 0: đích = bất kỳ ô nào trên
     lớp đó (dùng để thả via xuống plane). tb = hộp bao của đích (y0,x0,y1,x1)
     cho heuristic. Trả về mảng trạng thái của đường đi (rỗng nếu thất bại)."""
     L, H, W = fixed.shape
@@ -110,7 +114,8 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
         c = (tgt[k, 0] * H + tgt[k, 1]) * W + tgt[k, 2]
         memo_stamp[3, c] = cur
         if not reach:
-            offs = offs_neck if neck[tgt[k, 0], tgt[k, 1], tgt[k, 2]] else offs_main
+            kk = neck[tgt[k, 0], tgt[k, 1], tgt[k, 2]]
+            offs = offs_stk[kk, :stk_n[kk]]
             if _probe(fixed, occ, padmask, net, tgt[k, 0], tgt[k, 1], tgt[k, 2], offs, False) >= 0.0:
                 reach = True
     if not reach:      # mọi ô đích đều bị chặn cứng: thất bại ngay, không quét board
@@ -119,8 +124,11 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
     pushed = 0
     for k in range(src.shape[0]):
         l, y, x = src[k, 0], src[k, 1], src[k, 2]
+        if not lay_ok[l]:
+            continue
         # ô nguồn cũng phải hợp lệ với bán kính của chính đường này (review code #1)
-        so = offs_neck if neck[l, y, x] else offs_main
+        kk = neck[l, y, x]
+        so = offs_stk[kk, :stk_n[kk]]
         sp = _probe(fixed, occ, padmask, net, l, y, x, so, False)
         if sp < 0.0 or (hard and sp > 0.0):
             continue
@@ -183,10 +191,8 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
             # memo giá trị probe cho ô đích (bán kính tuỳ vùng cổ chai)
             if memo_stamp[0, nc] != cur:
                 memo_stamp[0, nc] = cur
-                if neck[l, ny, nx]:
-                    memo[0, nc] = _probe(fixed, occ, padmask, net, l, ny, nx, offs_neck, False)
-                else:
-                    memo[0, nc] = _probe(fixed, occ, padmask, net, l, ny, nx, offs_main, False)
+                kk = neck[l, ny, nx]
+                memo[0, nc] = _probe(fixed, occ, padmask, net, l, ny, nx, offs_stk[kk, :stk_n[kk]], False)
             pv = memo[0, nc]
             if pv < 0.0 or (hard and pv > 0.0):
                 continue
@@ -233,7 +239,7 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
             pv = memo[1, c]
             if pv >= 0.0 and not (hard and pv > 0.0):
                 for ll in range(L):
-                    if ll == l:
+                    if ll == l or not lay_ok[ll]:
                         continue
                     ns = ((ll * H + y) * W + x) * NDIR + 8
                     ng = gs + via_cost * (1.0 + pres_fac * pv)
@@ -290,7 +296,7 @@ def stamp_disc(mask, l, y, x, offs, val):
 
 
 @njit(cache=True)
-def footprint_cells(path, is_via, neck, offs_main, offs_neck, offs_via, mark, cur, L, H, W):
+def footprint_cells(path, is_via, neck, offs_stk, stk_n, offs_via, mark, cur, L, H, W):
     """Tập ô dấu chân của một đường (không trùng lặp) → mảng chỉ số phẳng."""
     buf = []
     for i in range(path.shape[0]):
@@ -305,7 +311,8 @@ def footprint_cells(path, is_via, neck, offs_main, offs_neck, offs_via, mark, cu
                         if mark[c] != cur:
                             mark[c] = cur
                             buf.append(c)
-        offs = offs_neck if neck[l, y, x] else offs_main
+        kk = neck[l, y, x]
+        offs = offs_stk[kk, :stk_n[kk]]
         for k in range(offs.shape[0]):
             yy = y + offs[k, 0]
             xx = x + offs[k, 1]

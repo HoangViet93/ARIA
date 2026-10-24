@@ -9,10 +9,12 @@ Bề rộng = max(0.20 mm, IPC-2221 lớp ngoài 1 oz ΔT 10 °C, làm tròn lê
 | W020_C015 | 0.20 mm | 0.15 mm | — | FB5, KL15_M |
 | W020_C015_NOVIA | 0.20 mm | 0.15 mm | cấm | OSC_IN, OSC_OUT |
 | W020_C020 | 0.20 mm | 0.20 mm | — | AIN1, AIN2, AIN3, AIN4, BOOT5, CAN1H, CAN1H_T, CAN1L, CAN1L_T, CAN1_SPL, CAN2H, CAN2H_T, CAN2L, CAN2L_T, CAN2_SPL, DIN1, DIN2, DIN3, DIN4, DIN5, DIN6, DIN7, DIN8, DIN9, DIN10, DIN11, DIN12, EN5, KL15, LIN1, LIN1_PU, LIN1_WAKE, LIN2, LIN2_PU, LIN2_WAKE, OUT1_C, OUT1_G, OUT2_C, OUT2_G, OUT3_C, OUT3_G, OUT4_C, OUT4_G, OUT5_C, OUT5_G, OUT6_C, OUT6_G, OUT7_C, OUT7_G, OUT8_C, OUT8_G, Q1_G |
-| W035_C020 | 0.35 mm | 0.20 mm | — | SW5 |
-| W040_C015 | 0.40 mm | 0.15 mm | — | +3V3, +3V3A, +5V |
-| W040_C020 | 0.40 mm | 0.20 mm | — | LS1, LS2, LS3, LS4, OUT1, OUT2, OUT3, OUT4, OUT5, OUT6, OUT7, OUT8, VBAT_F |
-| W280_C020 | 2.80 mm | 0.20 mm | — | VBAT_IN, VBAT_P |
+| W035_C020_OUT | 0.35 mm | 0.20 mm | — | SW5 |
+| W040_C015 | 0.40 mm | 0.15 mm | — | +3V3, +3V3A |
+| W040_C015_OUT | 0.40 mm | 0.15 mm | — | +5V |
+| W040_C020 | 0.40 mm | 0.20 mm | — | LS1, LS2, LS3, LS4, OUT1, OUT2, OUT3, OUT4, OUT5, OUT6, OUT7, OUT8 |
+| W040_C020_OUT | 0.40 mm | 0.20 mm | — | VBAT_F |
+| W280_C020_OUT | 2.80 mm | 0.20 mm | — | VBAT_IN, VBAT_P |
 | Default | 0.20 mm | 0.15 mm | — | mọi net còn lại (tín hiệu logic ≤ 6 V) |
 
 ## Từng net khai thuộc tính

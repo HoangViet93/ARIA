@@ -70,18 +70,26 @@ def compile_netclasses(design, pol):
         w_ipc = ipc2221_width(cur, pol)
         kmin = (pol["kinds"].get(kind) or {}).get("min_width", 0.0)
         w = max(pol["width"]["min_signal"], kmin, _round_up(w_ipc, pol["width"]["round_up"]))
+        # lớp trong tản nhiệt kém (IPC-2221 k_int ≈ k_ext/2 → ~2.6× bề rộng): net mà bề rộng lớp
+        # trong vượt bề rộng class thì CHỈ đi lớp ngoài (review: 5 A ở In2 2.8 mm thiếu ~2.6×)
+        w_in = max(w, _round_up(ipc2221_width(cur, pol, "inner"), pol["width"]["round_up"]))
+        outer_only = w_in > w + 1e-9
         clr, why_c = clearance_for(volt, pol)
         via_max = (pol["kinds"].get(kind) or {}).get("via_max")
-        key = (round(w, 3), round(clr, 3), via_max)
+        key = (round(w, 3), round(clr, 3), via_max, outer_only)
         groups.setdefault(key, []).append(net)
         rows.append({"net": net, "current_a": cur, "voltage_v": volt, "kind": kind,
                      "w_ipc": round(w_ipc, 3), "width": round(w, 3), "clearance": clr,
-                     "via_max": via_max, "why_clearance": why_c})
+                     "via_max": via_max, "why_clearance": why_c, "width_inner": round(w_in, 3),
+                     "outer_only": outer_only})
     classes = {}
-    for (w, clr, vmax), nets in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1], -1 if kv[0][2] is None else kv[0][2])):
-        name = "W%03d_C%03d%s" % (round(w * 100), round(clr * 100), "_NOVIA" if vmax == 0 else "")
+    for (w, clr, vmax, oo), nets in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1],
+                                                                          -1 if kv[0][2] is None else kv[0][2], kv[0][3])):
+        name = "W%03d_C%03d%s%s" % (round(w * 100), round(clr * 100), "_NOVIA" if vmax == 0 else "", "_OUT" if oo else "")
         cur = max(attrs[n].get("current_a", 0) or 0 for n in nets)
-        classes[name] = {"width": w, "clearance": clr, "nets": nets, "current_a": cur, "via_max": vmax}
+        w_in = max(r["width_inner"] for r in rows if r["net"] in nets)
+        classes[name] = {"width": w, "clearance": clr, "nets": nets, "current_a": cur, "via_max": vmax,
+                         "outer_only": oo, "width_inner": w_in}
     return classes, rows
 
 

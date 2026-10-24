@@ -90,6 +90,18 @@ def test_PWR_001_kinds():   # "PWR-001" — loại đoạn neck/low
     assert run("PWR-001", GOOD, tracks=[(0, 2, 20, 22, 20, 0.3, "VIN", "main")])[0] == 1
 
 
+def test_PWR_001_inner():   # "PWR-001" — lớp trong cần bề rộng IPC lớp trong (review: 6 lớp)
+    d = design()
+    d["netclasses"]["P"]["width_inner"] = 2.0
+    fp6 = dict(FP, stackup={"routing": ["F.Cu", "In2.Cu", "In3.Cu", "B.Cu"]})
+    tr = [(1, 2, 20, 22, 20, 0.8, "VIN", "main")]               # In2, đúng bề rộng class lớp ngoài
+    rule = RULES["PWR-001"]
+    assert Checker(d, fp6, GOOD, tr).track_width(rule)[0] == 1
+    assert Checker(d, fp6, GOOD, [(0,) + tr[0][1:]]).track_width(rule)[0] == 0    # F.Cu: đạt
+    assert Checker(d, fp6, GOOD, [(3,) + tr[0][1:]]).track_width(rule)[0] == 0    # B.Cu: đạt
+    assert Checker(d, FP, GOOD, [(1,) + tr[0][1:]]).track_width(rule)[0] == 0     # 2 lớp: 1 = B.Cu
+
+
 def test_RT_CLR():   # "RT-CLR"
     assert run("RT-CLR", GOOD, overuse=0)[0] == 0
     assert run("RT-CLR", GOOD, overuse=4)[0] == 4

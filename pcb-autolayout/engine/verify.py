@@ -28,6 +28,20 @@ from pcbkit.design import natkey  # noqa: E402
 mm = pcbnew.ToMM
 
 
+def cu_stack(board):
+    """Lớp đồng từ trên xuống: F.Cu, In1…In(n-2), B.Cu (id lớp KiCad 7 và 9 khác nhau — đi theo tên)."""
+    n = board.GetCopperLayerCount()
+    return [pcbnew.F_Cu] + [getattr(pcbnew, "In%d_Cu" % i) for i in range(1, n - 1)] + [pcbnew.B_Cu]
+
+
+def routing_layers(board):
+    """Lớp đi dây = F.Cu, B.Cu + lớp trong có track — cùng thứ tự index với engine (stackup.routing).
+    Bản cũ chỉ map F/B → track lớp trong của board 6 lớp bị bỏ qua (review độc lập #7)."""
+    used = {t.GetLayer() for t in board.GetTracks() if t.GetClass() == "PCB_TRACK"}
+    st = cu_stack(board)
+    return [l for l in st if l in (pcbnew.F_Cu, pcbnew.B_Cu) or l in used]
+
+
 def edge_box(board):
     """Hộp viền board theo HÌNH HỌC nét Edge.Cuts (bỏ nửa độ dày nét). GetBoardEdgesBoundingBox()
     tính cả độ dày → gốc lệch 0.05 mm và board to thêm 0.1 mm, lệch mọi rule đo tới mép."""
@@ -115,7 +129,8 @@ def board_model(board, routes=None):
             skipped.append(ref)                 # (giữ tên biến: giờ là "mặt dưới", không còn bị bỏ)
     tracks, vias = [], []
     tk, vk = route_kinds(routes) if routes else ({}, {})
-    lmap = {pcbnew.F_Cu: 0, pcbnew.B_Cu: 1}
+    rlayers = routing_layers(board)
+    lmap = {lid: i for i, lid in enumerate(rlayers)}
     for t in board.GetTracks():
         if t.GetClass() == "PCB_VIA":
             x, y, n = mm(t.GetPosition().x) - ox, mm(t.GetPosition().y) - oy, t.GetNetname()
@@ -129,6 +144,7 @@ def board_model(board, routes=None):
             tracks.append((l, x0, y0, x1, y1, mm(t.GetWidth()), n, tk.get((l, a, b, n), "neck")))
     ds = board.GetDesignSettings()
     fp_ = {"board": {"w": bw, "h": bh, "edge_clear": 0.3},
+           "stackup": {"routing": [board.GetLayerName(l) for l in rlayers]},
            "rules": {"clearance": mm(ds.m_MinClearance), "track": mm(ds.m_TrackMinWidth),
                      "via_dia": mm(ds.m_ViasMinSize) or 0.6, "via_drill": mm(ds.m_MinThroughDrill) or 0.3}}
     design = {"name": os.path.basename(board.GetFileName()), "parts": parts, "netclasses": {},
@@ -138,19 +154,22 @@ def board_model(board, routes=None):
 
 
 def measure_planes(board):
-    """Đo mảnh plane lớp trong khi GIỮ mọi mảnh (không lưu board)."""
+    """Đo mảnh zone trên MỌI lớp trong (bản cũ chỉ In1/In2: plane In4 của board 6 lớp không được
+    đo, review #8) khi GIỮ mọi mảnh (không lưu board)."""
     pieces = {}
-    zones = [z for z in board.Zones() if z.IsOnLayer(pcbnew.In1_Cu) or z.IsOnLayer(pcbnew.In2_Cu)]
+    plane_l = cu_stack(board)[1:-1]     # mọi lớp trong có zone — kể cả lớp có vài track (board video)
+    zones = [z for z in board.Zones() if any(z.IsOnLayer(l) for l in plane_l)]
     for z in zones:
         z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_NEVER)
     if zones:
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     for z in zones:
-        for lid in (pcbnew.In1_Cu, pcbnew.In2_Cu):
+        for lid in plane_l:
             if z.IsOnLayer(lid):
                 ps = z.GetFilledPolysList(lid)
                 key = "%s/%s" % (board.GetLayerName(lid), z.GetNetname())
-                pieces[key] = sorted((ps.Outline(i).Area() / 1e12 for i in range(ps.OutlineCount())), reverse=True)
+                pieces[key] = sorted(pieces.get(key, []) + [ps.Outline(i).Area() / 1e12
+                                                           for i in range(ps.OutlineCount())], reverse=True)
     return pieces
 
 
@@ -194,7 +213,9 @@ def main():
     skip_rules = {"RT-CLR": "không có router", "PLC-011": "board không khai vai trò decap",
                   "PLC-034": "board không khai vai trò ESD", "PLC-NEAR": "board không khai near",
                   "SMPS-002": "cần hot_loops trong --checks"}
-    report = {"board": a.board, "parts": len(design["parts"]), "tracks": len(tracks), "vias": len(vias),
+    import hashlib
+    report = {"board": a.board, "board_sha": hashlib.sha256(open(a.board, "rb").read()).hexdigest()[:16],
+              "parts": len(design["parts"]), "tracks": len(tracks), "vias": len(vias),
               "bottom_side": skipped, "no_courtyard": design["no_courtyard"], "results": res,
               "not_applicable": {k: v for k, v in skip_rules.items() if not (k == "SMPS-002" and extra)}}
     json.dump(report, open(os.path.join(out, "verify.json"), "w"), indent=1, ensure_ascii=False)

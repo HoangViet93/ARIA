@@ -73,9 +73,13 @@ class Checker:
             self.current[n] = a.get("current_a", 0) or 0
         self.parts = {p["ref"]: p for p in design["parts"]}
         self.width = {}
+        self.width_in = {}
         for nc in design["netclasses"].values():
             for n in nc["nets"]:
                 self.width[n] = nc["width"]
+                self.width_in[n] = nc.get("width_inner") or nc["width"]
+        # số lớp đi dây: index 0 = F.Cu, cuối = B.Cu, giữa = lớp trong (IPC-2221 lớp trong)
+        self.n_route = len((floorplan.get("stackup") or {}).get("routing") or ["F.Cu", "B.Cu"])
 
     def pads(self, ref):
         p = self.parts[ref]
@@ -157,7 +161,8 @@ class Checker:
         for t in self.tracks:
             l, x0, y0, x1, y1, w, n = t[:7]
             kind = t[7] if len(t) > 7 else "main"
-            need = self.width.get(n)
+            inner = 0 < l < self.n_route - 1
+            need = (self.width_in if inner else self.width).get(n)
             if not need or w >= need - 1e-6 or kind == "low":
                 continue
             ok = False
@@ -170,7 +175,8 @@ class Checker:
                         ok = True
                         break
             if not ok:
-                bad.append("%s %.2f<%.2f mm %s @(%.1f,%.1f)-(%.1f,%.1f)" % (n, w, need, kind, x0, y0, x1, y1))
+                bad.append("%s %.2f<%.2f mm %s%s @(%.1f,%.1f)-(%.1f,%.1f)" % (
+                    n, w, need, kind, " lớp trong" if inner else "", x0, y0, x1, y1))
         return len(bad), bad
 
     def router_clearance(self, rule):

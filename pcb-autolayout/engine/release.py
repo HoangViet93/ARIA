@@ -19,18 +19,53 @@ import sys
 
 import yaml
 
-LAYERS = "F.Cu,In1.Cu,In2.Cu,B.Cu,F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,Edge.Cuts"
+NON_CU = "F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,Edge.Cuts"
 
 
-def gate(checks_path, waivers_path):
-    res = json.load(open(checks_path))
-    res = res["results"] if isinstance(res, dict) else res
+def copper_layers(n_cu):
+    """F.Cu, In1..In(n-2), B.Cu — theo số lớp THẬT của board. Bản cũ cố định 4 lớp: board 6 lớp
+    ra gerber thiếu cả 4 lớp trong (review độc lập #1)."""
+    return ["F.Cu"] + ["In%d.Cu" % i for i in range(1, n_cu - 1)] + ["B.Cu"]
+
+
+CORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules", "core.yaml")
+
+
+def board_sha(path):
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16]
+
+
+def gate(checks_path, waivers_path, board_hash):
+    """→ danh sách rule mức C chặn phát hành. Rule C phải CÓ trong file kiểm và đạt (hoặc có miễn
+    trừ ký tên gắn với ĐÚNG board này). Thiếu = chặn: checks_place.json (chỉ rule placement) hay
+    `[]` từng qua cổng; rule "không áp dụng" của verify cũng là chưa kiểm (review độc lập #3/#4)."""
+    c_rules = [r["id"] for r in yaml.safe_load(open(CORE)) if r["severity"] == "C"]
+    raw = json.load(open(checks_path))
+    res = raw["results"] if isinstance(raw, dict) else raw
+    na = set(raw.get("not_applicable", {})) if isinstance(raw, dict) else set()
+    status = {r["rule"]: r["status"] for r in res if r["rule"] not in na}
     waived = set()
     if waivers_path and os.path.exists(waivers_path):
         for w in yaml.safe_load(open(waivers_path)) or []:
-            if w.get("approved_by"):
-                waived.add(w["rule"])
-    return [r["rule"] for r in res if r["severity"] == "C" and r["status"] != "ok" and r["rule"] not in waived]
+            if not w.get("approved_by"):
+                continue
+            if w.get("board_hash") != board_hash:
+                print("[release] bỏ qua miễn trừ %s: board_hash %s ≠ board hiện tại %s"
+                      % (w.get("rule"), w.get("board_hash"), board_hash))
+                continue
+            waived.add(w["rule"])
+    return [r for r in c_rules if status.get(r) != "ok" and r not in waived]
+
+
+def checks_bound(checks_path, board_hash):
+    """File kiểm phải thuộc ĐÚNG board: run.py → hash.txt cùng thư mục; verify.py → board_sha."""
+    raw = json.load(open(checks_path))
+    if isinstance(raw, dict):
+        return raw.get("board_sha") == board_hash, "board_sha trong %s" % os.path.basename(checks_path)
+    hp = os.path.join(os.path.dirname(os.path.abspath(checks_path)), "hash.txt")
+    if not os.path.exists(hp):
+        return False, "không có hash.txt cạnh %s" % os.path.basename(checks_path)
+    return open(hp).read().strip() == board_hash, "hash.txt"
 
 
 def main():
@@ -45,14 +80,14 @@ def main():
         a.checks = os.path.join(bdir, "checks.json")
     if not os.path.exists(a.checks):
         sys.exit("[release] TỪ CHỐI: không có %s (chạy run.py hoặc verify.py --out trước)" % a.checks)
-    hpath = os.path.join(bdir, "hash.txt")
-    if os.path.exists(hpath):   # board do run.py sinh: checks.json chỉ đúng cho đúng file đó
-        h = hashlib.sha256(open(a.board, "rb").read()).hexdigest()[:16]
-        if h != open(hpath).read().strip():
-            sys.exit("[release] TỪ CHỐI: board đã đổi sau lần kiểm (hash %s ≠ hash.txt) — kiểm lại" % h)
-    blocked = gate(a.checks, a.waivers)
+    h = board_sha(a.board)
+    ok, how = checks_bound(a.checks, h)
+    if not ok:
+        sys.exit("[release] TỪ CHỐI: kết quả kiểm không gắn với board này (hash %s, %s) — kiểm lại" % (h, how))
+    blocked = gate(a.checks, a.waivers, h)
     if blocked:
-        print("[release] TỪ CHỐI: rule mức C chưa đạt và chưa có miễn trừ ký tên: %s" % ", ".join(blocked))
+        print("[release] TỪ CHỐI: rule mức C chưa đạt / chưa kiểm và chưa có miễn trừ ký tên cho board %s: %s"
+              % (h, ", ".join(blocked)))
         sys.exit(2)
     os.makedirs(a.out, exist_ok=True)
     g = os.path.join(a.out, "gerber")
@@ -60,9 +95,13 @@ def main():
     import pcbnew
     board = pcbnew.LoadBoard(a.board)
     n_cu = board.GetCopperLayerCount()
-    layers = LAYERS if n_cu == 4 else LAYERS.replace("In1.Cu,In2.Cu,", "")
+    cu = copper_layers(n_cu)
+    layers = ",".join(cu) + "," + NON_CU
     subprocess.run(["kicad-cli", "pcb", "export", "gerbers", "-l", layers, "-o", g + "/", a.board],
                    check=True, capture_output=True)
+    got = [f for f in os.listdir(g) if f.endswith(tuple(".g%d" % i for i in range(1, 31)) + (".gtl", ".gbl"))]
+    if len(got) != n_cu:   # tự kiểm: thiếu lớp đồng thì không phát hành
+        sys.exit("[release] LỖI: board %d lớp đồng nhưng chỉ xuất %d gerber đồng: %s" % (n_cu, len(got), sorted(got)))
     subprocess.run(["kicad-cli", "pcb", "export", "drill", "-o", g + "/", a.board], check=True, capture_output=True)
     cpl = os.path.join(a.out, "cpl.csv")
     subprocess.run(["kicad-cli", "pcb", "export", "pos", "--format", "csv", "--units", "mm", "-o", cpl, a.board],

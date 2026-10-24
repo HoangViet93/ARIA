@@ -189,8 +189,9 @@ def s_release(a):
     if not a.tool_ok:
         raise Skip("board mốc do toolchain khác ghi (KiCad mới hơn không mở ngược được)")
     d = work("release", ("bcm4l-100.kicad_pcb", "bcm4l-100.kicad_pro", "bcm4l-100.kicad_dru",
-                         "checks.json", "hash.txt"))
+                         "checks.json", "checks_place.json", "hash.txt"))
     board = os.path.join(d, "build", "bcm4l-100.kicad_pcb")
+    bh = open(os.path.join(d, "build", "hash.txt")).read().strip()
     cpath = os.path.join(d, "build", "checks.json")
     res = json.load(open(cpath))
     fails = [r["rule"] for r in res if r["severity"] == "C" and r["status"] != "ok"]
@@ -200,23 +201,30 @@ def s_release(a):
         json.dump(res, open(cpath, "w"))
     out_dir = os.path.join(d, "out")
     rc, out = sh(sys.executable, "release.py", board, out_dir)
-    if fails:
-        expect(rc == 2 and all(f in out for f in fails), "phải từ chối %s: %s" % (fails, out[-200:]))
-        w = os.path.join(d, "waivers.yaml")
-        yaml.safe_dump([{"rule": f, "approved_by": None, "reason": "chưa ký"} for f in fails], open(w, "w"))
-        rc, out = sh(sys.executable, "release.py", board, out_dir, "--waivers", w)
-        expect(rc == 2, "waiver chưa ký vẫn qua cổng")
-        yaml.safe_dump([{"rule": f, "approved_by": "TEST-ONLY skilltest", "reason": "kiểm thử cổng"}
-                        for f in fails], open(w, "w"))
-        rc, out = sh(sys.executable, "release.py", board, out_dir, "--waivers", w)
+    expect(rc == 2 and all(f in out for f in fails), "phải từ chối %s: %s" % (fails, out[-200:]))
+    # âm: file kiểm chỉ có rule placement (thiếu rule C) — review độc lập #3
+    rc, out = sh(sys.executable, "release.py", board, out_dir, "--checks", os.path.join(d, "build", "checks_place.json"))
+    expect(rc != 0, "checks_place.json (thiếu rule C) vẫn qua cổng")
+    w = os.path.join(d, "waivers.yaml")
+    yaml.safe_dump([{"rule": f, "approved_by": None, "reason": "chưa ký", "board_hash": bh} for f in fails], open(w, "w"))
+    rc, out = sh(sys.executable, "release.py", board, out_dir, "--waivers", w)
+    expect(rc == 2, "waiver chưa ký vẫn qua cổng")
+    yaml.safe_dump([{"rule": f, "approved_by": "TEST-ONLY skilltest", "reason": "kiểm thử cổng",
+                     "board_hash": "0" * 16} for f in fails], open(w, "w"))
+    rc, out = sh(sys.executable, "release.py", board, out_dir, "--waivers", w)
+    expect(rc == 2, "waiver ký cho board KHÁC vẫn qua cổng")
+    yaml.safe_dump([{"rule": f, "approved_by": "TEST-ONLY skilltest", "reason": "kiểm thử cổng",
+                     "board_hash": bh} for f in fails], open(w, "w"))
+    rc, out = sh(sys.executable, "release.py", board, out_dir, "--waivers", w)
     expect(rc == 0, "release exit %d: %s" % (rc, out[-300:]))
     man = json.load(open(os.path.join(out_dir, "manifest.json")))
     gerb = glob.glob(os.path.join(out_dir, "gerber", "*"))
     expect(len(gerb) == 13 and len(man) >= 15, "thiếu file: %d gerber/drill, manifest %d" % (len(gerb), len(man)))
     open(board, "a").write("\n")   # sửa board sau khi kiểm → phải từ chối
-    rc, out = sh(sys.executable, "release.py", board, os.path.join(d, "out2"))
-    expect(rc != 0 and "đã đổi" in out, "board sửa sau kiểm vẫn qua cổng")
-    return "chặn %s; waiver chưa ký → chặn; đã ký → %d file; board bị sửa → chặn" % (fails or "—", len(man))
+    rc, out = sh(sys.executable, "release.py", board, os.path.join(d, "out2"), "--waivers", w)
+    expect(rc != 0 and "không gắn với board" in out, "board sửa sau kiểm vẫn qua cổng: " + out[-200:])
+    return ("chặn %s; thiếu rule C → chặn; waiver chưa ký / ký cho board khác → chặn; đúng board → %d file; "
+            "board bị sửa → chặn" % (fails, len(man)))
 
 
 def s_autolayout(a):

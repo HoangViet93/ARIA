@@ -36,12 +36,15 @@ def normalized_hash(path):
 
 def routes_key(design, fp, pos, iters):
     """Khoá của routes.json: mọi thứ quyết định kết quả đi dây — design, floorplan, placement,
-    số vòng và mã nguồn router. Khác một byte là đi dây lại."""
+    số vòng, mã nguồn router/fplib và dấu thư viện footprint. Khác một byte là đi dây lại."""
     h = hashlib.sha256()
     h.update(json.dumps([design, fp, sorted((k, list(v)) for k, v in pos.items()), iters],
                         sort_keys=True).encode())
-    for f in ("router.py", "router_core.py"):
+    for f in ("router.py", "router_core.py", "fplib.py"):
         h.update(open(os.path.join(ENGINE, "pcbkit", f), "rb").read())
+    # hình học footprint từ thư viện (KiCad 7 ↔ 9 khác courtyard/pad) — review #12
+    from pcbkit import fplib
+    h.update(fplib.fingerprint(p["footprint"] for p in design["parts"]).encode())
     return h.hexdigest()[:16]
 
 

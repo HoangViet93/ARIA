@@ -5,6 +5,7 @@ Tất định: thứ tự net cố định, thứ tự chân cố định, khôn
 theo số vòng chứ không theo thời gian.
 """
 import math
+import os
 import time
 
 import numpy as np
@@ -14,6 +15,7 @@ from .design import natkey
 
 RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
+HWEIGHT = 1.3      # trọng số heuristic A* (> 1: nhanh hơn, đường có thể dài hơn — nắn đường sửa)
 STALL_ITERS = 5
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
@@ -45,7 +47,11 @@ class Router:
         self.current = {}
         self.clr_net = {}
         self.via_max = {}
+        self.outer_only = set()
+        self._layok = {}
         for nc in design["netclasses"].values():
+            if nc.get("outer_only"):
+                self.outer_only.update(nc["nets"])
             for n in nc["nets"]:
                 self.width[n] = nc["width"]
                 self.current[n] = nc.get("current_a") or 0
@@ -74,6 +80,7 @@ class Router:
         self.net_vias = {}
         self.cur = 0
         self._zero_hist = None
+        self.hweight = float(os.environ.get("PCB_HWEIGHT", HWEIGHT))   # biến môi trường: chỉ để đo
         self.occ = np.zeros((self.L, self.H, self.W), np.int16)
         self.hist = np.zeros((self.L, self.H, self.W), np.float32)
         self._offs = {}
@@ -191,8 +198,7 @@ class Router:
         song của net dòng lớn (PWR-005), giữ ngay lúc chọn đường thay vì hy vọng còn chỗ sau."""
         hw = w / 2
         inf = self.infl(self.net_names[nid])
-        offs_main = self.offs(hw + inf)
-        offs_neck = self.offs(min(hw, self.neckw(self.net_names[nid]) / 2) + inf)
+        offs_stk, stk_n = self._stack(self.net_names[nid], hw)
         offs_via = self.offs(self.via_d / 2 + via_extra + inf)
         offs_viapad = self.offs(self.via_d / 2 + VIA_PAD_GAP + 1.5 * RES)   # DFM-005 (+1.5 ô: lượng tử)
         src_a = np.array(src, np.int64).reshape(-1, 3)
@@ -213,11 +219,11 @@ class Router:
                              min(self.H - 1, ys.max() + mc), min(self.W - 1, xs.max() + mc)], np.int64)
             self.cur += 1
             path = rc.astar(self.fixed, self.occ, self.hist_use, self.padmask, neck, nid, self.viablock, self.closed,
-                            offs_main, offs_neck, offs_via, offs_viapad,
+                            offs_stk, stk_n, offs_via, offs_viapad,
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
-                            self.via_cost, self.pres_fac, allow_via,
-                            self.hf, self.hc, self.hs, tb, 1.3, self.max_pops,
+                            self.via_cost, self.pres_fac, allow_via, self._lay_ok(nid),
+                            self.hf, self.hc, self.hs, tb, self.hweight, self.max_pops,
                             self.hard, self.bend1, self.bend2)
             if len(path):
                 return path
@@ -230,40 +236,83 @@ class Router:
             self.cur += 1
             bbox = np.array([0, 0, self.H - 1, self.W - 1], np.int64)
             path = rc.astar(self.fixed, self.occ, self._zero_hist, self.padmask, neck, nid, self.viablock, self.closed,
-                            offs_main, offs_neck, offs_via, offs_viapad,
+                            offs_stk, stk_n, offs_via, offs_viapad,
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
-                            self.via_cost, SOFT_RETRY_PRES, allow_via,
-                            self.hf, self.hc, self.hs, tb, 1.3, self.max_pops,
+                            self.via_cost, SOFT_RETRY_PRES, allow_via, self._lay_ok(nid),
+                            self.hf, self.hc, self.hs, tb, self.hweight, self.max_pops,
                             self.hard, self.bend1, self.bend2)
             if len(path):
                 return path
         return None
 
-    def neckw(self, net):
-        """Bề rộng thắt cổ của net: ≤ 0.5 mm và ≤ (cạnh pad nhỏ nhất − 0.1 mm), ≥ track mặc định."""
-        if net not in self._neckw:
+    def _lay_ok(self, nid):
+        """Mặt nạ lớp cho phép của net: class `outer_only` (lớp trong cần bề rộng lớn hơn class)
+        chỉ đi F.Cu/B.Cu trên board > 2 lớp đi dây."""
+        net = self.net_names[nid]
+        m = self._layok.get(net)
+        if m is None:
+            m = np.ones(self.L, np.uint8)
+            if net in self.outer_only and self.L > 2:
+                m[1:self.L - 1] = 0
+            self._layok[net] = m
+        return m
+
+    def _pad_neck_w(self, net, pad, w):
+        """Bề rộng thắt cổ sát MỘT pad: cạnh pad − 0.1 mm, trong [track mặc định, bề rộng net];
+        net < 1 A giữ trần 0.5 mm. Theo từng pad: một giá trị cho cả net (pad nhỏ nhất, kể cả
+        lowcur) từng ép 5 A vào 0.5 mm ở Q1 (pad 1.2 mm) — review độc lập #5."""
+        m = min(pad["x1"] - pad["x0"], pad["y1"] - pad["y0"])
+        nw = min(w, m - 0.1)
+        if self.current.get(net, 0) < 1.0:
+            nw = min(nw, self.neck_w)
+        return round(max(self.def_w, nw), 4)
+
+    def _neck_list(self, net):
+        """Các bề rộng thắt cổ của net (tăng dần) — từ pad dòng lớn (không lowcur) hẹp hơn đường."""
+        if net not in self._necks:
             w = self.width.get(net, self.def_w)
-            nw = self.neck_w
+            ws = set()
             for pad in self.pads:
-                if pad["net"] == net:
-                    m = min(pad["x1"] - pad["x0"], pad["y1"] - pad["y0"])
-                    if m < w + 0.1:
-                        nw = min(nw, m - 0.1)
-            self._neckw[net] = max(self.def_w, min(nw, w))
-        return self._neckw[net]
+                if pad["net"] == net and pad["num"] not in self.parts[pad["ref"]].get("lowcur", []):
+                    if min(pad["x1"] - pad["x0"], pad["y1"] - pad["y0"]) < w + 0.1 - 1e-6:
+                        ws.add(self._pad_neck_w(net, pad, w))
+            self._necks[net] = sorted(ws)
+        return self._necks[net]
+
+    def neckw(self, net):
+        """Thắt cổ hẹp nhất của net (bằng bề rộng net nếu không có pad nào phải thắt)."""
+        ws = self._neck_list(net)
+        return ws[0] if ws else self.width.get(net, self.def_w)
+
+    def _stack(self, net, hw):
+        """Chồng đĩa cho lõi A*: [0] = đĩa chính (nửa bề rộng hw), [k] = đĩa thắt cổ thứ k."""
+        key = (net, round(hw, 4))
+        if key not in self._stacks:
+            inf = self.infl(net)
+            ds = [self.offs(hw + inf)] + [self.offs(min(hw, wk / 2) + inf) for wk in self._neck_list(net)]
+            n = max(len(d) for d in ds)
+            stk = np.zeros((len(ds), n, 2), np.int64)
+            for i, d in enumerate(ds):
+                stk[i, :len(d)] = d
+            self._stacks[key] = (stk, np.array([len(d) for d in ds], np.int64))
+        return self._stacks[key]
 
     def _neck_mask(self, net, w, pads=None):
-        neck = np.zeros((self.L, self.H, self.W), np.bool_)
-        if w <= self.neckw(net) + 1e-9:
+        """int8: 0 = không thắt; k = thắt theo _neck_list(net)[k-1] (vùng chồng: lấy mức hẹp hơn)."""
+        neck = np.zeros((self.L, self.H, self.W), np.int8)
+        ws = self._neck_list(net)
+        if not ws:
             return neck
         d = NECK_DIST
         for pad in (self.pads if pads is None else pads):
             small = min(pad["x1"] - pad["x0"], pad["y1"] - pad["y0"]) < w + 0.1 - 1e-6
             if pad["net"] == net and small:      # chỉ thắt cổ khi pad hẹp hơn đường
+                k = ws.index(self._pad_neck_w(net, pad, w)) + 1
                 x0, y0, x1, y1 = self._rect_cells(pad["x0"] - d, pad["y0"] - d, pad["x1"] + d, pad["y1"] + d)
                 for l in pad["layers"]:
-                    neck[l, y0:y1 + 1, x0:x1 + 1] = True
+                    blk = neck[l, y0:y1 + 1, x0:x1 + 1]
+                    blk[(blk == 0) | (blk > k)] = k
         return neck
 
     # ---- đi dây một net -----------------------------------------------------
@@ -274,7 +323,7 @@ class Router:
         conns = []          # (path, width)
         fails = []
         if net in self.planes:
-            neck = np.zeros((self.L, self.H, self.W), np.bool_)
+            neck = np.zeros((self.L, self.H, self.W), np.int8)
             fw = 0.3
             own_vias = []
             for pad in pads:
@@ -383,9 +432,8 @@ class Router:
                 if path[k][0] != path[k + 1][0]:
                     is_via[k] = is_via[k + 1] = True
             hw = w / 2
-            cells.append(rc.footprint_cells(path, is_via, neck,
-                                            self.offs(hw + inf),
-                                            self.offs(min(hw, self.neckw(net) / 2) + inf),
+            stk, stk_n = self._stack(net, hw)
+            cells.append(rc.footprint_cells(path, is_via, neck, stk, stk_n,
                                             # net dòng lớn giữ luôn chỗ cho via song song
                                             self.offs(self.via_d / 2 + inf +
                                                       (HC_VIA_PITCH if reserve and self._hc_main(net, w) else 0.0)),
@@ -397,7 +445,8 @@ class Router:
     # ---- PathFinder --------------------------------------------------------
     def run(self, max_iter=25):
         self.neck_w = 0.5
-        self._neckw = {}
+        self._necks = {}
+        self._stacks = {}
         self.max_pops = 6_000_000
         self.hard, self.bend1, self.bend2 = False, 0.35, 1.2
         self.hist_use = self.hist
@@ -719,7 +768,11 @@ class Router:
             if not mains:
                 continue
             self._rip(net)
-            ex_tracks, ex_vias = [], []
+            own = self.net_vias.get(net, [])
+            for v in own:           # via chính cùng net vẫn chặn khoảng lỗ–lỗ khi chọn via phụ (review #6b)
+                self._via_block(v, +1)
+            lays = [l for l in range(self.L) if self._lay_ok(nid)[l]]   # lớp net được đi (review #2)
+            ex_tracks, ex_vias, links = [], [], []
             # ứng viên: gần trước, 16 hướng cố định; khoảng lỗ–lỗ do viablock canh, ≤ 1.45 mm để
             # nằm trong bán kính 1.5 mm của PWR-005. Bản cũ 3 × 8 vị trí → chỗ đông không lọt.
             cand = []
@@ -739,11 +792,12 @@ class Router:
                     if not (0 <= ny < self.H and 0 <= nx < self.W) or self.viablock[ny, nx] > 0:
                         continue
                     ok = True
-                    for l in range(self.L):
+                    for l in range(self.L):         # via xuyên mọi lớp
                         if rc._probe(self.fixed, self.occ, self.padmask, nid, l, ny, nx, offs_v, False) != 0.0 \
                                 or rc._probe(self.fixed, self.occ, self.padmask, nid, l, ny, nx, offs_vp, True) < 0.0:
                             ok = False
                             break
+                    for l in (lays if ok else ()):  # đoạn nối chỉ trên lớp được đi
                         n = max(abs(ny - vy), abs(nx - vx))
                         for i in range(n + 1):        # đoạn nối via chính ↔ via phụ
                             yy = vy + (ny - vy) * i // n
@@ -757,20 +811,26 @@ class Router:
                         continue
                     ex_vias.append((ny, nx))
                     self._via_block((ny, nx), +1)
-                    for l in range(self.L):
+                    n = max(abs(ny - vy), abs(nx - vx))
+                    for l in lays:
                         ex_tracks.append((l, vx * RES, vy * RES, nx * RES, ny * RES, w, net, "main"))
+                        links.append(np.array([[l, vy + (ny - vy) * i // n, vx + (nx - vx) * i // n]
+                                               for i in range(n + 1)], np.int64))
                     have += 1
                     added += 1
             # dấu chân của phần thêm: đưa vào occ cùng net
-            pseudo = []
-            for (ny, nx) in ex_vias:
-                pseudo.append((np.array([[0, ny, nx], [self.L - 1, ny, nx]], np.int64), w,
-                               np.zeros((self.L, self.H, self.W), np.bool_)))
+            # dấu chân phần thêm: via phụ VÀ đoạn nối (review #6a: đoạn nối từng nằm ngoài occ →
+            # net khác / via khâu GND có thể đặt lên đó mà router không thấy)
+            zero = np.zeros((self.L, self.H, self.W), np.int8)
+            pseudo = [(np.array([[0, ny, nx], [self.L - 1, ny, nx]], np.int64), w, zero) for (ny, nx) in ex_vias]
+            pseudo += [(ln, w, zero) for ln in links]
             cells = self.fp_cells[net]
             if pseudo:
                 cells = np.unique(np.concatenate([cells, self._footprint(pseudo, net, reserve=False)]))
+            for v in own + ex_vias:   # _put cộng lại viablock của mọi via — không cộng hai lần
+                self._via_block(v, -1)
             old = self.result[net]
-            self._put(net, old[0], old[1], cells, self.net_vias.get(net, []) + ex_vias)
+            self._put(net, old[0], old[1], cells, own + ex_vias)
             self.extra[net] = (ex_tracks, [(x * RES, y * RES, net, "main") for (y, x) in ex_vias])
         self.log("gia cố via dòng lớn: thêm %d via" % added)
 
@@ -785,7 +845,8 @@ class Router:
                 full = self.width.get(net, self.def_w)
                 for k in range(len(path)):
                     l, y, x = (int(v) for v in path[k])
-                    ww = min(w, self.neckw(net)) if neck[l, y, x] else w
+                    k = int(neck[l, y, x])
+                    ww = min(w, self._neck_list(net)[k - 1]) if k else w
                     pts.append((l, x, y, ww))
                 kind_low = w < full - 1e-9
                 run = [pts[0]]
