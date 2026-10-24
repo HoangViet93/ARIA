@@ -16,6 +16,7 @@ RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
 STALL_ITERS = 5
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
+CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
 HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)    # PathFinder dừng sau ngần này vòng liền không lập kỷ lục (chân hở, ô chồng)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
 
@@ -578,7 +579,12 @@ class Router:
         best, best_n = self._snapshot(), self._n_fail()
         tries = {}
         seen = set()
+        since_best = 0
         for step in range(max_steps):
+            if since_best >= CASCADE_STALL:
+                # synth-hi: 5 → 12 chân hở rồi quay về 5 sau 24 bước (~700 s) — dừng sớm, tất định
+                self.log("rip-up: %d bước liền không lập kỷ lục — dừng" % CASCADE_STALL)
+                break
             state = frozenset((n, tuple(self.result[n][1])) for n in order if self.result[n][1])
             if state in seen:           # vòng lặp: cùng tập chân hở đã gặp → dung lượng vùng không đủ
                 self.log("rip-up: lặp lại trạng thái — vùng thiếu dung lượng, cần sửa placement (T34)")
@@ -621,6 +627,9 @@ class Router:
             self.log("rip-up bước %d: cứu %s, gỡ %d net → còn %d chân hở" % (step + 1, net, len(partners), n))
             if n < best_n:
                 best, best_n = self._snapshot(), n
+                since_best = 0
+            else:
+                since_best += 1
             if n == 0:
                 break
         if self._n_fail() > best_n:
