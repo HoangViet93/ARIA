@@ -20,7 +20,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 
 | ID | Tên | TT | Hiện trạng / lệch |
 |---|---|---|---|
-| T01 | env_check | 🟡 | Kiểm tay; KiCad **7.0.11** (PPA KiCad 9 bị proxy chặn) |
+| T01 | env_check | 🟡 | Kiểm tay. KiCad **7.0.11** (máy) + **9.0.8** (chroot `/opt/k9`, lệnh `k9`, cài bằng `engine/tools/setup-kicad9.sh`); `build/toolchain.txt` ghi phiên bản + dấu thư viện footprint |
 | T02 | netlist_export | ✅ | `kicad-cli sch export netlist` (skill pcb-intake) |
 | T03 | summarize_design | ✅ | `intake.py`: netlist kicadsexpr → design.json; thử trên netlist KiCad 7 thật (159/159 chân) |
 | T04 | net_classify | 🟡 | Mạch khai thuộc tính net (dòng/điện áp/loại); chưa tự đoán từ tên net |
@@ -40,7 +40,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T22 | power_synth | 🟡 | Chỉ thả via GND xuống plane + bề rộng theo dòng |
 | T23 | freeroute_bench | ❌ | |
 | T24 | route_cleanup | 🟡 | Vòng nắn đường (đi lại cứng, phạt bẻ góc); chưa có teardrop |
-| T25 | drc | ✅ | `WriteDRCReport` (KiCad 7 không có `kicad-cli pcb drc`); `verify.py` chạy trên board có sẵn |
+| T25 | drc | ✅ | `WriteDRCReport` (chạy cả KiCad 7 lẫn 9; 7 không có `kicad-cli pcb drc`); `parse_drc` đọc mức nghiêm trọng cả hai định dạng report (`tests/test_drc_parse.py`); `verify.py` chạy trên board có sẵn |
 | T26–T30 | SI/PI/EMC/thermal/DFM | 🟡 | Chỉ SMPS-002, EMC-001, PWR-001 |
 | T31 | render | ✅ | matplotlib + `kicad-cli pcb export svg` |
 | T32 | report_export | ✅ | `release.py`: Gerber/drill/CPL/BOM/manifest + cổng chặn rule C chưa miễn trừ |

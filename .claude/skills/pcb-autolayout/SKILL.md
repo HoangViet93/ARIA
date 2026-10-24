@@ -49,10 +49,12 @@ cần một pha hoặc đang chẩn đoán.
 
 1. **Môi trường.** `python3 -c "import pcbnew; print(pcbnew.Version())"`, `kicad-cli version`,
    `python3 -c "import numba, shapely, yaml"`. Thiếu → `apt install kicad kicad-footprints`
-   (KiCad 7 qua apt; PPA KiCad 9 bị proxy chặn).
+   (KiCad 7). **KiCad 9**: `sudo sh pcb-autolayout/engine/tools/setup-kicad9.sh` (chroot
+   Ubuntu 26.04, ~5 phút) rồi thêm tiền tố `k9` vào mọi lệnh (`k9 python3 run.py …`).
+   Container mới thì chroot mất — chạy lại script.
 2. **Bộ rule nguyên vẹn** (trong `engine/`): `python3 rules_lint.py && python3 parts_lint.py &&
    python3 tests/test_checks.py && python3 tests/test_netclass.py && python3 tests/test_fplib.py &&
-   python3 tests/test_intake.py`. Lỗi → dừng, là lỗi engine.
+   python3 tests/test_intake.py && python3 tests/test_drc_parse.py`. Lỗi → dừng, là lỗi engine.
 3. **Đầu vào trial**: `circuit.py`, `floorplan.yaml`, `checks.yaml`, tuỳ chọn `templates.yaml`.
 4. **Chạy** (nền; ~2–10 phút): `python3 -u run.py ../trials/<tên> > log`. Theo dõi dòng
    `[class] [place] [route] [silk] [kicad] [check] [done]`.
@@ -60,7 +62,8 @@ cần một pha hoặc đang chẩn đoán.
    Phân biệt: lỗi board / lỗi engine / **rule sai** (không đạt được về hình học → sửa rule có
    lý do + test, như PLC-034 v2, PLC-NEAR v2).
 6. **Xem ảnh** `build/kicad_top.png` (+ bottom, in1). Rule đạt ≠ layout tốt — nhận xét thẳng.
-7. **Tất định**: chạy lần hai, so `build/hash.txt`. Khác = bug engine.
+7. **Tất định**: chạy lần hai, so `build/hash.txt`. Khác = bug engine — **chỉ khi
+   `build/toolchain.txt` giống nhau** (KiCad 9 đổi thư viện footprint → board khác là đúng).
 8. **Báo cáo**: cập nhật `trials/<tên>/REPORT.md` + `CONFORMANCE.md`; **đưa bài học mới vào
    file này** (mục dưới) nếu nó đổi cách làm.
 
@@ -81,6 +84,9 @@ cần một pha hoặc đang chẩn đoán.
 - Thắt cổ chỉ sát pad hẹp hơn đường (0.6 mm); net ≥ 1 A tránh via, buộc đổi lớp thì gia cố via.
 - KiCad 7: `ZONE_FILLER` segfault trên board dựng trong bộ nhớ → lưu/nạp lại rồi fill; UUID
   ngẫu nhiên → `canonicalize()`; `.kicad_dru` và net class trong `.kicad_pro` được DRC nạp.
+- KiCad 9: `EDA_UNITS_MILLIMETRES` → `EDA_UNITS_MM`; report DRC bỏ chữ `Severity:` (trước khi
+  sửa, mọi cảnh báo bị đếm thành lỗi). Hình học footprint lượng tử về 1 nm khi nạp (`fplib._q`)
+  — nhiễu `0.45999999999999996` khác nhau giữa các bản Python/KiCad.
 - Lệnh `pkill -f <mẫu>` / `kill $(pgrep -f <mẫu>)` có thể giết chính shell đang chạy nó —
   dùng `ps -C python3 -o pid=`.
 

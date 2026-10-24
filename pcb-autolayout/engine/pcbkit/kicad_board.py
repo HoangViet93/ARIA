@@ -237,7 +237,10 @@ def place_silk(board, floorplan, size=0.8, thick=0.15):
 
 def drc(board_path, report_path):
     board = pcbnew.LoadBoard(board_path)
-    pcbnew.WriteDRCReport(board, report_path, pcbnew.EDA_UNITS_MILLIMETRES, True)
+    mm = getattr(pcbnew, "EDA_UNITS_MM", None)  # KiCad 9
+    if mm is None:
+        mm = pcbnew.EDA_UNITS_MILLIMETRES  # KiCad 7
+    pcbnew.WriteDRCReport(board, report_path, mm, True)
     return parse_drc(report_path)
 
 
@@ -261,7 +264,8 @@ def parse_drc(report_path):
             elif sec == "unconnected pads":
                 out["unconnected"].append(cur)
             continue
-        m = re.search(r"Severity: (\w+)", line)
+        # KiCad 7: "Local override; Severity: error" — KiCad 9: "Local override; error"
+        m = re.search(r";\s*(?:Severity:\s*)?(error|warning|exclusion|ignore|info)\s*$", line)
         if m and cur is not None:
             cur["severity"] = m.group(1)
             cur["items"].append(line.strip())

@@ -32,6 +32,19 @@ def normalized_hash(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16]
 
 
+def write_toolchain(bdir, design):
+    """build/toolchain.txt: mọi thứ ngoài file trial mà hash.txt phụ thuộc vào."""
+    import numba
+    import pcbnew
+    from pcbkit import fplib
+    parts = design["parts"] if isinstance(design["parts"], list) else list(design["parts"].values())
+    lines = ["kicad %s" % pcbnew.Version(),
+             "python %d.%d.%d" % sys.version_info[:3],
+             "numba %s" % numba.__version__,
+             "footprints %s %s" % (fplib.FP_ROOT, fplib.fingerprint(p["footprint"] for p in parts))]
+    open(os.path.join(bdir, "toolchain.txt"), "w").write("\n".join(lines) + "\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("trial")
@@ -134,6 +147,7 @@ def main():
         subprocess.run(["rsvg-convert", "-w", "1600", "-b", "white", "-o", svg[:-4] + ".png", svg], check=True)
     h = normalized_hash(pcb)
     open(os.path.join(bdir, "hash.txt"), "w").write(h + "\n")
+    write_toolchain(bdir, design)
     print("[done] hash %s, tổng %.1fs" % (h, time.time() - t_all))
 
 

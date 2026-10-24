@@ -10,6 +10,13 @@ FP_ROOT = os.environ.get("KICAD_FP_ROOT", "/usr/share/kicad/footprints")
 _cache = {}
 
 
+def _q(v):
+    """Lượng tử về 1 nm (đơn vị gốc của KiCad). Phép trừ độ dày nét cho ra nhiễu kiểu
+    0.45999999999999996 thay vì 0.46 tuỳ phiên bản — so sánh sát biên trong placer có thể
+    lật theo nhiễu đó, nên mọi hình học vào engine đều qua đây."""
+    return round(v, 6) + 0.0
+
+
 def load(fpid):
     if fpid in _cache:
         return _cache[fpid]
@@ -18,7 +25,8 @@ def load(fpid):
     fp = pcbnew.FootprintLoad(os.path.join(FP_ROOT, lib + ".pretty"), name)
     if fp is None:
         raise ValueError("không tìm thấy footprint " + fpid)
-    mm = pcbnew.ToMM
+    def mm(v):
+        return _q(pcbnew.ToMM(v))
     pads = []
     for p in fp.Pads():
         bb = p.GetBoundingBox()
@@ -47,9 +55,22 @@ def load(fpid):
     if not xs:   # không có courtyard: lấy bao pad + 0.25 mm
         xs = [min(p["x0"] for p in pads) - 0.25, max(p["x1"] for p in pads) + 0.25]
         ys = [min(p["y0"] for p in pads) - 0.25, max(p["y1"] for p in pads) + 0.25]
-    info = {"pads": pads, "court": (min(xs), min(ys), max(xs), max(ys))}
+    info = {"pads": pads, "court": tuple(_q(v) for v in (min(xs), min(ys), max(xs), max(ys)))}
     _cache[fpid] = info
     return info
+
+
+def fingerprint(fpids):
+    """Hash nội dung các file .kicad_mod đã dùng. Hash board (T35) chỉ so được khi cùng
+    phiên bản KiCad *và* cùng dấu thư viện này: KiCad 9 đổi courtyard thạch anh 3225,
+    SOT-23, header… nên cùng mạch ra placement khác — đúng, vì đầu vào đã khác."""
+    import hashlib
+    h = hashlib.sha256()
+    for fpid in sorted(set(fpids)):
+        lib, name = fpid.split(":")
+        h.update(fpid.encode() + b"\0")
+        h.update(open(os.path.join(FP_ROOT, lib + ".pretty", name + ".kicad_mod"), "rb").read())
+    return h.hexdigest()[:16]
 
 
 def rot(x, y, deg):
