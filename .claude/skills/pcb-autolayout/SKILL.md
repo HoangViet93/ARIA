@@ -87,7 +87,14 @@ cần một pha hoặc đang chẩn đoán.
   "không có đường". Một dòng sửa: route 895 → 128 s, chân hở biến mất. Hết bước tìm ≠ không có đường.
 - Net ≥ 1 A buộc đổi lớp: A\* chọn vị trí via có chỗ cho **cả cụm via** (`HC_VIA_PITCH`) và giữ
   chỗ trong dấu chân — gia cố chạy cuối thì chỗ đã bị lấp (`tools/diag_via.py` in lý do loại).
-- PathFinder dừng khi 5 vòng liền không lập kỷ lục ("6 vòng giống hệt" không bao giờ xảy ra).
+- PathFinder dừng khi **10** vòng liền không lập kỷ lục. 5 vòng cắt trước khi hội tụ (synth-lo: 1 chân
+  hở / 1300 s → 0 / 194 s). Đã đo và LOẠI: heuristic A* 1.6 (synth-lo 0 → 5 chân hở), phạt ×1.3/vòng
+  (chậm hơn, vẫn hở). Tham số thử qua biến môi trường `PCB_STALL`, `PCB_PRES_MUL`, `PCB_HWEIGHT` —
+  chỉ để đo, quyết định bằng `bench.py`, không bằng một board.
+- **Không bao giờ để chập**: ô chồng không gỡ được → chân hở (RT-OPEN) qua `_no_shorts`. Baseline từng
+  ghi synth-hi "0 chân hở" lúc còn 21 chập — số liệu đẹp mà sai.
+- Board 6 lớp: net mà IPC lớp trong cần rộng hơn class → class `_OUT`, router cấm lớp trong, KiCad
+  `.kicad_dru` `disallow track` kiểm độc lập. Thắt cổ theo TỪNG pad (không lấy pad nhỏ nhất của net).
 - Đo trước khi tối ưu: `tools/prof_route.py <trial> [vòng]` (cProfile pha route).
 - **Placement có bước sửa sau** (`Placer.repair_near`): linh kiện vi phạm near → gỡ linh kiện không
   được bảo vệ quanh chân đích, đặt nó trước, đặt lại phần gỡ; điểm so **từ điển (vượt C, vượt M)** —
