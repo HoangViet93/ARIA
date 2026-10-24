@@ -25,6 +25,8 @@ from pcbkit.placer import Placer  # noqa: E402
 from pcbkit.router import Router  # noqa: E402
 
 ENGINE = os.path.dirname(os.path.abspath(__file__))
+T34_ROUNDS = 2       # số vòng route → placement tối đa
+ESCAPE_STEP = 0.8    # mm vành thoát chân nới thêm mỗi vòng cho IC còn chân hở
 
 
 def normalized_hash(path):
@@ -73,6 +75,7 @@ def main():
     elif not os.path.exists(os.path.join(bdir, "design.json")):
         sys.exit("thiếu circuit.py hoặc build/design.json (chạy intake.py trước)")
     design = json.load(open(os.path.join(bdir, "design.json")))
+    design_parts = {p["ref"]: p for p in design["parts"]}
     fp = yaml.safe_load(open(os.path.join(tdir, "floorplan.yaml")))
     extra = yaml.safe_load(open(os.path.join(tdir, "checks.yaml"))) if os.path.exists(
         os.path.join(tdir, "checks.yaml")) else {}
@@ -94,19 +97,74 @@ def main():
     if a.until == "constraints":
         return
 
-    t = time.time()
     tpath = os.path.join(tdir, "templates.yaml")
     templates = yaml.safe_load(open(tpath)) if os.path.exists(tpath) else {}
     core = yaml.safe_load(open(os.path.join(ENGINE, "rules", "core.yaml")))
-    pl = Placer(design, fp, templates, near_rules=[r for r in core if r["checker"] == "near_distance"])
-    pos = pl.run()
-    json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
-              indent=1)
-    print("[place] %d/%d linh kiện, %.1fs" % (len(pos), len(design["parts"]), time.time() - t))
-    for m in pl.log:
-        print("        " + m)
-    render.draw(os.path.join(bdir, "placement.png"), design, fp, pos, title="placement")
+    near_rules = [r for r in core if r["checker"] == "near_distance"]
+    rpath = os.path.join(bdir, "routes.json")
+    old = json.load(open(rpath)) if a.reuse_routes and os.path.exists(rpath) else {}
+    # T34 (vòng route → placement): còn chân hở ở một IC → nới vành thoát chân của IC đó, đặt và
+    # đi dây lại; giữ kết quả tốt nhất (chân hở, ô chồng). Vành ghi vào routes.json để
+    # --reuse-routes vào thẳng vòng cuối.
+    escape = dict(old.get("escape", {}))
+    best = None
+    for rnd in range(T34_ROUNDS + 1):
+        t = time.time()
+        pl = Placer(design, fp, templates, near_rules=near_rules, escape=escape)
+        pos = pl.run()
+        print("[place] %d/%d linh kiện, %.1fs%s" % (len(pos), len(design["parts"]), time.time() - t,
+              "" if not escape else " (vành thoát chân %s)" % escape))
+        for m in pl.log:
+            print("        " + m)
+        if a.until == "place":
+            break
+        t = time.time()
+        key = routes_key(design, fp, pos, a.iters)
+        if old.get("key") == key:
+            tracks = [tuple(x) for x in old["tracks"]]
+            vias = [tuple(x) for x in old["vias"]]
+            fails, overuse = old["fails"], old["overuse"]
+            print("[route] dùng lại routes.json (khoá %s khớp): %d đoạn, %d via, net lỗi %s"
+                  % (key, len(tracks), len(vias), fails or "không"))
+        else:
+            if a.reuse_routes:
+                print("[route] routes.json không khớp khoá đầu vào → đi dây lại")
+            r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
+            res = r.run(max_iter=a.iters)
+            tracks, vias = r.segments()
+            from pcbkit.router import stitch_vias
+            stitch = stitch_vias(r)
+            vias = sorted(set(vias) | set(stitch))
+            print("[route] via khâu GND: %d" % len(stitch))
+            fails = {n: f for n, (c, f) in sorted(res.items()) if f}
+            overuse = r.overuse
+            print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
+                  % (len(tracks), len(vias), overuse, fails or "không", time.time() - t))
+        n_open = sum(len(v) for v in fails.values())
+        cand = ((n_open, overuse), dict(escape), pos, pl, key, tracks, vias, fails, overuse)
+        if best is None or cand[0] < best[0]:
+            best = cand
+        if n_open == 0 or rnd == T34_ROUNDS:
+            break
+        hit = set()
+        for pins in fails.values():
+            for pin in pins:
+                ref = pin.split(".")[0]
+                q = design_parts[ref]
+                if q.get("role") == "anchor":
+                    hit.add(ref)
+                elif q.get("near") and design_parts[q["near"][0]].get("role") == "anchor":
+                    hit.add(q["near"][0])
+        if not hit:
+            break
+        for h in sorted(hit):
+            escape[h] = round(escape.get(h, 0.0) + ESCAPE_STEP, 3)
+        print("[T34] vòng %d: %d chân hở ở %s → nới vành thoát chân, đặt và đi dây lại"
+              % (rnd + 1, n_open, ", ".join(sorted(hit))))
     if a.until == "place":
+        json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
+                  indent=1)
+        render.draw(os.path.join(bdir, "placement.png"), design, fp, pos, title="placement")
         from pcbkit.checks import Checker as _C
         res = _C(design, fp, pos, [], hot_loops=extra.get("hot_loops", [])).run(
             os.path.join(ENGINE, "rules", "core.yaml"))
@@ -116,33 +174,14 @@ def main():
             print("[check] %-8s %s %-4s giá trị=%s (max %s)%s" % (x["rule"], x["severity"], x["status"], x["value"],
                   x["max"], "" if not x["violations"] else "  ← " + "; ".join(x["violations"][:3])))
         return
-
-    t = time.time()
-    key = routes_key(design, fp, pos, a.iters)
-    rpath = os.path.join(bdir, "routes.json")
-    old = json.load(open(rpath)) if a.reuse_routes and os.path.exists(rpath) else {}
-    if old.get("key") == key:
-        tracks = [tuple(x) for x in old["tracks"]]
-        vias = [tuple(x) for x in old["vias"]]
-        fails, overuse = old["fails"], old["overuse"]
-        print("[route] dùng lại routes.json (khoá %s khớp): %d đoạn, %d via, net lỗi %s"
-              % (key, len(tracks), len(vias), fails or "không"))
-    else:
-        if a.reuse_routes:
-            print("[route] routes.json không khớp khoá đầu vào → đi dây lại")
-        r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
-        res = r.run(max_iter=a.iters)
-        tracks, vias = r.segments()
-        from pcbkit.router import stitch_vias
-        stitch = stitch_vias(r)
-        vias = sorted(set(vias) | set(stitch))
-        print("[route] via khâu GND: %d" % len(stitch))
-        fails = {n: f for n, (c, f) in sorted(res.items()) if f}
-        overuse = r.overuse
-        print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
-              % (len(tracks), len(vias), overuse, fails or "không", time.time() - t))
-        json.dump({"key": key, "tracks": tracks, "vias": vias, "fails": fails, "overuse": overuse},
-                  open(rpath, "w"))
+    _, escape, pos, pl, key, tracks, vias, fails, overuse = best
+    if escape:
+        print("[T34] giữ kết quả vành %s: %d chân hở, %d ô chồng" % (escape, *best[0]))
+    json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
+              indent=1)
+    render.draw(os.path.join(bdir, "placement.png"), design, fp, pos, title="placement")
+    json.dump({"key": key, "escape": escape, "tracks": tracks, "vias": vias, "fails": fails, "overuse": overuse},
+              open(rpath, "w"))
     render.draw(os.path.join(bdir, "routed.png"), design, fp, pos, [x[:6] for x in tracks],
                 [v[:2] for v in vias], title="routed")
     if a.until == "route":

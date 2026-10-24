@@ -48,8 +48,12 @@ def _spiral(cx, cy):
 
 
 class Placer:
-    def __init__(self, design, floorplan, templates=None, near_rules=()):
+    def __init__(self, design, floorplan, templates=None, near_rules=(), escape=None):
         self.near_rules = list(near_rules)   # rule PLC-011/034/NEAR (core.yaml) cho bước sửa
+        # T34: vành thoát chân (mm) quanh linh kiện neo, do vòng route → placement đặt khi route còn
+        # chân hở ở linh kiện đó. Vành GIỮ tới hết placement: chỉ vệ tinh của nó được đặt vào.
+        self.escape = dict(escape or {})
+        self.rings = {}
         self.d = design
         self.fp = floorplan
         self.templates = templates or {}
@@ -99,6 +103,10 @@ class Placer:
                 self.clock_lines.append((net, a, b))
         self.pos[ref] = (round(x, 4), round(y, 4), rot)
         self.courts[ref] = fplib.placed_court(p["footprint"], x, y, rot)
+        e = self.escape.get(ref, 0.0)
+        if e > 0:
+            c = self.courts[ref]
+            self.rings[ref] = (c[0] - e, c[1] - e, c[2] + e, c[3] + e)
         for pad in fplib.placed_pads(p["footprint"], x, y, rot):
             net = p["pins"].get(pad["num"])
             if net:
@@ -182,10 +190,15 @@ class Placer:
                             (dd - rule["threshold"]["max"] + NEAR_MARGIN)
         return cost
 
-    def _free(self, rect, ignore=()):
+    def _free(self, rect, ignore=(), who=None):
         for r, c in self.courts.items():
             if r not in ignore and _overlap(rect, c):
                 return False
+        if who is not None:
+            near = (self.parts[who].get("near") or [None])[0]
+            for a, ring in self.rings.items():
+                if a != who and near != a and _overlap(rect, ring, 0.0):
+                    return False        # vành thoát chân của IC khác: chỉ vệ tinh của nó được vào
         return True
 
     def place_one(self, ref, region, target=None, rots=(0, 90, 180, 270), grow=0.0, use_halo=True):
@@ -233,7 +246,9 @@ class Placer:
                 c = fplib.placed_court(p["footprint"], x, y, rot)
                 if not _inside(c, region) or not _inside(c, self.board_rect):
                     continue
-                if not self._free((c[0] - halo, c[1] - halo, c[2] + halo, c[3] + halo) if halo else c):
+                e = self.escape.get(ref, 0.0)
+                hh = max(halo, e)
+                if not self._free((c[0] - hh, c[1] - hh, c[2] + hh, c[3] + hh) if hh else c, who=ref):
                     continue
                 cost = self._cost(ref, x, y, rot, near_xy)
                 if best is None or cost < best[0] - 1e-9:
@@ -326,7 +341,7 @@ class Placer:
         for (x, y) in _spiral(*target):
             for rot in (0, 90, 180, 270):
                 c = fplib.placed_court(p["footprint"], x, y, rot)
-                if not _inside(c, region) or not _inside(c, self.board_rect) or not self._free(c):
+                if not _inside(c, region) or not _inside(c, self.board_rect) or not self._free(c, who=aref):
                     continue
                 placed = [c]
                 items = []
@@ -336,7 +351,7 @@ class Placer:
                     ox, oy = fplib.rot(dx, dy, rot)
                     q = self.parts[ref]
                     cc = fplib.placed_court(q["footprint"], x + ox, y + oy, (rot + r2) % 360)
-                    if not _inside(cc, soft) or not _inside(cc, self.board_rect) or not self._free(cc) \
+                    if not _inside(cc, soft) or not _inside(cc, self.board_rect) or not self._free(cc, who=ref) \
                             or any(_overlap(cc, o) for o in placed):
                         ok = False
                         break
@@ -400,7 +415,7 @@ class Placer:
                     continue
                 x, y, rot = self.pos[tref]
                 c = fplib.placed_court(self.parts[ref]["footprint"], x + dx, y + dy, rot)
-                if _inside(c, self.board_rect) and self._free(c):
+                if _inside(c, self.board_rect) and self._free(c, who=ref):
                     self._commit(ref, x + dx, y + dy, rot)
                 else:
                     self.log.append("kênh %s%d: %s không sao chép được, đặt riêng" % (name, k, ref))
@@ -442,7 +457,7 @@ class Placer:
     def _rebuild(self, items):
         """Dựng lại toàn bộ trạng thái từ danh sách (ref, (x, y, rot)) theo đúng thứ tự cũ —
         netpads/clock_lines phụ thuộc thứ tự commit."""
-        self.pos, self.courts, self.netpads, self.clock_lines = {}, {}, {}, []
+        self.pos, self.courts, self.netpads, self.clock_lines, self.rings = {}, {}, {}, [], {}
         for ref, (x, y, rot) in items:
             self._commit(ref, x, y, rot)
 
