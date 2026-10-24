@@ -1,0 +1,35 @@
+# Floorplan BCM-6L (tầng B: Claude đề xuất — kỹ sư duyệt). mm, gốc trên-trái, y xuống.
+board: {w: 120, h: 85, edge_clear: 0.3}
+
+stackup:   # SIG / GND / SIG / SIG / GND / SIG — mọi lớp tín hiệu kề một lớp GND (knowledge/01 §3)
+  layers: [F.Cu, In1.Cu, In2.Cu, In3.Cu, In4.Cu, B.Cu]
+  planes: {In1.Cu: GND, In4.Cu: GND}
+  pours: {F.Cu: GND, B.Cu: GND}
+  routing: [F.Cu, In2.Cu, In3.Cu, B.Cu]
+
+rules: {clearance: 0.15, track: 0.2, via_dia: 0.6, via_drill: 0.3}
+
+fixed:   # cơ khí: connector mép dưới (hàng 1 phía trong), lỗ bắt vít 4 góc
+  J3: [6, 77.8, 0]       # vào: 10 số hàng trong; hàng mép: 2 số, 4 analog, 4 GND
+  J2: [44, 77.8, 0]      # ra: 8 high-side hàng trong; 4 low-side + 4 GND hàng mép
+  J1: [78, 77.8, 0]      # nguồn/bus: LIN | CAN1 | CAN2 | KL15 | VBAT | GND
+  J4: [44, 2.6, 90]      # SWD mép trên
+  H1: [3.5, 3.5, 0]
+  H2: [116.5, 3.5, 0]
+  H3: [3.5, 62, 0]
+  H4: [116.5, 62, 0]
+
+# Thứ tự đặt khối = thứ tự danh sách (khối có mẫu T16 / ràng buộc chặt trước).
+blocks:
+  - {name: mcu,      rect: [34, 6, 78, 42], anchor: {ref: U5, at: [56, 22], rot: 0}}
+  - {name: buck,     rect: [86, 0, 120, 18]}
+  - {name: ldo,      rect: [76, 0, 92, 16]}
+  - {name: pwr_in,   rect: [94, 16, 120, 74]}
+  - {name: can,      rect: [80, 44, 94, 74]}
+  - {name: lin,      rect: [64, 44, 80, 74]}
+  - {name: out,      rect: [30, 40, 66, 74], channels: 8, grid: [4, 2]}
+  - {name: ls,       rect: [62, 16, 94, 44], channels: 4, grid: [2, 2]}
+  - {name: din,      rect: [2, 22, 30, 62], channels: 12, grid: [4, 3]}
+  - {name: ain,      rect: [8, 6, 34, 22], channels: 4, grid: [4, 1]}
+  - {name: io_strip, rect: [2, 66, 66, 74]}
+  - {name: swd,      rect: [34, 0, 60, 6]}

@@ -19,9 +19,16 @@ def _v(x, y):
     return pcbnew.VECTOR2I(int(round((x + ORIGIN[0]) * 1e6)), int(round((y + ORIGIN[1]) * 1e6)))
 
 
+def _layer_id(name):
+    """"F.Cu" → pcbnew.F_Cu, "In3.Cu" → pcbnew.In3_Cu…"""
+    return getattr(pcbnew, name.replace(".", "_"))
+
+
 def build(design, floorplan, pos, tracks, vias, out_path):
     board = pcbnew.BOARD()
-    board.SetCopperLayerCount(4)
+    stack = floorplan["stackup"]
+    board.SetCopperLayerCount(len(stack["layers"]))
+    routing = stack.get("routing", ["F.Cu", "B.Cu"])
     ds = board.GetDesignSettings()
     r = floorplan["rules"]
     ds.m_MinClearance = pcbnew.FromMM(r["clearance"])
@@ -83,7 +90,7 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     silk_report = place_silk(board, floorplan)
 
     # track & via
-    lid = {0: pcbnew.F_Cu, 1: pcbnew.B_Cu}
+    lid = {i: _layer_id(n) for i, n in enumerate(routing)}
     for tr in tracks:
         l, x0, y0, x1, y1, w, n = tr[:7]
         t = pcbnew.PCB_TRACK(board)
@@ -104,17 +111,17 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         board.Add(v)
 
     # plane GND ở hai lớp trong
-    layer_ids = {"In1.Cu": pcbnew.In1_Cu, "In2.Cu": pcbnew.In2_Cu, "F.Cu": pcbnew.F_Cu, "B.Cu": pcbnew.B_Cu}
-    zones = sorted(floorplan["stackup"]["planes"].items())
+    planes = set(stack["planes"])
+    zones = sorted(stack["planes"].items())
     zones += sorted(floorplan["stackup"].get("pours", {}).items())
     for lname, net in zones:
         z = pcbnew.ZONE(board)
-        z.SetLayer(layer_ids[lname])
+        z.SetLayer(_layer_id(lname))
         z.SetNet(nets[net])
         z.SetLocalClearance(pcbnew.FromMM(0.25))
         z.SetMinThickness(pcbnew.FromMM(0.2))
         # plane trong: thermal relief; pour ngoài: SMD nối đặc, xuyên lỗ thermal (dễ hàn)
-        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL if lname.startswith("In")
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL if lname in planes
                            else pcbnew.ZONE_CONNECTION_THT_THERMAL)
         z.SetThermalReliefGap(pcbnew.FromMM(0.3))
         z.SetThermalReliefSpokeWidth(pcbnew.FromMM(0.4))
@@ -122,7 +129,7 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         ol.NewOutline()
         for (x, y) in pts:
             ol.Append(_v(x, y))
-        if lname.startswith("In"):
+        if lname in planes:
             # fill lần 1 giữ mọi mảnh để ĐO (EMC-001, review code #6); lần 2 xoá mẩu chết
             z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_NEVER)
         board.Add(z)
@@ -137,7 +144,7 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     filler.Fill(board.Zones())
     pieces = {}
     for z in board.Zones():
-        for lid in (pcbnew.In1_Cu, pcbnew.In2_Cu):
+        for lid in [_layer_id(n) for n in sorted(planes)]:
             if z.IsOnLayer(lid):
                 ps = z.GetFilledPolysList(lid)
                 pieces[board.GetLayerName(lid)] = sorted(

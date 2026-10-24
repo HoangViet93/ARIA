@@ -1,0 +1,19 @@
+# T16 — layout mẫu theo khối (tầng B: soạn một lần, kỹ sư duyệt, dùng lại).
+# Toạ độ [dx, dy, góc] tương đối với linh kiện neo ở góc 0 (mm, y hướng xuống).
+# Sau này thuộc parts-db (theo MPN); ở đây đặt tạm theo trial.
+#
+# TPS54202 SOT-23-6: 1 GND (-1.14,-0.95) · 2 SW (-1.14,0) · 3 VIN (-1.14,0.95)
+#                    4 FB (1.14,0.95)    · 5 EN (1.14,0)  · 6 BOOT (1.14,-0.95)
+# SW ở cạnh trái → cuộn L2 bên trái; FB/EN cạnh phải → điện trở phân áp bên phải,
+# xa SW (SMPS-004); Cin dưới-trái sát VIN, GND qua via xuống plane ngay dưới.
+U1:
+  C6: [-1.6, 2.6, 180]     # Cin HF: pad VIN sát chân 3
+  C5: [-1.6, 4.6, 0]       # Cin bulk ngay sau
+  C7: [0.0, -2.45, 180]    # BOOT–SW phía trên thân
+  L2: [-5.85, -1.5, 180]   # pad SW sát chân 2 — nút SW ngắn nhất
+  C8: [-7.7, -6.4, 0]      # Cout sát pad ra của L2
+  C9: [-2.8, -6.4, 0]
+  R3: [3.25, 1.6, 0]       # FB (chân 4) phía phải, đối diện SW
+  R2: [3.25, 2.8, 180]
+  R5: [3.25, 0.4, 0]       # EN (chân 5)
+  R4: [3.25, -0.8, 180]

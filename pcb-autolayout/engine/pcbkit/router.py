@@ -37,7 +37,9 @@ class Router:
         b = floorplan["board"]
         self.W = int(round(b["w"] / RES)) + 1
         self.H = int(round(b["h"] / RES)) + 1
-        self.L = 2
+        # lớp đi dây theo stackup (4 lớp: F/B; 6 lớp: F/In2/In3/B…) — index 0 = F.Cu, L-1 = B.Cu
+        self.layer_names = list(floorplan.get("stackup", {}).get("routing", ["F.Cu", "B.Cu"]))
+        self.L = len(self.layer_names)
         self.planes = list(design.get("plane_nets", []))
         self.width = {}
         self.current = {}
@@ -102,7 +104,12 @@ class Router:
                 net = p["pins"].get(pad["num"])
                 if net:
                     nets.add(net)
-                self.pads.append(dict(pad, ref=ref, net=net))
+                # fplib: 0 = F.Cu, 1 = B.Cu → index lớp đi dây; pad xuyên lỗ có đồng ở mọi lớp
+                if pad["kind"] == "pth":
+                    lays = list(range(self.L))
+                else:
+                    lays = sorted({0 if l == 0 else self.L - 1 for l in pad["layers"]})
+                self.pads.append(dict(pad, ref=ref, net=net, layers=lays))
         for i, n in enumerate(sorted(nets, key=natkey)):
             self.net_ids[n] = i
         self.net_names = {i: n for n, i in self.net_ids.items()}
@@ -276,7 +283,7 @@ class Router:
                 src = self.pad_target_cells(pad)
                 fw = min(0.3, max(self.def_w, min(pad["x1"] - pad["x0"], pad["y1"] - pad["y0"]) - 0.1))
                 lay = pad["layers"][0]
-                other = 1 - lay
+                other = self.L - 1 if lay == 0 else 0      # via xuống plane xuyên mọi lớp
                 share = [(lay, y, x) for (y, x) in own_vias]
                 path = self._search(nid, src, share or None, other, fw, neck, margin_list=(2, 5))
                 if path is None:
@@ -757,7 +764,8 @@ class Router:
             # dấu chân của phần thêm: đưa vào occ cùng net
             pseudo = []
             for (ny, nx) in ex_vias:
-                pseudo.append((np.array([[0, ny, nx], [1, ny, nx]], np.int64), w, np.zeros((self.L, self.H, self.W), np.bool_)))
+                pseudo.append((np.array([[0, ny, nx], [self.L - 1, ny, nx]], np.int64), w,
+                               np.zeros((self.L, self.H, self.W), np.bool_)))
             cells = self.fp_cells[net]
             if pseudo:
                 cells = np.unique(np.concatenate([cells, self._footprint(pseudo, net, reserve=False)]))

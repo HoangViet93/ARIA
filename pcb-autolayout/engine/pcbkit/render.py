@@ -11,7 +11,7 @@ from matplotlib.patches import Rectangle
 
 from . import fplib
 
-LAYER_COLORS = {0: "#c83232", 1: "#3264c8"}
+LAYER_COLORS = {"F.Cu": "#c83232", "In2.Cu": "#c88a32", "In3.Cu": "#32a050", "B.Cu": "#3264c8"}
 
 
 def draw(path, design, floorplan, pos, tracks=(), vias=(), title=""):
@@ -33,8 +33,9 @@ def draw(path, design, floorplan, pos, tracks=(), vias=(), title=""):
             ax.add_patch(Rectangle((pad["x0"], pad["y0"]), pad["x1"] - pad["x0"], pad["y1"] - pad["y0"],
                                    fc=col, ec="none", alpha=0.8))
         ax.text((c[0] + c[2]) / 2, (c[1] + c[3]) / 2, ref, fontsize=3.5, ha="center", va="center")
+    names = floorplan.get("stackup", {}).get("routing", ["F.Cu", "B.Cu"])   # index lớp đi dây → tên
     for (l, x0, y0, x1, y1, w) in tracks:
-        ax.plot([x0, x1], [y0, y1], color=LAYER_COLORS[l], lw=max(w * 3.2, 0.3),
+        ax.plot([x0, x1], [y0, y1], color=LAYER_COLORS.get(names[l], "#888"), lw=max(w * 3.2, 0.3),
                 solid_capstyle="round", alpha=0.75)
     for (x, y) in vias:
         ax.add_patch(plt.Circle((x, y), 0.3, color="#444"))

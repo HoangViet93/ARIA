@@ -229,6 +229,10 @@ class Placer:
                       max(region[2], max(tx) + reach), max(region[3], max(ty) + reach))
         # IC có linh kiện vệ tinh (tụ decap, linh kiện "near" chân nó): giữ vành trống
         # quanh courtyard để vệ tinh còn chỗ bám chân — đặt tham lam không tự biết chừa.
+        # (sau khi nới vùng decap/near) đích ngoài vùng → kéo về điểm gần nhất trong vùng: xoắn ốc chỉ quét 40 mm quanh đích, đích
+        # là trọng tâm net (vd chân connector mép dưới) cách vùng 54 mm thì không ứng viên nào nằm
+        # trong vùng dù vùng còn 4284 chỗ trống (Q27, bcm6l-240)
+        target = (min(max(target[0], region[0]), region[2]), min(max(target[1], region[1]), region[3]))
         # Vành = cạnh ngắn của tụ decap vệ tinh lớn nhất + khe (tụ 0805 cần 2.15 mm, không phải 1.8).
         # (Thử bắt vành nằm trong vùng khối: các IC dồn vào giữa, synth-hi tệ hơn — đã bỏ.)
         sats = [q for q in self.parts.values() if q.get("near") and q["near"][0] == ref]

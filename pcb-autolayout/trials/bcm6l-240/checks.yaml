@@ -1,0 +1,3 @@
+# Tham số rule riêng của board (sau này lấy từ parts-db).
+hot_loops:
+  - [U1.3, C6.1, C6.2, U1.1]     # buck: VIN → Cin HF → GND
