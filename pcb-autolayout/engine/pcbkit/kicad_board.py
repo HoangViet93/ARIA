@@ -129,6 +129,9 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     write_dru(design, floorplan, os.path.splitext(out_path)[0] + ".kicad_dru")
     # KiCad 7: ZONE_FILLER segfault trên board dựng trong bộ nhớ → lưu, nạp lại, rồi fill.
     pcbnew.SaveBoard(out_path, board)
+    # chuẩn hoá TRƯỚC khi tô: thứ tự item/UUID đầu vào của bộ tô zone phải giống từng byte,
+    # không thì KiCad 9 tô ra đa giác khác nhau ở mức µm giữa các lần chạy
+    canonicalize(out_path)
     board = pcbnew.LoadBoard(out_path)
     filler = pcbnew.ZONE_FILLER(board)
     filler.Fill(board.Zones())
@@ -310,6 +313,59 @@ def _top_items(txt):
     return items
 
 
+_FILLED = re.compile(r'\(filled_polygon\s*\(layer "([^"]+)"\)\s*(\(island\)\s*)?\(pts'
+                     r'((?:\s*\(xy [-\d.eE]+ [-\d.eE]+\))+)\s*\)\s*\)')
+_XY = re.compile(r"\(xy ([-\d.eE]+) ([-\d.eE]+)\)")
+
+
+def _drop_collinear(pts):
+    """Bỏ đỉnh nằm thẳng hàng giữa hai đỉnh kề (|tích chéo| < 1e-9 mm², cùng chiều) — bộ tô đa
+    luồng của KiCad 9 lúc có lúc không chèn các đỉnh này; hình học không đổi. Lặp các lượt
+    quét tuyến tính tới khi không bỏ được nữa."""
+    f = [(float(x), float(y)) for x, y in pts]
+    keep = list(range(len(f)))
+    while len(keep) > 3:
+        out = []
+        n = len(keep)
+        for j in range(n):
+            a = f[out[-1]] if out else f[keep[j - 1]]
+            b, c = f[keep[j]], f[keep[(j + 1) % n]]
+            cr = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+            dot = (b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])
+            if not (abs(cr) < 1e-9 and dot >= 0):
+                out.append(keep[j])
+        if len(out) == len(keep) or len(out) < 3:
+            break
+        keep = out
+    return [pts[i] for i in keep]
+
+
+def _canon_fills(zone):
+    """KiCad 9 tô zone đa luồng: cùng đa giác nhưng đỉnh bắt đầu và thứ tự các mảnh đổi giữa
+    các lần chạy → file khác dù đồng giống hệt. Xoay mỗi đa giác về đỉnh nhỏ nhất (giữ chiều)
+    và sắp các mảnh theo (lớp, đỉnh)."""
+    found = list(_FILLED.finditer(zone))
+    if not found:
+        return zone
+    blocks = []
+    for m in found:
+        pts = _drop_collinear(_XY.findall(m.group(3)))
+        k = min(range(len(pts)), key=lambda i: (float(pts[i][0]), float(pts[i][1])))
+        pts = pts[k:] + pts[:k]
+        rows = ["\t\t\t\t" + " ".join("(xy %s %s)" % q for q in pts[i:i + 4]) for i in range(0, len(pts), 4)]
+        txt = ('(filled_polygon\n\t\t\t(layer "%s")\n%s\t\t\t(pts\n%s\n\t\t\t)\n\t\t)'
+               % (m.group(1), "\t\t\t(island)\n" if m.group(2) else "", "\n".join(rows)))
+        blocks.append(((m.group(1), [(float(x), float(y)) for x, y in pts]), txt))
+    blocks.sort(key=lambda b: b[0])
+    out, last = [], 0
+    for m, (_, txt) in zip(found, blocks):
+        out.append(zone[last:m.start()])
+        out.append(txt)
+        last = m.end()
+    out.append(zone[last:])
+    return "".join(out)
+
+
 def canonicalize(path):
     """T35: làm file .kicad_pcb tất định. KiCad 7 sinh UUID ngẫu nhiên và lưu
     footprint theo thứ tự UUID, nên hai lần chạy giống hệt nhau vẫn ra file khác.
@@ -321,7 +377,7 @@ def canonicalize(path):
     head_kinds = ("(version", "(generator", "(general", "(paper", "(title_block", "(layers", "(setup",
                   "(property", "(net ")
     head = [it for it in items if it.startswith(head_kinds)]
-    body = [it for it in items if not it.startswith(head_kinds)]
+    body = [_canon_fills(it) if it.startswith("(zone") else it for it in items if not it.startswith(head_kinds)]
     kind_rank = {"(footprint": 0, "(gr_": 1, "(segment": 2, "(arc": 3, "(via": 4, "(zone": 5}
 
     def key(it):

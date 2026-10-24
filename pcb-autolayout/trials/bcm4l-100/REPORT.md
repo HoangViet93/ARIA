@@ -262,3 +262,19 @@ placement.
 
 Kết quả: **15/16** (chỉ còn PLC-NEAR mức M), DRC 0, toàn trình **150 s** (tiêu chí A1 ≤ 3 phút),
 hash `9c30d6f3daadd940`. Kiểm skill 8/8 PASS.
+
+## Vòng 8 — 16/16 rule không chỉnh tay; tất định KiCad 9 thật sự
+
+| # | Phát hiện | Sửa |
+|---|---|---|
+| 1 | R9 cách L3 12 mm: placer tham lam tới lượt R9 thì quanh L3 đã kín, không bao giờ quay lại | `repair_near`: gỡ linh kiện không bảo vệ quanh đích, đặt vi phạm trước, đặt lại phần gỡ; giữ nếu điểm giảm |
+| 2 | Điểm trọng số C×10 cho đổi C25 (M, vượt 0.46) lấy D7 vượt PLC-034 (C) 0.03 mm | Điểm so từ điển (vượt C, vượt M); test |
+| 3 | C25 → J1.1 4.46 mm: chân đích x 58.3 nằm **ngoài** vùng khối lin (dừng ở 56.5) | Linh kiện near vươn `NEAR_REACH` 4 mm quanh đích (như decap tràn 3 mm); test trượt khi tắt |
+| 4 | **Tất định vỡ trên KiCad 9**: cùng routes, khác thư mục → hash khác. Bộ tô zone ra đa giác lệch µm theo thứ tự item/UUID đầu vào | `canonicalize()` trước khi nạp lại để tô; chuẩn hoá đa giác tô. Kiểm tất định giờ chạy ở 2 thư mục |
+
+Kết quả: **16/16** trên cả KiCad 9 (`f116fcd59dba83db`) và KiCad 7 (`33b4f9200f4283d2`), DRC 0,
+toàn trình ~130 s. `run_skills.py --full` 8/8. Tiêu chí A2 "board luyện 16/16 không chỉnh tay" đạt;
+còn vế "≥ 1 trial tổng hợp mật độ cao 100 % chân" — cần A0.
+
+Nhận xét thẳng: rule đạt hết nhưng layout chưa bằng người — đường chéo dài MCU → ngõ vào trái,
+lớp dưới vẫn ít dùng. Việc của B2 (placement toàn cục) và B4 (đổi chân MCU).

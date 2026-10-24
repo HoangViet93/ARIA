@@ -73,7 +73,7 @@ lượt làm việc dài như các lượt vừa qua). Ước lượng chưa ki�
 | Mốc | Nội dung | Tiêu chí xong |
 |---|---|---|
 | **A0** Benchmark | Dựng bộ R/V (script chạy tất cả + bảng chỉ số), chạy lại demo KiCad từ netlist qua engine | `bench.py` in bảng chỉ số; lưu baseline |
-| **A1** Tốc độ router | Đo profile; rip-up gia tăng (chỉ net bị ảnh hưởng), cửa sổ tìm theo vùng, bỏ vòng PathFinder dư, cache probe theo net; giữ tất định | Board luyện **≤ 3 phút** toàn trình, kết quả rule không tụt |
+| **A1** ✅ Tốc độ router | Đo profile; rip-up gia tăng (chỉ net bị ảnh hưởng), cửa sổ tìm theo vùng, bỏ vòng PathFinder dư, cache probe theo net; giữ tất định | Board luyện **≤ 3 phút** toàn trình, kết quả rule không tụt |
 | **A2** T34 repair | Router báo vùng thiếu dung lượng (từ vòng lặp rip-up) → bảng chiến lược `ROLES.md` §6: nới vùng khối / tăng vành trống / đổi chỗ cụm → đặt lại vùng đó → đi lại; tối đa N vòng, tất định | Board luyện **16/16 rule** không chỉnh tay; ≥ 1 trial tổng hợp mật độ cao đạt 100 % chân |
 | **A3** parts-db vào engine | Placer/checker đọc `parts-db` (approved): `place_near`, `keep_away`, `hot_loop`, mẫu T16 theo MPN thay cho `templates.yaml`/`near=` khai tay | Board luyện chạy với `circuit.py` không còn `near=`/`keep_away` khai tay |
 | **A4** Waiver + ECO | `waivers.yaml` vào checker/release; ECO (`ROLES.md` §7): thêm 1–5 linh kiện → ghim phần không đổi | Thêm 3 linh kiện → ≥ 90 % linh kiện giữ vị trí; DRC sạch |

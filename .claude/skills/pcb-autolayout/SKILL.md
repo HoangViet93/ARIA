@@ -89,6 +89,10 @@ cần một pha hoặc đang chẩn đoán.
   chỗ trong dấu chân — gia cố chạy cuối thì chỗ đã bị lấp (`tools/diag_via.py` in lý do loại).
 - PathFinder dừng khi 5 vòng liền không lập kỷ lục ("6 vòng giống hệt" không bao giờ xảy ra).
 - Đo trước khi tối ưu: `tools/prof_route.py <trial> [vòng]` (cProfile pha route).
+- **Placement có bước sửa sau** (`Placer.repair_near`): linh kiện vi phạm near → gỡ linh kiện không
+  được bảo vệ quanh chân đích, đặt nó trước, đặt lại phần gỡ; điểm so **từ điển (vượt C, vượt M)** —
+  trọng số C×10 từng để lọt đổi C25 (M) lấy D7 vượt PLC-034 (C). Linh kiện `near` được vươn khỏi
+  vùng khối `NEAR_REACH` mm quanh chân đích (chân đích có thể nằm ngoài vùng khối của nó).
 - Dòng điện lấy theo **từng net** (`net_attrs`), không theo class.
 - Thắt cổ chỉ sát pad hẹp hơn đường (0.6 mm); net ≥ 1 A tránh via, buộc đổi lớp thì gia cố via.
 - KiCad 7: `ZONE_FILLER` segfault trên board dựng trong bộ nhớ → lưu/nạp lại rồi fill; UUID
@@ -96,6 +100,10 @@ cần một pha hoặc đang chẩn đoán.
 - **Hai đường kiểm phải đối chứng nhau**: `verify.py --routes` trên board của `run.py` phải ra
   đúng `checks.json`. Lần đầu lệch đã lộ lỗi khai `lowcur` FB1 (1 A qua 0.3 mm) và lỗi viền
   0.05 mm — cả hai DRC/rule đều im lặng. `lowcur` giờ được `lint_lowcur` chặn.
+- **KiCad 9 tô zone không tất định** nếu thứ tự item/UUID đầu vào khác (đa giác lệch µm, cùng
+  input mà khác thư mục là ra khác) → `canonicalize()` TRƯỚC khi nạp lại để tô, và chuẩn hoá đa
+  giác tô (bỏ đỉnh thẳng hàng, xoay về đỉnh nhỏ nhất, sắp mảnh). Kiểm tất định phải chạy ở **hai
+  thư mục khác nhau** (`run_skills.py --full`), cùng thư mục là che mất lỗi này.
 - KiCad 9: `EDA_UNITS_MILLIMETRES` → `EDA_UNITS_MM`; report DRC bỏ chữ `Severity:` (trước khi
   sửa, mọi cảnh báo bị đếm thành lỗi). Hình học footprint lượng tử về 1 nm khi nạp (`fplib._q`)
   — nhiễu `0.45999999999999996` khác nhau giữa các bản Python/KiCad.

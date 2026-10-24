@@ -45,8 +45,8 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T31 | render | ✅ | matplotlib + `kicad-cli pcb export svg` |
 | T32 | report_export | ✅ | `release.py`: Gerber/drill/CPL/BOM/manifest + cổng chặn rule C chưa miễn trừ |
 | T33 | floorplan_gen | ❌ | Lệch: floorplan viết tay (tầng B, Claude đề xuất) |
-| T34 | repair | ❌ | Chưa cần cho trial luyện: chân hở "thiếu dung lượng" hoá ra là lỗi A\*. Vẫn cần cho board dày (bộ R mật độ cao) |
-| T35 | determinism_check | ✅ | Hai lần chạy → `.kicad_pcb` giống hệt từng byte (`canonicalize`) |
+| T34 | repair | 🟡 | Mức placement: `repair_near` (gỡ–đặt lại quanh đích, điểm C-trước-M). Chưa có vòng route → placement cho vùng thiếu dung lượng (cần bộ R mật độ cao để chứng minh) |
+| T35 | determinism_check | ✅ | Hai lần chạy ở **hai thư mục khác nhau** → `.kicad_pcb` giống từng byte, cả KiCad 7 lẫn 9 (canonicalize trước khi tô zone + chuẩn hoá đa giác tô) |
 | T36 | rules_lint | ✅ | 16 rule, mỗi rule có test |
 | T37 | channel_replicate | ✅ | Kênh ra ×4, vào ×6 |
 | T38–T42 | BCM-specific | ❌ | |

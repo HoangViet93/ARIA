@@ -16,9 +16,14 @@ description: Chạy riêng pha placement của engine pcb-autolayout (floorplan,
 4. Xem `placement.png`. Rule PLC-* trượt → chẩn đoán: lỗi floorplan (tầng B, hỏi) hay giới
    hạn placer (ghi vào REPORT, đề xuất sửa engine).
 
+## Bước sửa sau placement
+Log `sửa near X: gỡ N linh kiện trong R mm quanh …, vượt C/M a/b → c/d mm` = placer tự dời
+linh kiện để thoả near. Không bao giờ đổi vi phạm mức C lấy lợi mức M. Linh kiện cố định / neo /
+cụm mẫu T16 không bị gỡ.
+
 ## Giới hạn đã biết (placer tham lam)
-- Nhạy thứ tự; không tự chừa chỗ cho đường đi dây → có thể gây chân hở ở pha route (cần
-  T34). PLC-NEAR (termination CAN) trượt trên trial hiện tại.
+- Nhạy thứ tự; không tự chừa chỗ cho đường đi dây. Trial luyện hiện 16/16 nhưng còn đường
+  chéo dài MCU → ngõ vào (cần B2 placement toàn cục / B4 đổi chân).
 - T33 floorplan_gen chưa có: floorplan do Claude soạn.
 
 ## Kiểm thử skill

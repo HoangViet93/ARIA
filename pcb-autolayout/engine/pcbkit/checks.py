@@ -17,6 +17,42 @@ def _poly_area(pts):
     return abs(a) / 2
 
 
+def near_role(part):
+    return part.get("role") if part.get("role") in ("decap", "esd") else "other"
+
+
+def near_gap(parts, pos, ref, rule):
+    """Khoảng cách `near` của một linh kiện theo đúng thước đo của rule (PLC-011/034/NEAR);
+    None nếu rule không áp dụng. Dùng chung cho checker và bước sửa placement (repair)."""
+    p = parts[ref]
+    if not p.get("near") or near_role(p) != rule["applies_to"]["role"]:
+        return None
+    tref, tnum = p["near"]
+    if ref not in pos or tref not in pos:
+        return None
+    tnet = parts[tref]["pins"].get(tnum)
+    first = {}
+    for q in fplib.placed_pads(p["footprint"], *pos[ref]):
+        first.setdefault(q["num"], q)
+    mine = [q for num, q in first.items() if tnet and p["pins"].get(num) == tnet]
+    tpads = [q for q in fplib.placed_pads(parts[tref]["footprint"], *pos[tref]) if q["num"] == tnum]
+    if rule.get("to") == "connector_body" and tref.startswith("J"):
+        # đo tới mép courtyard connector, không tới tâm chân (chân hàng 2 nằm sâu trong thân)
+        c = fplib.placed_court(parts[tref]["footprint"], *pos[tref])
+        ds = [math.hypot(max(c[0] - q["x"], 0, q["x"] - c[2]), max(c[1] - q["y"], 0, q["y"] - c[3]))
+              for q in mine]
+    elif rule.get("edge"):
+        # mép–mép: linh kiện lớn (cuộn cảm…) có pad to, tâm–tâm phạt oan
+        ds = [math.hypot(max(t["x0"] - q["x1"], 0, q["x0"] - t["x1"]),
+                         max(t["y0"] - q["y1"], 0, q["y0"] - t["y1"])) for q in mine for t in tpads]
+    else:
+        ds = [math.hypot(q["x"] - t["x"], q["y"] - t["y"]) for q in mine for t in tpads]
+    if not ds:
+        x, y, _ = pos[ref]
+        ds = [math.hypot(x - t["x"], y - t["y"]) for t in tpads]
+    return min(ds)
+
+
 class Checker:
     def __init__(self, design, floorplan, pos, tracks, drc=None, board=None, hot_loops=(), vias=(),
                  router_overuse=None):
@@ -54,32 +90,10 @@ class Checker:
         role = rule["applies_to"]["role"]
         bad, worst = [], 0.0
         for ref in sorted(self.parts, key=natkey):
-            p = self.parts[ref]
-            if not p.get("near"):
+            dd = near_gap(self.parts, self.pos, ref, rule)
+            if dd is None:
                 continue
-            prole = p.get("role") if p.get("role") in ("decap", "esd") else "other"
-            if prole != role:
-                continue
-            tref, tnum = p["near"]
-            tnet = self.parts[tref]["pins"].get(tnum)
-            mine = [q for num, q in self.pads(ref).items() if tnet and p["pins"].get(num) == tnet]
-            tpads = [q for q in fplib.placed_pads(self.parts[tref]["footprint"], *self.pos[tref])
-                     if q["num"] == tnum]
-            if rule.get("to") == "connector_body" and tref.startswith("J"):
-                # đo tới mép courtyard connector, không tới tâm chân (chân hàng 2 nằm sâu trong thân)
-                c = fplib.placed_court(self.parts[tref]["footprint"], *self.pos[tref])
-                ds = [math.hypot(max(c[0] - q["x"], 0, q["x"] - c[2]), max(c[1] - q["y"], 0, q["y"] - c[3]))
-                      for q in mine]
-            elif rule.get("edge"):
-                # mép–mép: linh kiện lớn (cuộn cảm…) có pad to, tâm–tâm phạt oan
-                ds = [math.hypot(max(t["x0"] - q["x1"], 0, q["x0"] - t["x1"]),
-                                 max(t["y0"] - q["y1"], 0, q["y0"] - t["y1"])) for q in mine for t in tpads]
-            else:
-                ds = [math.hypot(q["x"] - t["x"], q["y"] - t["y"]) for q in mine for t in tpads]
-            if not ds:
-                x, y, _ = self.pos[ref]
-                ds = [math.hypot(x - t["x"], y - t["y"]) for t in tpads]
-            dd = min(ds)
+            tref, tnum = self.parts[ref]["near"]
             worst = max(worst, dd)
             if dd > rule["threshold"]["max"]:
                 bad.append("%s→%s.%s %.1f mm" % (ref, tref, tnum, dd))

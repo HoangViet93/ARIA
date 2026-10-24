@@ -23,15 +23,11 @@
   "rule": "PLC-NEAR",
   "severity": "M",
   "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
-  "value": 12.32233744059949,
+  "value": 3.784475690237689,
   "max": 4.0,
-  "status": "FAIL",
-  "violations": [
-   "C25→J1.1 4.5 mm",
-   "R8→L3.4 4.8 mm",
-   "R9→L3.3 12.3 mm"
-  ],
-  "n": 3
+  "status": "ok",
+  "violations": [],
+  "n": 0
  },
  {
   "rule": "PLC-OVL",

@@ -97,7 +97,8 @@ def main():
     t = time.time()
     tpath = os.path.join(tdir, "templates.yaml")
     templates = yaml.safe_load(open(tpath)) if os.path.exists(tpath) else {}
-    pl = Placer(design, fp, templates)
+    core = yaml.safe_load(open(os.path.join(ENGINE, "rules", "core.yaml")))
+    pl = Placer(design, fp, templates, near_rules=[r for r in core if r["checker"] == "near_distance"])
     pos = pl.run()
     json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
               indent=1)

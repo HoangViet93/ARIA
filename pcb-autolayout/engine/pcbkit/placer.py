@@ -12,6 +12,7 @@ from .design import natkey
 MARGIN = 0.15       # khoảng hở tối thiểu giữa hai courtyard
 DECAP_SLACK = 3.0   # tụ decap được tràn khỏi vùng khối tối đa 3 mm
 HALO = 1.8          # vành trống quanh IC có vệ tinh khi đặt IC
+NEAR_REACH = 4.0    # linh kiện "near" được vươn khỏi vùng khối tới hộp ± ngần này quanh chân đích
 
 
 def _overlap(a, b, m=MARGIN):
@@ -46,7 +47,8 @@ def _spiral(cx, cy):
 
 
 class Placer:
-    def __init__(self, design, floorplan, templates=None):
+    def __init__(self, design, floorplan, templates=None, near_rules=()):
+        self.near_rules = list(near_rules)   # rule PLC-011/034/NEAR (core.yaml) cho bước sửa
         self.d = design
         self.fp = floorplan
         self.templates = templates or {}
@@ -189,6 +191,13 @@ class Placer:
             # vùng khối là "mềm" với tụ decap: bám chân IC quan trọng hơn ranh giới khối
             region = (region[0] - DECAP_SLACK, region[1] - DECAP_SLACK,
                       region[2] + DECAP_SLACK, region[3] + DECAP_SLACK)
+        if near_xy:
+            # chân đích có thể nằm ngoài vùng khối (C25 → J1.1 ở x 58.3, khối lin dừng ở 56.5):
+            # cho vươn tới hộp quanh đích — "near" là ràng buộc rõ ràng hơn ranh giới khối
+            tx = [q[0] for q in near_xy]
+            ty = [q[1] for q in near_xy]
+            region = (min(region[0], min(tx) - NEAR_REACH), min(region[1], min(ty) - NEAR_REACH),
+                      max(region[2], max(tx) + NEAR_REACH), max(region[3], max(ty) + NEAR_REACH))
         # IC có linh kiện vệ tinh (tụ decap, linh kiện "near" chân nó): giữ vành trống
         # quanh courtyard để vệ tinh còn chỗ bám chân — đặt tham lam không tự biết chừa.
         halo = HALO if (use_halo and p.get("role") == "anchor"
@@ -393,7 +402,77 @@ class Placer:
                 continue
             refs = [r for r, p in self.parts.items() if p["block"] == blk["name"] and r not in self.pos]
             self.place_block(refs, blk["rect"], blk.get("anchor"))
+        if self.near_rules:
+            self.repair_near()
         missing = [r for r in self.parts if r not in self.pos]
         for r in sorted(missing, key=natkey):
             self.log.append("chưa đặt: " + r)
         return self.pos
+
+    # ---- sửa sau placement (T34 mức placement) ------------------------------
+    def _rebuild(self, items):
+        """Dựng lại toàn bộ trạng thái từ danh sách (ref, (x, y, rot)) theo đúng thứ tự cũ —
+        netpads/clock_lines phụ thuộc thứ tự commit."""
+        self.pos, self.courts, self.netpads, self.clock_lines = {}, {}, {}, []
+        for ref, (x, y, rot) in items:
+            self._commit(ref, x, y, rot)
+
+    def _near_score(self):
+        """(phần vượt ngưỡng mức C, phần vượt mức M) — so theo thứ tự từ điển. Trọng số (C ×10)
+        từng để lọt: đổi C25 (M) lấy D7 vượt PLC-034 (C) 0.03 mm vẫn "giảm điểm"."""
+        from .checks import near_gap
+        c = m = 0.0
+        bad = []
+        for rule in self.near_rules:
+            for ref in sorted(self.pos, key=natkey):
+                dd = near_gap(self.parts, self.pos, ref, rule)
+                if dd is not None and dd > rule["threshold"]["max"]:
+                    if rule["severity"] == "C":
+                        c += dd - rule["threshold"]["max"]
+                    else:
+                        m += dd - rule["threshold"]["max"]
+                    bad.append(ref)
+        return (round(c, 6), round(m, 6)), bad
+
+    def repair_near(self, radii=(4.0, 6.0), passes=2):
+        """Placer tham lam không quay lại: linh kiện `near` tới lượt thì chỗ quanh đích đã bị
+        lấp (R9 cách L3 12 mm). Với mỗi linh kiện vi phạm: gỡ nó + các linh kiện KHÔNG được bảo
+        vệ có tâm trong bán kính (nới dần theo `radii`) quanh chân đích, đặt nó trước, đặt lại phần đã gỡ (thứ tự
+        _order), giữ nếu tổng điểm near giảm, không thì trả nguyên trạng. Tất định."""
+        rect = {b["name"]: b["rect"] for b in self.fp["blocks"]}
+        protected = set(self.fp.get("fixed", {}))
+        for a, tm in self.templates.items():
+            protected.add(a)
+            protected.update(tm)
+        protected.update(r for r, p in self.parts.items() if p.get("role") == "anchor")
+        for _ in range(passes):
+            score, viol = self._near_score()
+            if not viol:
+                return
+            changed = False
+            for v in sorted(set(viol), key=natkey):
+                p = self.parts[v]
+                tref = p["near"][0]
+                if v in protected or v not in self.pos:
+                    continue
+                tx, ty = self.pin_xy(*p["near"])[0]
+                for radius in radii:
+                    evict = sorted((r for r, (x, y, _) in self.pos.items()
+                                    if r not in protected and r not in (v, tref)
+                                    and math.hypot(x - tx, y - ty) <= radius), key=natkey)
+                    snap, nlog = list(self.pos.items()), len(self.log)
+                    self._rebuild([(r, xy) for r, xy in snap if r != v and r not in evict])
+                    ok = self.place_one(v, rect.get(p["block"], self.board_rect))
+                    for e in self._order(evict):
+                        ok = self.place_one(e, rect.get(self.parts[e]["block"], self.board_rect)) and ok
+                    new, _ = self._near_score()
+                    del self.log[nlog:]
+                    if ok and new[0] <= score[0] and new < score:
+                        self.log.append("sửa near %s: gỡ %d linh kiện trong %.0f mm quanh %s.%s, vượt C/M "
+                                        "%.2f/%.2f → %.2f/%.2f mm" % (v, len(evict), radius, tref, p["near"][1],
+                                                                       *score, *new))
+                        score, changed = new, True
+                        break
+                    self._rebuild(snap)
+            if not changed:
+                return
