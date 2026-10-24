@@ -1,7 +1,7 @@
 ** Drc report for /home/user/ARIA/pcb-autolayout/trials/synth-hi/build/synth-hi.kicad_pcb **
-** Created on 2026-10-24 15:28:44 **
+** Created on 2026-10-24 15:51:59 **
 
-** Found 95 DRC violations **
+** Found 74 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
     Local override; warning
     @(107.5992 mm, 65.7957 mm): Footprint C25
@@ -224,92 +224,28 @@
 [lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
     Local override; warning
     @(151.0439 mm, 66.1837 mm): Footprint R52
-[tracks_crossing]: Tracks crossing
-    Rule: netclass 'Default'; error
-    @(127.6500 mm, 72.0500 mm): Track [S9_B] on B.Cu, length 1.4849 mm
-    @(128.9500 mm, 72.6000 mm): Track [S11_B] on B.Cu, length 1.7678 mm
-[clearance]: Clearance violation (netclass 'Default' clearance 0.1500 mm; actual 0.1182 mm)
-    Rule: netclass 'Default'; error
-    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
-    @(123.8000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.1414 mm
-[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
-    Local override; error
-    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
-    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
-    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
-    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
-[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
-    Local override; error
-    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
-    @(123.9000 mm, 71.8000 mm): Track [S1_B] on B.Cu, length 0.0707 mm
-[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
-    Local override; error
-    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
-    @(123.9000 mm, 72.0500 mm): Track [S1_B] on B.Cu, length 0.2500 mm
-[tracks_crossing]: Tracks crossing
-    Rule: netclass 'Default'; error
-    @(123.9500 mm, 71.7500 mm): Track [S1_B] on B.Cu, length 0.2500 mm
-    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
-[shorting_items]: Items shorting two nets (nets S1_B and S9_B)
-    Local override; error
-    @(123.9500 mm, 71.5000 mm): Track [S1_B] on B.Cu, length 0.0707 mm
-    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
-[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
-    Local override; error
-    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
-    @(124.0000 mm, 71.4500 mm): Track [S1_B] on B.Cu, length 0.3500 mm
-[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
-    Local override; error
-    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
-    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
-[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
-    Local override; error
-    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
-    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
-[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
-    Local override; error
-    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
-    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
-    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
-    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
-    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
-[tracks_crossing]: Tracks crossing
-    Rule: netclass 'Default'; error
-    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
-    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
-[tracks_crossing]: Tracks crossing
-    Rule: netclass 'Default'; error
-    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
-    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
-[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
-    Local override; error
-    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
-    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
-[tracks_crossing]: Tracks crossing
-    Rule: netclass 'Default'; error
-    @(127.2000 mm, 78.3500 mm): Track [S9_A] on B.Cu, length 0.9192 mm
-    @(126.8000 mm, 79.4000 mm): Track [S8_B] on B.Cu, length 1.2021 mm
-[shorting_items]: Items shorting two nets (nets S9_A and S8_B)
-    Local override; error
-    @(127.2000 mm, 78.3500 mm): Track [S9_A] on B.Cu, length 0.9192 mm
-    @(127.6500 mm, 78.5500 mm): Track [S8_B] on B.Cu, length 0.5500 mm
 
-** Found 0 unconnected pads **
+** Found 5 unconnected pads **
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(121.8375 mm, 69.7500 mm): Pad 10 [S2_B] of U1 on F.Cu
+    @(134.4016 mm, 74.4466 mm): Pad 2 [S2_B] of R42 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(126.7500 mm, 72.1625 mm): Pad 20 [S7_B] of U1 on F.Cu
+    @(147.4504 mm, 76.4501 mm): Pad 2 [S7_B] of R47 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(121.3571 mm, 81.4728 mm): Pad 1 [S9_A] of R29 on F.Cu
+    @(130.1625 mm, 70.7500 mm): Pad 25 [S9_A] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(120.7871 mm, 77.2428 mm): Pad 2 [S9_B] of R49 on F.Cu
+    @(130.1625 mm, 70.2500 mm): Pad 26 [S9_B] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.5882 mm, 89.4517 mm): Pad 2 [S11_B] of R51 on F.Cu
+    @(130.1625 mm, 68.2500 mm): Pad 30 [S11_B] of U1 on F.Cu
 
 ** Found 0 Footprint errors **
 
