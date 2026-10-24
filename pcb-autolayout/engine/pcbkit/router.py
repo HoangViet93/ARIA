@@ -450,6 +450,7 @@ class Router:
                 if over[self.fp_cells[net]].any() or self.result[net][1]:
                     dirty.add(net)
         self.resolve_overuse(order)
+        self._no_shorts(order)          # chốt cuối (rip-up dây chuyền không được để lại chồng)
         self.polish(order)
         self.reinforce_vias()
         self.overuse = int((self.occ.reshape(-1) > 1).sum())
@@ -460,16 +461,47 @@ class Router:
             self.log("CẢNH BÁO: còn %d ô chồng sau gỡ cứng (RT-CLR), net: %s" % (self.overuse, who))
         return self.result
 
+    def _no_shorts(self, order):
+        """Chốt an toàn: KHÔNG BAO GIỜ xuất board có chập mạch. Ô chồng còn lại sau gỡ cứng = hai
+        net chạm nhau (synth-hi: 15 chập, DRC shorting_items). Gỡ net ưu tiên thấp nhất đang chồng,
+        đi lại ở chế độ cứng (không được chạm ai) — chân không tới được thành chân HỞ (RT-OPEN):
+        hở thì minh bạch và sửa được, chập là lỗi phần cứng. Lần thứ hai vẫn chồng → gỡ hẳn net."""
+        flat = self.occ.reshape(-1)
+        if not (flat > 1).any():
+            return
+        self._hard_mode(True)
+        tries = {}
+        while (flat > 1).any():
+            over = flat > 1
+            net = [n for n in order if over[self.fp_cells[n]].any()][-1]
+            tries[net] = tries.get(net, 0) + 1
+            self._rip(net)
+            if tries[net] == 1:
+                self._pending_vias = []
+                conns, fails = self.route_net(net)
+                vias = self._pending_vias
+                for v in vias:
+                    self._via_block(v, -1)
+                self._put(net, conns, fails, self._footprint(conns, net), vias)
+            else:
+                pins = sorted("%s.%s" % (p["ref"], p["num"]) for p in self.pads if p["net"] == net)
+                self._put(net, [], pins[1:], np.zeros(0, np.int64), [])
+            self.log("chống chập: %s đi lại cứng → %d chân hở" % (net, len(self.result[net][1])))
+        self._hard_mode(False)
+
     def _hard_mode(self, on):
+        """Vào/ra chế độ cứng; gọi lồng được (ngăn xếp) — bản cũ lưu một biến, lồng nhau thì ra
+        khỏi chế độ cứng với trạng thái của chính chế độ cứng."""
+        if not hasattr(self, "_mode_stack"):
+            self._mode_stack = []
         if on:
-            self._saved = (self.pres_fac, self.hist_use, self.max_pops)
+            self._mode_stack.append((self.hard, self.bend1, self.bend2, self.pres_fac, self.hist_use, self.max_pops))
             self.max_pops = 1_500_000           # chế độ cứng: tìm thất bại phải dừng sớm
             self.hard, self.bend1, self.bend2 = True, 1.0, 3.0
             self.hist_use = np.zeros_like(self.hist)
             self.pres_fac = 0.0
         else:
-            self.hard, self.bend1, self.bend2 = False, 0.35, 1.2
-            self.pres_fac, self.hist_use, self.max_pops = self._saved
+            self.hard, self.bend1, self.bend2, self.pres_fac, self.hist_use, self.max_pops = self._mode_stack.pop()
 
     def resolve_overuse(self, order, rounds=4):
         """Mọi ô chồng là vi phạm clearance thật (biên lưới = 0, review code #2). Với mỗi
@@ -516,6 +548,10 @@ class Router:
                         self._put(g, r0[0], r0[1], c0, v0)
                 if not done:
                     continue
+        # chồng không gỡ được theo nhóm → thành chân hở (không bao giờ để chập), rồi giao cho
+        # rip-up dây chuyền — công cụ mạnh hơn cho đúng loại việc "chân bị nhốt"
+        self._no_shorts(order)
+        self._hard_mode(True)
         self._resolve_fails(order)
         self._hard_mode(False)
         self.log("gỡ chồng cứng: còn %d ô chồng" % int((self.occ.reshape(-1) > 1).sum()))
