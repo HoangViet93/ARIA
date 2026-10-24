@@ -8,14 +8,16 @@ import math
 from .design import natkey
 
 
-def ipc2221_width(current_a, pol):
-    """Bề rộng tối thiểu (mm) lớp ngoài theo IPC-2221 cho dòng I, ΔT, đồng oz."""
+def ipc2221_width(current_a, pol, layer="outer"):
+    """Bề rộng tối thiểu (mm) theo IPC-2221 cho dòng I, ΔT, đồng oz; layer outer|inner.
+    Router hiện chỉ đi lớp ngoài nên net class dùng 'outer'; 'inner' cho kiểm/plane sau này."""
     w = pol["width"]
     if current_a <= 0:
         return 0.0
-    area_mil2 = (current_a / (w["k_external"] * w["dT_c"] ** 0.44)) ** (1 / 0.725)
-    thick_mil = 1.378 * w["copper_oz"]
-    return area_mil2 / thick_mil * 0.0254
+    k = w["k_external"] if layer == "outer" else w["k_internal"]
+    oz = w["copper_oz"] if layer == "outer" else w.get("copper_oz_inner", w["copper_oz"])
+    area_mil2 = (current_a / (k * w["dT_c"] ** 0.44)) ** (1 / 0.725)
+    return area_mil2 / (1.378 * oz) * 0.0254
 
 
 def _round_up(v, step):

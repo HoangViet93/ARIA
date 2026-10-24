@@ -1,8 +1,11 @@
 """Pipeline tất định: design → placement → routing → KiCad → DRC → check → ảnh.
 
-    python3 run.py <thư-mục-trial> [--iters N]
+    python3 run.py <thư-mục-trial> [--iters N] [--until constraints|place|route|all]
 
-Mọi đầu ra nằm trong <trial>/build/. Không có bước nào gọi AI.
+Đầu vào: <trial>/circuit.py (mạch viết bằng Python), hoặc <trial>/build/design.json do
+`intake.py` sinh từ netlist KiCad (khi không có circuit.py). Mọi đầu ra nằm trong
+<trial>/build/. Không có bước nào gọi AI. `--until` dừng sau một pha (skill pcb-place,
+pcb-route dùng).
 """
 import argparse
 import hashlib
@@ -33,12 +36,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("trial")
     ap.add_argument("--iters", type=int, default=30)
+    ap.add_argument("--until", choices=["constraints", "place", "route", "all"], default="all")
     a = ap.parse_args()
     t_all = time.time()
     tdir = os.path.abspath(a.trial)
     bdir = os.path.join(tdir, "build")
     os.makedirs(bdir, exist_ok=True)
-    subprocess.run([sys.executable, os.path.join(tdir, "circuit.py")], check=True)
+    if os.path.exists(os.path.join(tdir, "circuit.py")):
+        subprocess.run([sys.executable, os.path.join(tdir, "circuit.py")], check=True)
+    elif not os.path.exists(os.path.join(bdir, "design.json")):
+        sys.exit("thiếu circuit.py hoặc build/design.json (chạy intake.py trước)")
     design = json.load(open(os.path.join(bdir, "design.json")))
     fp = yaml.safe_load(open(os.path.join(tdir, "floorplan.yaml")))
     extra = yaml.safe_load(open(os.path.join(tdir, "checks.yaml"))) if os.path.exists(
@@ -55,6 +62,8 @@ def main():
         for name, c in classes.items():
             print("[class] %-16s %.2f mm / clr %.2f%s: %s" % (name, c["width"], c["clearance"],
                   " / cấm via" if c["via_max"] == 0 else "", ", ".join(c["nets"])))
+    if a.until == "constraints":
+        return
 
     t = time.time()
     tpath = os.path.join(tdir, "templates.yaml")
@@ -67,6 +76,16 @@ def main():
     for m in pl.log:
         print("        " + m)
     render.draw(os.path.join(bdir, "placement.png"), design, fp, pos, title="placement")
+    if a.until == "place":
+        from pcbkit.checks import Checker as _C
+        res = _C(design, fp, pos, [], hot_loops=extra.get("hot_loops", [])).run(
+            os.path.join(ENGINE, "rules", "core.yaml"))
+        res = [x for x in res if x["rule"].startswith(("PLC", "SMPS-002"))]
+        json.dump(res, open(os.path.join(bdir, "checks_place.json"), "w"), indent=1, ensure_ascii=False)
+        for x in res:
+            print("[check] %-8s %s %-4s giá trị=%s (max %s)%s" % (x["rule"], x["severity"], x["status"], x["value"],
+                  x["max"], "" if not x["violations"] else "  ← " + "; ".join(x["violations"][:3])))
+        return
 
     t = time.time()
     r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
@@ -83,6 +102,8 @@ def main():
               open(os.path.join(bdir, "routes.json"), "w"))
     render.draw(os.path.join(bdir, "routed.png"), design, fp, pos, [x[:6] for x in tracks],
                 [v[:2] for v in vias], title="routed")
+    if a.until == "route":
+        return
 
     t = time.time()
     pcb = os.path.join(bdir, design["name"] + ".kicad_pcb")

@@ -41,8 +41,9 @@ def load(fpid):
     for it in fp.GraphicalItems():
         if it.GetLayer() == pcbnew.F_CrtYd:
             bb = it.GetBoundingBox()
-            xs += [mm(bb.GetX()), mm(bb.GetX() + bb.GetWidth())]
-            ys += [mm(bb.GetY()), mm(bb.GetY() + bb.GetHeight())]
+            hw = mm(it.GetWidth()) / 2 if hasattr(it, "GetWidth") else 0.0   # bỏ độ dày nét
+            xs += [mm(bb.GetX()) + hw, mm(bb.GetX() + bb.GetWidth()) - hw]
+            ys += [mm(bb.GetY()) + hw, mm(bb.GetY() + bb.GetHeight()) - hw]
     if not xs:   # không có courtyard: lấy bao pad + 0.25 mm
         xs = [min(p["x0"] for p in pads) - 0.25, max(p["x1"] for p in pads) + 0.25]
         ys = [min(p["y0"] for p in pads) - 0.25, max(p["y1"] for p in pads) + 0.25]
@@ -78,5 +79,11 @@ def placed_pads(fpid, x, y, deg):
 
 
 def placed_court(fpid, x, y, deg):
-    b = rot_box(load(fpid)["court"], deg)
+    info = load(fpid)
+    c = info["court"]
+    if c is None:       # footprint không có courtyard (board cũ): dùng bao pad + 0.25 mm
+        ps = info["pads"]
+        c = (min(p["x0"] for p in ps) - 0.25, min(p["y0"] for p in ps) - 0.25,
+             max(p["x1"] for p in ps) + 0.25, max(p["y1"] for p in ps) + 0.25)
+    b = rot_box(c, deg)
     return (x + b[0], y + b[1], x + b[2], y + b[3])

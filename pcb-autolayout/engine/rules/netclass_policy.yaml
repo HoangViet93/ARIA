@@ -8,8 +8,10 @@ fab:                      # năng lực fab (fab-profiles sau này)
   min_clearance: 0.15
   via: {dia: 0.6, drill: 0.3}
 
-width:                    # IPC-2221 lớp ngoài: I = k·ΔT^0.44·A^0.725 (A mil²)
-  k_external: 0.048
+width:                    # IPC-2221: I = k·ΔT^0.44·A^0.725 (A mil²)
+  k_external: 0.048       # lớp ngoài
+  k_internal: 0.024       # lớp trong (IPC-2221 bảo thủ; IPC-2152 cho thấy tốt hơn khi có plane gần)
+  copper_oz_inner: 1.0
   dT_c: 10
   copper_oz: 1.0          # 1 oz = 1.378 mil
   min_signal: 0.2         # tín hiệu: 0.2 mm (chắc chắn hơn mức fab 0.15 cho automotive)

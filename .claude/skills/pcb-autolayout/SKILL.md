@@ -9,6 +9,21 @@ Engine ở `pcb-autolayout/engine/`. Phân vai và tính tái lập: `pcb-autola
 (đọc §2–§6). Hiện trạng so với plan: `pcb-autolayout/CONFORMANCE.md`. Mục tiêu cuối:
 `pcb-autolayout/TARGET-BCM.md`. Nhật ký bài học: `trials/*/REPORT.md`.
 
+## Bộ skill — skill này là điều phối
+
+| Pha | Skill | Công cụ | Khi nào |
+|---|---|---|---|
+| Đầu vào | `pcb-intake` | `intake.py` | Project mới từ `.kicad_sch` (trial dùng `circuit.py` thì bỏ qua) |
+| Linh kiện | `pcb-part` | `parts-db/`, `parts_lint.py` | IC quan trọng chưa có trong parts-db |
+| Luật | `pcb-constraints` | `constraints.py` | Trước placement; khi hỏi luật width/clearance |
+| Đặt | `pcb-place` | `run.py --until place` | Soạn/chỉnh floorplan (~15 s/lần) |
+| Đi dây | `pcb-route` | `run.py --until route` / `run.py` | Placement đã đạt |
+| Kiểm | `pcb-verify` | `verify.py` | Board có sẵn / vẽ tay; hiệu chỉnh rule |
+| Phát hành | `pcb-release` | `release.py` | Người dùng yêu cầu gửi fab (tầng C) |
+
+Toàn trình một lệnh: `python3 run.py ../trials/<tên>` (bước dưới). Dùng skill pha khi chỉ
+cần một pha hoặc đang chẩn đoán.
+
 ## Nguyên tắc cứng (đều từng bị vi phạm — đừng lặp lại)
 
 - **Mục tiêu là hoàn thiện ENGINE, không phải chỉnh tay cho một board lọt.** Gặp lỗi →
@@ -35,8 +50,9 @@ Engine ở `pcb-autolayout/engine/`. Phân vai và tính tái lập: `pcb-autola
 1. **Môi trường.** `python3 -c "import pcbnew; print(pcbnew.Version())"`, `kicad-cli version`,
    `python3 -c "import numba, shapely, yaml"`. Thiếu → `apt install kicad kicad-footprints`
    (KiCad 7 qua apt; PPA KiCad 9 bị proxy chặn).
-2. **Bộ rule nguyên vẹn** (trong `engine/`): `python3 rules_lint.py && python3 tests/test_checks.py
-   && python3 tests/test_netclass.py && python3 tests/test_fplib.py`. Lỗi → dừng, là lỗi engine.
+2. **Bộ rule nguyên vẹn** (trong `engine/`): `python3 rules_lint.py && python3 parts_lint.py &&
+   python3 tests/test_checks.py && python3 tests/test_netclass.py && python3 tests/test_fplib.py &&
+   python3 tests/test_intake.py`. Lỗi → dừng, là lỗi engine.
 3. **Đầu vào trial**: `circuit.py`, `floorplan.yaml`, `checks.yaml`, tuỳ chọn `templates.yaml`.
 4. **Chạy** (nền; ~2–10 phút): `python3 -u run.py ../trials/<tên> > log`. Theo dõi dòng
    `[class] [place] [route] [silk] [kicad] [check] [done]`.

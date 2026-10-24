@@ -12,6 +12,8 @@ POL = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "rules",
 for amps, mm in ((0.5, 0.12), (1, 0.30), (2, 0.78), (3, 1.37), (5, 2.77)):
     got = netclass.ipc2221_width(amps, POL)
     assert abs(got - mm) < 0.01, (amps, got, mm)
+# lớp trong IPC-2221 ≈ 2.6× lớp ngoài (knowledge/03 §2): 1 A → 0.78 mm
+assert abs(netclass.ipc2221_width(1, POL, "inner") - 0.78) < 0.01
 assert netclass.clearance_for(3.3, POL)[0] == 0.15
 assert netclass.clearance_for(39, POL)[0] == 0.20
 d = {"net_attrs": {"VB": {"current_a": 2.5, "voltage_v": 39, "kind": "power"},

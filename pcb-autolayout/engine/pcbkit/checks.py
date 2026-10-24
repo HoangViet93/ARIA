@@ -86,13 +86,31 @@ class Checker:
         return worst, bad
 
     def courtyard_overlap(self, rule):
-        courts = {r: fplib.placed_court(self.parts[r]["footprint"], *self.pos[r]) for r in self.pos}
+        """So chồng courtyard theo TỪNG MẶT; footprint không có courtyard bị bỏ (KiCad cũng
+        không so được — verify liệt kê riêng)."""
+        courts, side = {}, {}
+        for r in self.pos:
+            fid = self.parts[r]["footprint"]
+            if fplib.load(fid).get("court") is None:
+                continue
+            courts[r] = fplib.placed_court(fid, *self.pos[r])
+            side[r] = self.parts[r].get("side", "F")
         refs = sorted(courts, key=natkey)
+        polys = {}
+        for r in refs:                          # đa giác thật nếu có (verify), không thì hộp bao
+            pts = fplib.load(self.parts[r]["footprint"]).get("poly")
+            if pts and len(pts) >= 3:
+                from shapely.geometry import Polygon
+                polys[r] = Polygon(pts).buffer(0)
         bad = []
         for i, a in enumerate(refs):
             for b in refs[i + 1:]:
+                if side[a] != side[b]:
+                    continue
                 A, B = courts[a], courts[b]
                 if A[0] < B[2] and B[0] < A[2] and A[1] < B[3] and B[1] < A[3]:
+                    if a in polys and b in polys and polys[a].intersection(polys[b]).area < 1e-3:
+                        continue                # hộp bao chồng nhưng đa giác thật không chồng
                     bad.append("%s/%s" % (a, b))
         return len(bad), bad
 

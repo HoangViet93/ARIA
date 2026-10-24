@@ -1,0 +1,18 @@
+# T05 parts-db — luật layout của MỘT linh kiện, dùng chung mọi project.
+# Soạn bởi sub-agent đọc datasheet (skill pcb-part) → status: draft → KỸ SƯ duyệt → approved.
+mpn: TPS54202
+manufacturer: Texas Instruments
+role: buck
+package: SOT-23-6
+status: draft            # draft | approved — engine chỉ dùng "approved" cho luật mức C
+approved_by: null
+source: "datasheet SLUSCD6 — CHƯA đối chiếu từng trang; soạn từ hiểu biết chung, phải kiểm"
+pins: {GND: [1], SW: [2], VIN: [3], FB: [4], EN: [5], BOOT: [6]}
+rules:
+  - {id: place_near, part_role: cin_hf, pin: VIN, max_mm: 1.5, why: "tụ input HF sát VIN–GND (hot loop)"}
+  - {id: place_near, part_role: inductor, pin: SW, max_mm: 3.0, why: "nút SW ngắn"}
+  - {id: place_near, part_role: cboot, pin: BOOT, max_mm: 2.0}
+  - {id: place_near, part_role: fb_divider, pin: FB, max_mm: 2.0}
+  - {id: keep_away, net_pin: FB, from_pin: SW, min_mm: 1.0}
+  - {id: hot_loop, pins: [VIN, GND], max_mm2: 15}
+template: trials/bcm4l-100/templates.yaml#U1
