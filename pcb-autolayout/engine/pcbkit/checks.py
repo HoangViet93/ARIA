@@ -33,6 +33,8 @@ class Checker:
         for nc in design["netclasses"].values():
             for n in nc["nets"]:
                 self.current[n] = nc.get("current_a") or 0
+        for n, a in design.get("net_attrs", {}).items():      # dòng của TỪNG net, không của class
+            self.current[n] = a.get("current_a", 0) or 0
         self.parts = {p["ref"]: p for p in design["parts"]}
         self.width = {}
         for nc in design["netclasses"].values():
@@ -199,15 +201,18 @@ class Checker:
         return round(worst, 2), bad
 
     def plane_islands(self, rule):
-        import pcbnew
+        """EMC-001: plane trong không bị cắt rời. Đếm các mảnh ≥ min_area_mm2 khi fill
+        GIỮ mọi mảnh (kicad_board đo trước khi xoá mẩu chết); mẩu nhỏ hơn là đồng chết
+        giữa các via — bị xoá ở bản sản xuất."""
+        pieces = getattr(self.board, "plane_pieces", None)
+        amin = rule.get("min_area_mm2", 1.0)
         worst, bad = 0, []
-        for z in self.board.Zones():
-            for lid in (pcbnew.In1_Cu, pcbnew.In2_Cu):
-                if z.IsOnLayer(lid):
-                    n = z.GetFilledPolysList(lid).OutlineCount()
-                    worst = max(worst, n)
-                    if n > rule["threshold"]["max"]:
-                        bad.append("%s: %d mảnh" % (self.board.GetLayerName(lid), n))
+        for layer, areas in sorted((pieces or {}).items()):
+            big = [a for a in areas if a >= amin]
+            worst = max(worst, len(big))
+            if len(big) > rule["threshold"]["max"]:
+                bad.append("%s: %d mảnh ≥ %.1f mm² (%s)" % (layer, len(big), amin,
+                                                            ", ".join("%.1f" % a for a in big)))
         return worst, bad
 
     def edge_stitch(self, rule):

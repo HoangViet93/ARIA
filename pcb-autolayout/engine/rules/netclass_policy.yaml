@@ -1,0 +1,30 @@
+# T08/T09 — chính sách sinh net class từ thuộc tính net (dòng, điện áp, loại).
+# Mạch chỉ khai thuộc tính; bề rộng/clearance/via do engine TÍNH từ đây, không gõ tay.
+# Đổi file này = đổi luật cho mọi board → tăng `version` và chạy lại test.
+version: 1
+
+fab:                      # năng lực fab (fab-profiles sau này)
+  min_track: 0.15
+  min_clearance: 0.15
+  via: {dia: 0.6, drill: 0.3}
+
+width:                    # IPC-2221 lớp ngoài: I = k·ΔT^0.44·A^0.725 (A mil²)
+  k_external: 0.048
+  dT_c: 10
+  copper_oz: 1.0          # 1 oz = 1.378 mil
+  min_signal: 0.2         # tín hiệu: 0.2 mm (chắc chắn hơn mức fab 0.15 cho automotive)
+  round_up: 0.05
+
+clearance:                # theo điện áp lớn nhất net phải chịu (kể cả xung đã kẹp)
+  # IPC-2221B Bảng 6-1 cột B4 (lớp ngoài có phủ mask): ≤ 100 V → 0.13 mm. Lấy max với
+  # năng lực fab, và thêm biên cho miền ắc-quy (bẩn/ẩm automotive) — quyết định tầng B.
+  - {max_v: 6,   clearance: 0.15, why: "logic: mức fab"}
+  - {max_v: 60,  clearance: 0.20, why: "miền ắc-quy ≤ 60 V: IPC B4 0.13 + biên automotive"}
+  - {max_v: 100, clearance: 0.30, why: "trên 60 V: cần người duyệt (HV-001)"}
+
+kinds:                    # ràng buộc thêm theo loại net
+  power: {min_width: 0.4, why: "đường cấp nguồn: rộng hơn mức nhiệt IPC để giảm điện cảm/sụt áp (PDN)"}
+  load:  {min_width: 0.4, why: "ra tải qua connector: chịu dòng khởi động/ngắn mạch trước khi bảo vệ cắt"}
+  clock: {via_max: 0, why: "SI-070: clock/thạch anh không via"}
+  diff:  {why: "cặp vi sai (CAN): chưa có router cặp — chỉ bề rộng/clearance"}
+  sense: {why: "net nhạy (FB…): khoảng giữ khai bằng keep_away"}

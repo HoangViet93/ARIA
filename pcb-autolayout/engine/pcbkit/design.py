@@ -34,6 +34,7 @@ class Design:
         self.netclasses = {}     # tên -> {width, clearance, nets, current_a}
         self.plane_nets = []     # net nối plane bằng via (GND)
         self.keep_away = []      # [(netA, netB, mm)]: đồng hai net phải cách nhau ít nhất mm
+        self.net_attrs = {}      # net -> {current_a, voltage_v, kind} (T08/T09)
 
     def part(self, ref, value, footprint, pins, block, **kw):
         assert ref not in self.parts, ref
@@ -43,6 +44,12 @@ class Design:
     def netclass(self, name, width, nets, clearance=0.15, current_a=None, via_max=None):
         self.netclasses[name] = {"width": width, "clearance": clearance,
                                  "nets": list(nets), "current_a": current_a, "via_max": via_max}
+
+    def net_attr(self, nets, current_a=0.0, voltage_v=3.3, kind=None):
+        """Khai thuộc tính net (dòng lớn nhất, điện áp lớn nhất kể cả xung đã kẹp, loại).
+        Bề rộng/clearance/via do engine tính (pcbkit/netclass.py) — không gõ tay."""
+        for n in nets:
+            self.net_attrs[n] = {"current_a": current_a, "voltage_v": voltage_v, "kind": kind}
 
     def nets(self):
         out = {}
@@ -56,7 +63,7 @@ class Design:
         data = {"name": self.name,
                 "parts": [self.parts[r].to_dict() for r in sorted(self.parts, key=natkey)],
                 "netclasses": self.netclasses, "plane_nets": self.plane_nets,
-                "keep_away": self.keep_away}
+                "keep_away": self.keep_away, "net_attrs": self.net_attrs}
         with open(path, "w") as f:
             json.dump(data, f, indent=1, sort_keys=True)
 

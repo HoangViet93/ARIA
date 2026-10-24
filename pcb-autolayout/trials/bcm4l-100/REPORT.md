@@ -1,6 +1,35 @@
-# Luyện tập #1 — BCM-mini 12 V, 4 lớp, 128 linh kiện
+# Luyện tập #1 — BCM-mini 12 V, 4 lớp, 120 linh kiện
 
-## Vòng 3 — sau review độc lập (mới nhất)
+## Vòng 4 — trả mạch về gốc, net class do engine tính (mới nhất)
+
+**Sửa sai vòng 3:** mình đã tự đổi mạch (linh kiện/giá trị/cách nối) — vượt phạm vi:
+mạch là đầu vào, quyết định tầng C. Đã hoàn tác về mạch gốc; các lỗi mạch review tìm
+ra chuyển sang `CIRCUIT-ISSUES.md` chờ chủ mạch quyết. `circuit.py` chỉ còn thêm
+**ràng buộc layout** (thuộc tính net, keep_away, hướng thạch anh, near).
+
+**Engine mới ở vòng này**
+- **T08/T09 net class tự tính**: mạch chỉ khai dòng/điện áp/loại net; engine tính bề rộng
+  theo IPC-2221, clearance theo điện áp (`rules/netclass_policy.yaml`), sinh bảng
+  `build/netclasses.md`, và ghi **net class thật vào `.kicad_pro`** (trước đây KiCad chỉ
+  thấy Default). 7 class: 1.10 / 0.40 / 0.35 / 0.20 mm; clearance 0.20 cho miền ắc-quy.
+- Dòng tính theo **từng net**, không theo class (bug: OUT 0.5 A bị coi là 1 A).
+- EMC-001 đo mảnh plane trước khi xoá mẩu chết; mẩu < 1 mm² không tính là cắt plane.
+- Đặt linh kiện: dải bảo vệ I/O đặt trước mọi khối (ESD → lọc → transceiver); IC có
+  vệ tinh giữ vành trống 1.8 mm; mẫu T16 cho TPS54202 gốc.
+- Router: **rip-up dây chuyền** cho chân bị nhốt (đường mềm → gỡ đúng net chạm → đi lại),
+  giữ trạng thái tốt nhất, phát hiện vòng lặp.
+
+**Kết quả: chưa đạt.** KiCad DRC 0 lỗi; 13/16 rule đạt. Trượt:
+- **RT-OPEN (C):** 1 chân hở (U5.15 IN4_M). Rip-up chứng minh đây là **thiếu dung lượng**:
+  IN2/IN3_M/IN4_M/IN5_M đẩy nhau theo vòng ở vùng dưới-trái MCU (bị trục VBAT_P + nhánh
+  pull-up cắt ngang). Đường nguồn rộng đúng luật (0.4/1.1 mm) lấy thêm chỗ. Router không
+  tự giải được → cần **T34 repair: quay về placement** (ROLES §6, R-RT-UNROUTED→R-PLC-CONG).
+- **PWR-005 (C):** 1 via +5V không đặt được via song song (chật).
+- **PLC-NEAR (M):** termination CAN xa CMC — giới hạn placer tham lam (cần T14 toàn cục).
+
+---
+
+## Vòng 3 — sau review độc lập
 
 Hai agent review **độc lập** (không được xem kết luận của mình): một kỹ sư phần cứng
 automotive review mạch + layout, một reviewer code tìm bug engine. Họ tìm ra **4 lỗi

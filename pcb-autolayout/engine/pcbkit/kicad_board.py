@@ -121,7 +121,7 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         for (x, y) in pts:
             ol.Append(_v(x, y))
         if lname.startswith("In"):
-            # plane trong: giữ mọi mảnh để EMC-001 đếm được plane bị cắt rời (review code #6)
+            # fill lần 1 giữ mọi mảnh để ĐO (EMC-001, review code #6); lần 2 xoá mẩu chết
             z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_NEVER)
         board.Add(z)
     write_dru(design, floorplan, os.path.splitext(out_path)[0] + ".kicad_dru")
@@ -130,9 +130,19 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     board = pcbnew.LoadBoard(out_path)
     filler = pcbnew.ZONE_FILLER(board)
     filler.Fill(board.Zones())
+    pieces = {}
+    for z in board.Zones():
+        for lid in (pcbnew.In1_Cu, pcbnew.In2_Cu):
+            if z.IsOnLayer(lid):
+                ps = z.GetFilledPolysList(lid)
+                pieces[board.GetLayerName(lid)] = sorted(
+                    (ps.Outline(i).Area() / 1e12 for i in range(ps.OutlineCount())), reverse=True)
+                z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)
+    filler.Fill(board.Zones())            # bản sản xuất: không để đồng trôi nổi
     board.BuildConnectivity()
     pcbnew.SaveBoard(out_path, board)
     board.silk_report = silk_report
+    board.plane_pieces = pieces
     return board
 
 
@@ -148,7 +158,7 @@ def write_dru(design, floorplan, path):
             out.append('(rule "nc_%s_clearance"\n  (condition "%s")\n  (constraint clearance (min %.3fmm)))'
                        % (name, cond, nc["clearance"]))
         if nc.get("via_max") is not None:
-            out.append('(rule "nc_%s_via_count"\n  (condition "%s")\n  (constraint via_count (max %d)))'
+            out.append('(rule "via_count_%s"\n  (condition "%s")\n  (constraint via_count (max %d)))'
                        % (name, cond, nc["via_max"]))
     for a, b, mm in design.get("keep_away", []):
         out.append('(rule "keep_%s_%s"\n  (condition "(A.NetName == \'%s\' && B.NetName == \'%s\') || '

@@ -23,11 +23,15 @@
   "rule": "PLC-NEAR",
   "severity": "M",
   "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
-  "value": 3.8003289331319774,
+  "value": 13.29812016790343,
   "max": 4.0,
-  "status": "ok",
-  "violations": [],
-  "n": 0
+  "status": "FAIL",
+  "violations": [
+   "C25→J1.1 4.5 mm",
+   "R8→L3.4 4.8 mm",
+   "R9→L3.3 13.3 mm"
+  ],
+  "n": 3
  },
  {
   "rule": "PLC-OVL",
@@ -43,11 +47,13 @@
   "rule": "RT-OPEN",
   "severity": "C",
   "title": "Mọi chân đã nối (theo connectivity của KiCad)",
-  "value": 0,
+  "value": 1,
   "max": 0,
-  "status": "ok",
-  "violations": [],
-  "n": 0
+  "status": "FAIL",
+  "violations": [
+   "Missing connection between items Local override; Severity: error @(135.2500 mm, 82.1625 mm): Pad 15 [IN4_M] of U5 on F.Cu"
+  ],
+  "n": 1
  },
  {
   "rule": "DRC-ERR",
@@ -83,7 +89,7 @@
   "rule": "SMPS-002",
   "severity": "C",
   "title": "Diện tích hot loop bộ buck",
-  "value": 1.32,
+  "value": 1.69,
   "max": 15,
   "status": "ok",
   "violations": [],
@@ -123,11 +129,13 @@
   "rule": "PWR-005",
   "severity": "C",
   "title": "Đổi lớp của net dòng lớn có đủ via song song (1 A/via + 1 dự phòng)",
-  "value": 0,
+  "value": 1,
   "max": 0,
-  "status": "ok",
-  "violations": [],
-  "n": 0
+  "status": "FAIL",
+  "violations": [
+   "+5V via @(58.0,31.0): 1/2"
+  ],
+  "n": 1
  },
  {
   "rule": "DFM-005",

@@ -18,11 +18,11 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T01 | env_check | 🟡 | Kiểm tay; KiCad **7.0.11** (PPA KiCad 9 bị proxy chặn) |
 | T02 | netlist_export | ❌ | Lệch: mạch mô tả bằng `circuit.py` thay vì schematic KiCad |
 | T03 | summarize_design | 🟡 | `design.json` từ `circuit.py`; chưa đọc netlist `kicadsexpr` |
-| T04 | net_classify | ❌ | Net class khai tay trong `circuit.py` |
+| T04 | net_classify | 🟡 | Mạch khai thuộc tính net (dòng/điện áp/loại); chưa tự đoán từ tên net |
 | T05 | part_rules / parts-db | ❌ | Luật linh kiện nằm tạm trong `near=` của `circuit.py` và `checks.yaml` |
 | T06/T07 | stackup / impedance | ❌ | Stackup cố định SIG/GND/GND/SIG |
-| T08 | current | 🟡 | Bề rộng tính tay theo IPC-2221, chưa có công cụ |
-| T09 | constraint_compile | 🟡 | Sinh `.kicad_dru` (clearance net class, via_count, keep_away); chưa có net class trong `.kicad_pro` |
+| T08 | current | ✅ | `pcbkit/netclass.py`: IPC-2221 lớp ngoài, có test khớp bảng knowledge/03 |
+| T09 | constraint_compile | ✅ | Net class vào `.kicad_pro` + `.kicad_dru` (via_count, keep_away) + bảng `netclasses.md` |
 | T10/T11 | cluster | 🟡 | Dùng `block` khai trong mạch; chưa gom cụm tự động |
 | T12 | board_setup | 🟡 | Outline + vị trí cố định từ `floorplan.yaml` |
 | T13 | board_from_netlist | ✅ | `kicad_board.build()` qua pcbnew |
@@ -40,7 +40,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T31 | render | ✅ | matplotlib + `kicad-cli pcb export svg` |
 | T32 | report_export | 🟡 | `REPORT.md` viết tay; chưa xuất Gerber |
 | T33 | floorplan_gen | ❌ | Lệch: floorplan viết tay (tầng B, Claude đề xuất) |
-| T34 | repair | ❌ | Lệch: các lỗi được sửa bằng **sửa code engine**, không phải bảng chiến lược |
+| T34 | repair | ❌ | **Việc kế tiếp**: rip-up đã chứng minh có vùng thiếu dung lượng → cần quay về placement |
 | T35 | determinism_check | ✅ | Hai lần chạy → `.kicad_pcb` giống hệt từng byte (`canonicalize`) |
 | T36 | rules_lint | ✅ | 16 rule, mỗi rule có test |
 | T37 | channel_replicate | ✅ | Kênh ra ×4, vào ×6 |

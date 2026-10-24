@@ -119,7 +119,7 @@ def test_SMPS_004_SI_070():   # "SMPS-004" "SI-070" — KiCad DRC phân xử qua
     v = _drc_with("Clearance violation (rule keep_SW5_FB5 clearance 1.0000 mm; actual 0.4 mm)")
     assert run("SMPS-004", GOOD, drc=v)[0] == 1
     assert run("SI-070", GOOD, drc=v)[0] == 0
-    w = _drc_with("Too many vias on a connection (rule nc_CLK_via_count max 0; actual 2)")
+    w = _drc_with("Too many vias on a connection (rule via_count_W020_C015_NOVIA max 0; actual 2)")
     assert run("SI-070", GOOD, drc=w)[0] == 1
     assert run("SMPS-004", GOOD, drc={"violations": [], "unconnected": []})[0] == 0
 
@@ -152,6 +152,7 @@ class _Zone:
 class _Board:
     def __init__(self, n):
         self.z = [_Zone(n)]
+        self.plane_pieces = {"In1.Cu": [4500.0] + [5.0] * (n - 1) + [0.1]}   # + mẩu chết 0.1 mm²
 
     def Zones(self):
         return self.z

@@ -72,6 +72,8 @@
   severity: C
   title: Plane GND liền một khối (không bị via/antipad cắt rời)
   metric: islands
+  # mảnh < 1 mm² là đồng chết kẹt giữa via (xoá ở bản sản xuất), không phải cắt plane
+  min_area_mm2: 1.0
   threshold: {max: 1}
   checker: plane_islands
   knowledge: knowledge/05-emc-esd-automotive.md#2-gnd
@@ -117,7 +119,7 @@
   severity: C
   title: Clock/thạch anh không via (via_count của net class, KiCad DRC phân xử)
   metric: violations
-  rule_prefix: nc_CLK_via_count
+  rule_prefix: via_count_
   threshold: {max: 0}
   checker: kicad_rule
   knowledge: knowledge/04-high-speed-si.md#8-clock

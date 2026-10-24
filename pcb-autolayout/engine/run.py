@@ -16,7 +16,7 @@ import time
 import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pcbkit import kicad_board, render  # noqa: E402
+from pcbkit import kicad_board, netclass, render  # noqa: E402
 from pcbkit.checks import Checker  # noqa: E402
 from pcbkit.placer import Placer  # noqa: E402
 from pcbkit.router import Router  # noqa: E402
@@ -43,6 +43,18 @@ def main():
     fp = yaml.safe_load(open(os.path.join(tdir, "floorplan.yaml")))
     extra = yaml.safe_load(open(os.path.join(tdir, "checks.yaml"))) if os.path.exists(
         os.path.join(tdir, "checks.yaml")) else {}
+
+    # T08/T09: net class do engine tính từ thuộc tính net — không gõ tay
+    pol = yaml.safe_load(open(os.path.join(ENGINE, "rules", "netclass_policy.yaml")))
+    if design.get("net_attrs"):
+        classes, rows = netclass.compile_netclasses(design, pol)
+        design["netclasses"] = classes
+        default = {"track": fp["rules"]["track"], "clearance": fp["rules"]["clearance"],
+                   "via_dia": fp["rules"]["via_dia"], "via_drill": fp["rules"]["via_drill"]}
+        open(os.path.join(bdir, "netclasses.md"), "w").write(netclass.table_md(classes, rows, pol, default))
+        for name, c in classes.items():
+            print("[class] %-16s %.2f mm / clr %.2f%s: %s" % (name, c["width"], c["clearance"],
+                  " / cấm via" if c["via_max"] == 0 else "", ", ".join(c["nets"])))
 
     t = time.time()
     tpath = os.path.join(tdir, "templates.yaml")
@@ -75,6 +87,8 @@ def main():
     t = time.time()
     pcb = os.path.join(bdir, design["name"] + ".kicad_pcb")
     board = kicad_board.build(design, fp, pos, tracks, vias, pcb)
+    if design.get("net_attrs"):
+        netclass.export_kicad_pro(os.path.splitext(pcb)[0] + ".kicad_pro", design["netclasses"], default)
     kicad_board.canonicalize(pcb)
     sr = board.silk_report
     print("[silk] %d tên trên silkscreen, %d không có chỗ → F.Fab %s" % (sr["silk"], len(sr["fab"]), sr["fab"][:12]))

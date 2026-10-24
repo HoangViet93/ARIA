@@ -1,14 +1,17 @@
 (version 1)
-(rule "nc_BUS_DIFF_clearance"
-  (condition "A.NetName == 'CANH' || A.NetName == 'CANL' || A.NetName == 'CANH_T' || A.NetName == 'CANL_T'")
-  (constraint clearance (min 0.200mm)))
-(rule "nc_CLK_via_count"
+(rule "via_count_W020_C015_NOVIA"
   (condition "A.NetName == 'OSC_IN' || A.NetName == 'OSC_OUT'")
   (constraint via_count (max 0)))
-(rule "nc_FB_clearance"
-  (condition "A.NetName == 'FB5'")
-  (constraint clearance (min 0.300mm)))
-(rule "nc_PWR_2A5_clearance"
+(rule "nc_W020_C020_clearance"
+  (condition "A.NetName == 'BOOT5' || A.NetName == 'CANH' || A.NetName == 'CANH_T' || A.NetName == 'CANL' || A.NetName == 'CANL_T' || A.NetName == 'CAN_SPL' || A.NetName == 'EN5' || A.NetName == 'IN1' || A.NetName == 'IN2' || A.NetName == 'IN3' || A.NetName == 'IN4' || A.NetName == 'IN5' || A.NetName == 'IN6' || A.NetName == 'LIN' || A.NetName == 'LIN_PU' || A.NetName == 'LIN_WAKE' || A.NetName == 'OUT1_C' || A.NetName == 'OUT1_G' || A.NetName == 'OUT2_C' || A.NetName == 'OUT2_G' || A.NetName == 'OUT3_C' || A.NetName == 'OUT3_G' || A.NetName == 'OUT4_C' || A.NetName == 'OUT4_G' || A.NetName == 'Q1_G'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_W035_C020_clearance"
+  (condition "A.NetName == 'SW5'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_W040_C020_clearance"
+  (condition "A.NetName == 'OUT1' || A.NetName == 'OUT2' || A.NetName == 'OUT3' || A.NetName == 'OUT4' || A.NetName == 'VBAT_F'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_W110_C020_clearance"
   (condition "A.NetName == 'VBAT_IN' || A.NetName == 'VBAT_P'")
   (constraint clearance (min 0.200mm)))
 (rule "keep_SW5_FB5"

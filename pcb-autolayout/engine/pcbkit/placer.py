@@ -11,6 +11,7 @@ from .design import natkey
 
 MARGIN = 0.15       # khoảng hở tối thiểu giữa hai courtyard
 DECAP_SLACK = 3.0   # tụ decap được tràn khỏi vùng khối tối đa 3 mm
+HALO = 1.8          # vành trống quanh IC có vệ tinh khi đặt IC
 
 
 def _overlap(a, b, m=MARGIN):
@@ -58,6 +59,8 @@ class Placer:
                 self.hc[n] = nc.get("current_a") or 0
                 if nc.get("via_max") == 0:
                     self.novia.add(n)
+        for n, a in design.get("net_attrs", {}).items():
+            self.hc[n] = a.get("current_a", 0) or 0
         self.keep = {}
         for a, b, mm in design.get("keep_away", []):
             self.keep.setdefault(a, []).append((b, mm))
@@ -172,7 +175,7 @@ class Placer:
                 return False
         return True
 
-    def place_one(self, ref, region, target=None, rots=(0, 90, 180, 270), grow=0.0):
+    def place_one(self, ref, region, target=None, rots=(0, 90, 180, 270), grow=0.0, use_halo=True):
         p = self.parts[ref]
         near_xy = None
         if p.get("near") and p["near"][0] in self.pos:
@@ -186,13 +189,17 @@ class Placer:
             # vùng khối là "mềm" với tụ decap: bám chân IC quan trọng hơn ranh giới khối
             region = (region[0] - DECAP_SLACK, region[1] - DECAP_SLACK,
                       region[2] + DECAP_SLACK, region[3] + DECAP_SLACK)
+        # IC có linh kiện vệ tinh (tụ decap, linh kiện "near" chân nó): giữ vành trống
+        # quanh courtyard để vệ tinh còn chỗ bám chân — đặt tham lam không tự biết chừa.
+        halo = HALO if (use_halo and p.get("role") == "anchor"
+                        and any(q.get("near") and q["near"][0] == ref for q in self.parts.values())) else 0.0
         best = None
         for (x, y) in _spiral(*target):
             for rot in rots:
                 c = fplib.placed_court(p["footprint"], x, y, rot)
                 if not _inside(c, region) or not _inside(c, self.board_rect):
                     continue
-                if not self._free(c):
+                if not self._free((c[0] - halo, c[1] - halo, c[2] + halo, c[3] + halo) if halo else c):
                     continue
                 cost = self._cost(ref, x, y, rot, near_xy)
                 if best is None or cost < best[0] - 1e-9:
@@ -201,11 +208,13 @@ class Placer:
             if best is not None and math.hypot(x - target[0], y - target[1]) > 6.0 + best[0] / 8.0:
                 break
         if best is None:
+            if halo:                # không chừa được vành: đặt sát như cũ trước khi nới vùng
+                return self.place_one(ref, region, target, rots, grow, use_halo=False)
             if grow < 5.0:          # vùng khối là gợi ý: nới dần trước khi bỏ cuộc
                 g = grow + 2.5
                 self.log.append("nới vùng %.1f mm cho %s" % (g, ref))
                 return self.place_one(ref, (region[0] - 2.5, region[1] - 2.5, region[2] + 2.5, region[3] + 2.5),
-                                      None, rots, grow=g)
+                                      None, rots, grow=g, use_halo=use_halo)
             self.log.append("FAIL place %s trong vùng %s" % (ref, region))
             return False
         self._commit(ref, best[1], best[2], best[3])
@@ -226,8 +235,12 @@ class Placer:
     # ---- thứ tự đặt trong khối --------------------------------------------
     def _order(self, refs):
         anchors = [r for r in refs if self.parts[r].get("role") == "anchor"]
-        rest = [r for r in refs if r not in anchors]
-        out = sorted(anchors, key=natkey)
+        # bảo vệ I/O bám connector đã cố định: đặt TRƯỚC linh kiện neo — chuỗi tín hiệu đi
+        # từ connector vào (ESD → lọc → transceiver), không để IC chiếm chỗ sát connector
+        first = sorted([r for r in refs if self.parts[r].get("role") == "esd" and self.parts[r].get("near")
+                        and self.parts[r]["near"][0] in self.fp.get("fixed", {})], key=natkey)
+        rest = [r for r in refs if r not in anchors and r not in first]
+        out = first + sorted(anchors, key=natkey)
         placed_nets = set(self.netpads)
         while rest:
             def key(r):
@@ -359,6 +372,21 @@ class Placer:
     def run(self):
         for ref, (x, y, rot) in sorted(self.fp["fixed"].items(), key=lambda kv: natkey(kv[0])):
             self._commit(ref, x, y, rot)
+        # Dải bảo vệ I/O trước mọi khối: mọi linh kiện ESD/lọc bám chân connector cố định,
+        # theo thứ tự connector/chân — để không khối nào chiếm mặt trước connector.
+        rect = {b["name"]: b["rect"] for b in self.fp["blocks"]}
+        chan_of = {b["name"]: b["name"] for b in self.fp["blocks"] if b.get("channels")}
+        io = []
+        for ref, p in self.parts.items():
+            if p.get("role") == "esd" and p.get("near") and p["near"][0] in self.fp["fixed"]:
+                blk = p["block"]
+                if p.get("channel") and p["channel"][0] in chan_of:
+                    continue                    # linh kiện của kênh nhân bản: để kênh tự đặt
+                if blk in rect:
+                    io.append((natkey(p["near"][0]), natkey(p["near"][1]), natkey(ref), ref, rect[blk]))
+        for *_, ref, r in sorted(io):
+            if ref not in self.pos:
+                self.place_one(ref, r)
         for blk in self.fp["blocks"]:
             if blk.get("channels"):
                 self.place_channels(blk)

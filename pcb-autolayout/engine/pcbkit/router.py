@@ -45,6 +45,8 @@ class Router:
                 self.current[n] = nc.get("current_a") or 0
                 self.clr_net[n] = max(nc.get("clearance") or self.clr, self.clr)
                 self.via_max[n] = nc.get("via_max")
+        for n, a in design.get("net_attrs", {}).items():      # dòng của TỪNG net, không của class
+            self.current[n] = a.get("current_a", 0) or 0
         self.via_fallback = set()
         self.parts = {p["ref"]: p for p in design["parts"]}
         self._build_pads()
@@ -476,8 +478,80 @@ class Router:
                         self._put(g, r0[0], r0[1], c0, v0)
                 if not done:
                     continue
+        self._resolve_fails(order)
         self._hard_mode(False)
         self.log("gỡ chồng cứng: còn %d ô chồng" % int((self.occ.reshape(-1) > 1).sum()))
+
+    def _snapshot(self):
+        return (dict(self.result), dict(self.fp_cells), {k: list(v) for k, v in self.net_vias.items()},
+                self.occ.copy(), self.viablock.copy())
+
+    def _restore(self, snap):
+        r, f, v, occ, vb = snap
+        self.result, self.fp_cells, self.net_vias = dict(r), dict(f), {k: list(x) for k, x in v.items()}
+        self.occ[...] = occ
+        self.viablock[...] = vb
+
+    def _n_fail(self):
+        return sum(len(v[1]) for v in self.result.values())
+
+    def _resolve_fails(self, order, max_steps=24, max_tries=3):
+        """Rip-up dây chuyền cho chân bị nhốt. Mỗi bước: (1) đi net bị kẹt ở chế độ MỀM
+        để biết đường tốt nhất của nó chạm net nào; (2) gỡ đúng các net đó; (3) đi net bị
+        kẹt cứng trước, rồi đi lại TẤT CẢ net vừa gỡ — net nào hỏng sẽ vào lượt sau.
+        Mỗi net được cứu tối đa `max_tries` lần (chống lặp vô hạn). Luôn giữ trạng thái ít chân hở
+        nhất; hết bước thì quay về trạng thái đó. Tất định."""
+        best, best_n = self._snapshot(), self._n_fail()
+        tries = {}
+        seen = set()
+        for step in range(max_steps):
+            state = frozenset((n, tuple(self.result[n][1])) for n in order if self.result[n][1])
+            if state in seen:           # vòng lặp: cùng tập chân hở đã gặp → dung lượng vùng không đủ
+                self.log("rip-up: lặp lại trạng thái — vùng thiếu dung lượng, cần sửa placement (T34)")
+                break
+            seen.add(state)
+            failing = [n for n in order if self.result[n][1] and tries.get(n, 0) < max_tries]
+            if not failing:
+                break
+            failing.sort(key=lambda n: (tries.get(n, 0), order.index(n)))   # ít lần thử nhất trước
+            net = failing[0]
+            tries[net] = tries.get(net, 0) + 1
+            saved_mode = (self.hard, self.pres_fac, self.hist_use, self.max_pops)
+            self.hard, self.pres_fac, self.hist_use, self.max_pops = False, 0.3, np.zeros_like(self.hist), 8_000_000
+            old = (self.result[net], self.fp_cells[net], self.net_vias.get(net, []))
+            self._rip(net)
+            self._pending_vias = []
+            conns, f = self.route_net(net)
+            for v in self._pending_vias:
+                self._via_block(v, -1)
+            soft_cells = self._footprint(conns, net) if conns else np.zeros(0, np.int64)
+            self._put(net, old[0][0], old[0][1], old[1], old[2])
+            self.hard, self.pres_fac, self.hist_use, self.max_pops = saved_mode
+            if f:
+                self.log("rip-up: %s không có đường kể cả khi cho chồng (vật cản cố định)" % net)
+                continue
+            partners = [m for m in order if m != net and np.isin(self.fp_cells[m], soft_cells).any()]
+            for g in [net] + partners:
+                self._rip(g)
+            saved_pops = self.max_pops
+            self.max_pops = 8_000_000
+            for g in [net] + partners:
+                self._pending_vias = []
+                c2, f2 = self.route_net(g)
+                vias = self._pending_vias
+                for v in vias:
+                    self._via_block(v, -1)
+                self._put(g, c2, f2, self._footprint(c2, g), vias)
+            self.max_pops = saved_pops
+            n = self._n_fail()
+            self.log("rip-up bước %d: cứu %s, gỡ %d net → còn %d chân hở" % (step + 1, net, len(partners), n))
+            if n < best_n:
+                best, best_n = self._snapshot(), n
+            if n == 0:
+                break
+        if self._n_fail() > best_n:
+            self._restore(best)
+        self.log("rip-up: kết thúc với %d chân hở" % self._n_fail())
 
     def _rip(self, net):
         flat_occ = self.occ.reshape(-1)
