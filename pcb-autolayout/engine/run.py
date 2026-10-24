@@ -45,7 +45,9 @@ def main():
         os.path.join(tdir, "checks.yaml")) else {}
 
     t = time.time()
-    pl = Placer(design, fp)
+    tpath = os.path.join(tdir, "templates.yaml")
+    templates = yaml.safe_load(open(tpath)) if os.path.exists(tpath) else {}
+    pl = Placer(design, fp, templates)
     pos = pl.run()
     json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
               indent=1)
@@ -81,7 +83,7 @@ def main():
                                                           time.time() - t))
 
     ck = Checker(design, fp, pos, tracks, drc=drc, board=board, hot_loops=extra.get("hot_loops", []),
-                 vias=vias)
+                 vias=vias, router_overuse=r.overuse)
     results = ck.run(os.path.join(ENGINE, "rules", "core.yaml"))
     json.dump(results, open(os.path.join(bdir, "checks.json"), "w"), indent=1, ensure_ascii=False)
     for x in results:

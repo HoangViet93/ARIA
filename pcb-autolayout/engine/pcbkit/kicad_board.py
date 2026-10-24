@@ -15,7 +15,8 @@ ORIGIN = (100.0, 60.0)
 
 
 def _v(x, y):
-    return pcbnew.VECTOR2I(pcbnew.FromMM(x + ORIGIN[0]), pcbnew.FromMM(y + ORIGIN[1]))
+    # làm tròn về nm nguyên (FromMM có thể cắt mất 1 nm với số thực như 0.15000000000000002)
+    return pcbnew.VECTOR2I(int(round((x + ORIGIN[0]) * 1e6)), int(round((y + ORIGIN[1]) * 1e6)))
 
 
 def build(design, floorplan, pos, tracks, vias, out_path):
@@ -28,6 +29,9 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     ds.m_ViasMinSize = pcbnew.FromMM(r["via_dia"])
     ds.m_MinThroughDrill = pcbnew.FromMM(r["via_drill"])
     ds.m_CopperEdgeClearance = pcbnew.FromMM(floorplan["board"]["edge_clear"])
+    # Chân xuyên lỗ GND luôn nối plane trong (In1/In2) bằng thermal đủ nan; trên pour lớp
+    # ngoài bị dây chen thì 1 nan là chấp nhận được (KiCad mặc định đòi 2 → starved_thermal).
+    ds.m_MinResolvedSpokes = 1
     nc = ds.m_NetSettings.m_DefaultNetClass
     nc.SetClearance(pcbnew.FromMM(r["clearance"]))
     nc.SetTrackWidth(pcbnew.FromMM(r["track"]))
@@ -78,7 +82,8 @@ def build(design, floorplan, pos, tracks, vias, out_path):
 
     # track & via
     lid = {0: pcbnew.F_Cu, 1: pcbnew.B_Cu}
-    for (l, x0, y0, x1, y1, w, n) in tracks:
+    for tr in tracks:
+        l, x0, y0, x1, y1, w, n = tr[:7]
         t = pcbnew.PCB_TRACK(board)
         t.SetStart(_v(x0, y0))
         t.SetEnd(_v(x1, y1))
@@ -86,7 +91,8 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         t.SetLayer(lid[l])
         t.SetNet(nets[n])
         board.Add(t)
-    for (x, y, n) in vias:
+    for vv in vias:
+        x, y, n = vv[:3]
         v = pcbnew.PCB_VIA(board)
         v.SetPosition(_v(x, y))
         v.SetWidth(pcbnew.FromMM(r["via_dia"]))
@@ -114,7 +120,11 @@ def build(design, floorplan, pos, tracks, vias, out_path):
         ol.NewOutline()
         for (x, y) in pts:
             ol.Append(_v(x, y))
+        if lname.startswith("In"):
+            # plane trong: giữ mọi mảnh để EMC-001 đếm được plane bị cắt rời (review code #6)
+            z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_NEVER)
         board.Add(z)
+    write_dru(design, floorplan, os.path.splitext(out_path)[0] + ".kicad_dru")
     # KiCad 7: ZONE_FILLER segfault trên board dựng trong bộ nhớ → lưu, nạp lại, rồi fill.
     pcbnew.SaveBoard(out_path, board)
     board = pcbnew.LoadBoard(out_path)
@@ -124,6 +134,27 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     pcbnew.SaveBoard(out_path, board)
     board.silk_report = silk_report
     return board
+
+
+def write_dru(design, floorplan, path):
+    """Xuất ràng buộc net class sang luật DRC tùy biến để KiCad tự kiểm (review code #3):
+    clearance theo net class, số via tối đa, khoảng cách giữ (keep_away)."""
+    base = floorplan["rules"]["clearance"]
+    out = ["(version 1)"]
+    for name in sorted(design["netclasses"]):
+        nc = design["netclasses"][name]
+        cond = " || ".join("A.NetName == '%s'" % n for n in nc["nets"])
+        if (nc.get("clearance") or base) > base + 1e-9:
+            out.append('(rule "nc_%s_clearance"\n  (condition "%s")\n  (constraint clearance (min %.3fmm)))'
+                       % (name, cond, nc["clearance"]))
+        if nc.get("via_max") is not None:
+            out.append('(rule "nc_%s_via_count"\n  (condition "%s")\n  (constraint via_count (max %d)))'
+                       % (name, cond, nc["via_max"]))
+    for a, b, mm in design.get("keep_away", []):
+        out.append('(rule "keep_%s_%s"\n  (condition "(A.NetName == \'%s\' && B.NetName == \'%s\') || '
+                   '(A.NetName == \'%s\' && B.NetName == \'%s\')")\n  (constraint clearance (min %.3fmm)))'
+                   % (a, b, a, b, b, a, mm))
+    open(path, "w").write("\n".join(out) + "\n")
 
 
 def _bb(item, pad=0.0):
@@ -223,13 +254,15 @@ def parse_drc(report_path):
         m = re.search(r"Severity: (\w+)", line)
         if m and cur is not None:
             cur["severity"] = m.group(1)
+            cur["items"].append(line.strip())
             continue
         if cur is not None and line.strip().startswith("@("):
             cur["items"].append(line.strip())
     return out
 
 
-_UUID_RE = re.compile(r"\((tstamp|uuid) ([0-9a-fA-F-]{36})\)")
+_UUID_RE = re.compile(r"\((tstamp|uuid) \"?([0-9a-fA-F-]{36})\"?\)")
+_ANY_UUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
 
 def _top_items(txt):
@@ -281,10 +314,12 @@ def canonicalize(path):
     body.sort(key=key)
     out = "(kicad_pcb\n  " + "\n  ".join(head + body) + "\n)\n"
     ns = uuid.UUID("6f1c7a52-3d1e-4b7a-9a52-0c2a1e5b7d10")
-    counter = [0]
-
-    def repl(m):
-        counter[0] += 1
-        return "(%s %s)" % (m.group(1), uuid.uuid5(ns, str(counter[0])))
-    out = _UUID_RE.sub(repl, out)
+    # map cũ → mới theo thứ tự xuất hiện đầu tiên, rồi thay MỌI lần xuất hiện (kể cả
+    # tham chiếu trong group/members) — review code #9
+    mapping = {}
+    for m in _ANY_UUID.finditer(out):
+        u = m.group(0).lower()
+        if u not in mapping:
+            mapping[u] = str(uuid.uuid5(ns, str(len(mapping) + 1)))
+    out = _ANY_UUID.sub(lambda m: mapping[m.group(0).lower()], out)
     open(path, "w").write(out)

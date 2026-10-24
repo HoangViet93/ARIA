@@ -1,4 +1,21 @@
 {
+ "keep_away": [
+  [
+   "SW5",
+   "FB5",
+   1.0
+  ],
+  [
+   "SW5",
+   "OSC_IN",
+   5.0
+  ],
+  [
+   "SW5",
+   "OSC_OUT",
+   5.0
+  ]
+ ],
  "name": "bcm4l-100",
  "netclasses": {
   "BUS_DIFF": {
@@ -10,10 +27,30 @@
     "CANH_T",
     "CANL_T"
    ],
+   "via_max": null,
    "width": 0.25
   },
+  "CLK": {
+   "clearance": 0.15,
+   "current_a": null,
+   "nets": [
+    "OSC_IN",
+    "OSC_OUT"
+   ],
+   "via_max": 0,
+   "width": 0.2
+  },
+  "FB": {
+   "clearance": 0.3,
+   "current_a": null,
+   "nets": [
+    "FB5"
+   ],
+   "via_max": null,
+   "width": 0.2
+  },
   "OUT_0A5": {
-   "clearance": 0.2,
+   "clearance": 0.15,
    "current_a": 0.5,
    "nets": [
     "OUT1",
@@ -21,16 +58,18 @@
     "OUT3",
     "OUT4"
    ],
+   "via_max": null,
    "width": 0.4
   },
   "PWR_1A": {
-   "clearance": 0.2,
+   "clearance": 0.15,
    "current_a": 1.0,
    "nets": [
     "VBAT_F",
     "+5V",
     "SW5"
    ],
+   "via_max": null,
    "width": 0.5
   },
   "PWR_2A5": {
@@ -40,15 +79,17 @@
     "VBAT_IN",
     "VBAT_P"
    ],
+   "via_max": null,
    "width": 1.1
   },
   "PWR_SIG": {
-   "clearance": 0.2,
+   "clearance": 0.15,
    "current_a": 0.3,
    "nets": [
     "+3V3",
     "+3V3A"
    ],
+   "via_max": null,
    "width": 0.3
   }
  },
@@ -68,7 +109,8 @@
    },
    "ref": "C2",
    "role": null,
-   "value": "100n 50V"
+   "rots": null,
+   "value": "100n 100V"
   },
   {
    "block": "pwr_in",
@@ -82,7 +124,8 @@
    },
    "ref": "C3",
    "role": null,
-   "value": "47u 35V"
+   "rots": null,
+   "value": "47u 63V"
   },
   {
    "block": "pwr_in",
@@ -99,7 +142,8 @@
    },
    "ref": "C4",
    "role": null,
-   "value": "4u7 50V"
+   "rots": null,
+   "value": "2u2 100V"
   },
   {
    "block": "buck",
@@ -108,7 +152,7 @@
    "lowcur": [],
    "near": [
     "U1",
-    "3"
+    "5"
    ],
    "pins": {
     "1": "VBAT_F",
@@ -116,7 +160,8 @@
    },
    "ref": "C5",
    "role": null,
-   "value": "10u 50V"
+   "rots": null,
+   "value": "4u7 100V"
   },
   {
    "block": "buck",
@@ -125,7 +170,7 @@
    "lowcur": [],
    "near": [
     "U1",
-    "3"
+    "5"
    ],
    "pins": {
     "1": "VBAT_F",
@@ -133,7 +178,8 @@
    },
    "ref": "C6",
    "role": "decap",
-   "value": "100n 50V"
+   "rots": null,
+   "value": "100n 100V"
   },
   {
    "block": "buck",
@@ -142,7 +188,7 @@
    "lowcur": [],
    "near": [
     "U1",
-    "6"
+    "1"
    ],
    "pins": {
     "1": "BOOT5",
@@ -150,6 +196,7 @@
    },
    "ref": "C7",
    "role": null,
+   "rots": null,
    "value": "100n"
   },
   {
@@ -167,6 +214,7 @@
    },
    "ref": "C8",
    "role": null,
+   "rots": null,
    "value": "22u 10V"
   },
   {
@@ -184,6 +232,7 @@
    },
    "ref": "C9",
    "role": null,
+   "rots": null,
    "value": "22u 10V"
   },
   {
@@ -201,6 +250,7 @@
    },
    "ref": "C10",
    "role": null,
+   "rots": null,
    "value": "10u"
   },
   {
@@ -218,6 +268,7 @@
    },
    "ref": "C11",
    "role": null,
+   "rots": null,
    "value": "22u"
   },
   {
@@ -235,6 +286,7 @@
    },
    "ref": "C12",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -252,6 +304,7 @@
    },
    "ref": "C13",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -269,6 +322,7 @@
    },
    "ref": "C14",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -286,6 +340,7 @@
    },
    "ref": "C15",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -303,6 +358,7 @@
    },
    "ref": "C16",
    "role": null,
+   "rots": null,
    "value": "4u7"
   },
   {
@@ -320,6 +376,7 @@
    },
    "ref": "C17",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -337,6 +394,7 @@
    },
    "ref": "C18",
    "role": null,
+   "rots": null,
    "value": "1u"
   },
   {
@@ -354,6 +412,7 @@
    },
    "ref": "C19",
    "role": null,
+   "rots": null,
    "value": "100n"
   },
   {
@@ -371,7 +430,8 @@
    },
    "ref": "C20",
    "role": null,
-   "value": "20p"
+   "rots": null,
+   "value": "15p"
   },
   {
    "block": "mcu",
@@ -388,7 +448,8 @@
    },
    "ref": "C21",
    "role": null,
-   "value": "20p"
+   "rots": null,
+   "value": "15p"
   },
   {
    "block": "can",
@@ -405,6 +466,7 @@
    },
    "ref": "C22",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -422,6 +484,7 @@
    },
    "ref": "C23",
    "role": "decap",
+   "rots": null,
    "value": "100n"
   },
   {
@@ -436,6 +499,7 @@
    },
    "ref": "C24",
    "role": null,
+   "rots": null,
    "value": "4n7"
   },
   {
@@ -453,6 +517,7 @@
    },
    "ref": "C25",
    "role": null,
+   "rots": null,
    "value": "1n 50V"
   },
   {
@@ -472,6 +537,7 @@
    },
    "ref": "C26",
    "role": "decap",
+   "rots": null,
    "value": "100n 50V"
   },
   {
@@ -489,6 +555,7 @@
    },
    "ref": "C31",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -506,6 +573,7 @@
    },
    "ref": "C32",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -523,6 +591,7 @@
    },
    "ref": "C33",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -540,6 +609,7 @@
    },
    "ref": "C34",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -557,6 +627,7 @@
    },
    "ref": "C35",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -575,6 +646,7 @@
    },
    "ref": "C36",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -592,6 +664,7 @@
    },
    "ref": "C37",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -610,6 +683,7 @@
    },
    "ref": "C38",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -627,6 +701,7 @@
    },
    "ref": "C39",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -645,6 +720,7 @@
    },
    "ref": "C40",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -662,6 +738,7 @@
    },
    "ref": "C41",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -680,6 +757,7 @@
    },
    "ref": "C42",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -697,6 +775,7 @@
    },
    "ref": "C43",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -715,6 +794,7 @@
    },
    "ref": "C44",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -732,6 +812,7 @@
    },
    "ref": "C45",
    "role": "esd",
+   "rots": null,
    "value": "10n 50V"
   },
   {
@@ -750,6 +831,7 @@
    },
    "ref": "C46",
    "role": null,
+   "rots": null,
    "value": "10n"
   },
   {
@@ -767,7 +849,8 @@
    },
    "ref": "D1",
    "role": "esd",
-   "value": "SMBJ24A"
+   "rots": null,
+   "value": "SMBJ33CA"
   },
   {
    "block": "pwr_in",
@@ -784,6 +867,7 @@
    },
    "ref": "D3",
    "role": null,
+   "rots": null,
    "value": "BZT52C10"
   },
   {
@@ -798,6 +882,7 @@
    },
    "ref": "D4",
    "role": null,
+   "rots": null,
    "value": "LED"
   },
   {
@@ -816,6 +901,7 @@
    },
    "ref": "D5",
    "role": "esd",
+   "rots": null,
    "value": "PESD2CAN"
   },
   {
@@ -832,7 +918,8 @@
    },
    "ref": "D6",
    "role": null,
-   "value": "BAS21"
+   "rots": null,
+   "value": "1N4148W"
   },
   {
    "block": "lin",
@@ -849,7 +936,29 @@
    },
    "ref": "D7",
    "role": "esd",
-   "value": "ESD LIN"
+   "rots": null,
+   "value": "PESD1LIN"
+  },
+  {
+   "block": "out1",
+   "channel": [
+    "out",
+    1,
+    "dz"
+   ],
+   "footprint": "Diode_SMD:D_SOD-123",
+   "lowcur": [
+    "1"
+   ],
+   "near": null,
+   "pins": {
+    "1": "VBAT_P",
+    "2": "OUT1_G"
+   },
+   "ref": "D11",
+   "role": null,
+   "rots": null,
+   "value": "BZT52C10"
   },
   {
    "block": "out1",
@@ -865,9 +974,31 @@
     "1": "OUT1",
     "2": "GND"
    },
-   "ref": "D11",
+   "ref": "D12",
    "role": null,
+   "rots": null,
    "value": "SS14"
+  },
+  {
+   "block": "out2",
+   "channel": [
+    "out",
+    2,
+    "dz"
+   ],
+   "footprint": "Diode_SMD:D_SOD-123",
+   "lowcur": [
+    "1"
+   ],
+   "near": null,
+   "pins": {
+    "1": "VBAT_P",
+    "2": "OUT2_G"
+   },
+   "ref": "D13",
+   "role": null,
+   "rots": null,
+   "value": "BZT52C10"
   },
   {
    "block": "out2",
@@ -883,9 +1014,31 @@
     "1": "OUT2",
     "2": "GND"
    },
-   "ref": "D12",
+   "ref": "D14",
    "role": null,
+   "rots": null,
    "value": "SS14"
+  },
+  {
+   "block": "out3",
+   "channel": [
+    "out",
+    3,
+    "dz"
+   ],
+   "footprint": "Diode_SMD:D_SOD-123",
+   "lowcur": [
+    "1"
+   ],
+   "near": null,
+   "pins": {
+    "1": "VBAT_P",
+    "2": "OUT3_G"
+   },
+   "ref": "D15",
+   "role": null,
+   "rots": null,
+   "value": "BZT52C10"
   },
   {
    "block": "out3",
@@ -901,9 +1054,31 @@
     "1": "OUT3",
     "2": "GND"
    },
-   "ref": "D13",
+   "ref": "D16",
    "role": null,
+   "rots": null,
    "value": "SS14"
+  },
+  {
+   "block": "out4",
+   "channel": [
+    "out",
+    4,
+    "dz"
+   ],
+   "footprint": "Diode_SMD:D_SOD-123",
+   "lowcur": [
+    "1"
+   ],
+   "near": null,
+   "pins": {
+    "1": "VBAT_P",
+    "2": "OUT4_G"
+   },
+   "ref": "D17",
+   "role": null,
+   "rots": null,
+   "value": "BZT52C10"
   },
   {
    "block": "out4",
@@ -919,8 +1094,9 @@
     "1": "OUT4",
     "2": "GND"
    },
-   "ref": "D14",
+   "ref": "D18",
    "role": null,
+   "rots": null,
    "value": "SS14"
   },
   {
@@ -937,6 +1113,7 @@
    },
    "ref": "FB1",
    "role": null,
+   "rots": null,
    "value": "600R@100M 3A"
   },
   {
@@ -954,6 +1131,7 @@
    },
    "ref": "FB2",
    "role": null,
+   "rots": null,
    "value": "120R@100M"
   },
   {
@@ -965,6 +1143,7 @@
    "pins": {},
    "ref": "H1",
    "role": null,
+   "rots": null,
    "value": "M3"
   },
   {
@@ -976,6 +1155,7 @@
    "pins": {},
    "ref": "H2",
    "role": null,
+   "rots": null,
    "value": "M3"
   },
   {
@@ -987,6 +1167,7 @@
    "pins": {},
    "ref": "H3",
    "role": null,
+   "rots": null,
    "value": "M3"
   },
   {
@@ -998,6 +1179,7 @@
    "pins": {},
    "ref": "H4",
    "role": null,
+   "rots": null,
    "value": "M3"
   },
   {
@@ -1018,6 +1200,7 @@
    },
    "ref": "J1",
    "role": null,
+   "rots": null,
    "value": "MicroFit 2x4"
   },
   {
@@ -1042,6 +1225,7 @@
    },
    "ref": "J2",
    "role": null,
+   "rots": null,
    "value": "MicroFit 2x6"
   },
   {
@@ -1059,6 +1243,7 @@
    },
    "ref": "J3",
    "role": null,
+   "rots": null,
    "value": "SWD"
   },
   {
@@ -1068,7 +1253,7 @@
    "lowcur": [],
    "near": [
     "U1",
-    "2"
+    "6"
    ],
    "pins": {
     "1": "SW5",
@@ -1076,7 +1261,8 @@
    },
    "ref": "L2",
    "role": null,
-   "value": "10u"
+   "rots": null,
+   "value": "22u"
   },
   {
    "block": "can",
@@ -1086,12 +1272,13 @@
    "near": null,
    "pins": {
     "1": "CANH_T",
-    "2": "CANL_T",
+    "2": "CANH",
     "3": "CANL",
-    "4": "CANH"
+    "4": "CANL_T"
    },
    "ref": "L3",
    "role": null,
+   "rots": null,
    "value": "CMC 51uH"
   },
   {
@@ -1107,6 +1294,7 @@
    },
    "ref": "Q1",
    "role": "anchor",
+   "rots": null,
    "value": "SQD40P06 (P-MOS)"
   },
   {
@@ -1126,7 +1314,8 @@
    },
    "ref": "Q11",
    "role": "anchor",
-   "value": "AO3401A"
+   "rots": null,
+   "value": "ZXMP6A13F -60V"
   },
   {
    "block": "out1",
@@ -1145,6 +1334,7 @@
    },
    "ref": "Q12",
    "role": null,
+   "rots": null,
    "value": "MMBT3904"
   },
   {
@@ -1164,7 +1354,8 @@
    },
    "ref": "Q13",
    "role": "anchor",
-   "value": "AO3401A"
+   "rots": null,
+   "value": "ZXMP6A13F -60V"
   },
   {
    "block": "out2",
@@ -1183,6 +1374,7 @@
    },
    "ref": "Q14",
    "role": null,
+   "rots": null,
    "value": "MMBT3904"
   },
   {
@@ -1202,7 +1394,8 @@
    },
    "ref": "Q15",
    "role": "anchor",
-   "value": "AO3401A"
+   "rots": null,
+   "value": "ZXMP6A13F -60V"
   },
   {
    "block": "out3",
@@ -1221,6 +1414,7 @@
    },
    "ref": "Q16",
    "role": null,
+   "rots": null,
    "value": "MMBT3904"
   },
   {
@@ -1240,7 +1434,8 @@
    },
    "ref": "Q17",
    "role": "anchor",
-   "value": "AO3401A"
+   "rots": null,
+   "value": "ZXMP6A13F -60V"
   },
   {
    "block": "out4",
@@ -1259,6 +1454,7 @@
    },
    "ref": "Q18",
    "role": null,
+   "rots": null,
    "value": "MMBT3904"
   },
   {
@@ -1276,6 +1472,61 @@
    },
    "ref": "R1",
    "role": null,
+   "rots": null,
+   "value": "10k"
+  },
+  {
+   "block": "buck",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "3"
+   ],
+   "pins": {
+    "1": "+5V",
+    "2": "FB5"
+   },
+   "ref": "R2",
+   "role": null,
+   "rots": null,
+   "value": "100k"
+  },
+  {
+   "block": "buck",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "3"
+   ],
+   "pins": {
+    "1": "FB5",
+    "2": "GND"
+   },
+   "ref": "R3",
+   "role": null,
+   "rots": null,
+   "value": "18k"
+  },
+  {
+   "block": "buck",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "4"
+   ],
+   "pins": {
+    "1": "LIN_INH",
+    "2": "EN5"
+   },
+   "ref": "R4",
+   "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1288,63 +1539,13 @@
     "4"
    ],
    "pins": {
-    "1": "+5V",
-    "2": "FB5"
-   },
-   "ref": "R2",
-   "role": null,
-   "value": "100k"
-  },
-  {
-   "block": "buck",
-   "channel": null,
-   "footprint": "Resistor_SMD:R_0402_1005Metric",
-   "lowcur": [],
-   "near": [
-    "U1",
-    "4"
-   ],
-   "pins": {
-    "1": "FB5",
-    "2": "GND"
-   },
-   "ref": "R3",
-   "role": null,
-   "value": "13k7"
-  },
-  {
-   "block": "buck",
-   "channel": null,
-   "footprint": "Resistor_SMD:R_0402_1005Metric",
-   "lowcur": [],
-   "near": [
-    "U1",
-    "5"
-   ],
-   "pins": {
-    "1": "VBAT_F",
-    "2": "EN5"
-   },
-   "ref": "R4",
-   "role": null,
-   "value": "100k"
-  },
-  {
-   "block": "buck",
-   "channel": null,
-   "footprint": "Resistor_SMD:R_0402_1005Metric",
-   "lowcur": [],
-   "near": [
-    "U1",
-    "5"
-   ],
-   "pins": {
     "1": "EN5",
     "2": "GND"
    },
    "ref": "R5",
    "role": null,
-   "value": "22k"
+   "rots": null,
+   "value": "100k"
   },
   {
    "block": "mcu",
@@ -1361,6 +1562,7 @@
    },
    "ref": "R6",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1378,6 +1580,7 @@
    },
    "ref": "R7",
    "role": null,
+   "rots": null,
    "value": "1k"
   },
   {
@@ -1385,13 +1588,17 @@
    "channel": null,
    "footprint": "Resistor_SMD:R_0805_2012Metric",
    "lowcur": [],
-   "near": null,
+   "near": [
+    "L3",
+    "2"
+   ],
    "pins": {
     "1": "CANH",
     "2": "CAN_SPL"
    },
    "ref": "R8",
    "role": null,
+   "rots": null,
    "value": "60R4"
   },
   {
@@ -1399,19 +1606,23 @@
    "channel": null,
    "footprint": "Resistor_SMD:R_0805_2012Metric",
    "lowcur": [],
-   "near": null,
+   "near": [
+    "L3",
+    "3"
+   ],
    "pins": {
     "1": "CANL",
     "2": "CAN_SPL"
    },
    "ref": "R9",
    "role": null,
+   "rots": null,
    "value": "60R4"
   },
   {
    "block": "lin",
    "channel": null,
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_2512_6332Metric",
    "lowcur": [],
    "near": null,
    "pins": {
@@ -1420,7 +1631,8 @@
    },
    "ref": "R10",
    "role": null,
-   "value": "1k"
+   "rots": null,
+   "value": "1k 1W"
   },
   {
    "block": "lin",
@@ -1437,6 +1649,7 @@
    },
    "ref": "R11",
    "role": null,
+   "rots": null,
    "value": "4k7"
   },
   {
@@ -1456,6 +1669,7 @@
    },
    "ref": "R12",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1476,6 +1690,7 @@
    },
    "ref": "R21",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1494,6 +1709,7 @@
    },
    "ref": "R22",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1512,7 +1728,27 @@
    },
    "ref": "R23",
    "role": null,
+   "rots": null,
    "value": "1k"
+  },
+  {
+   "block": "out1",
+   "channel": [
+    "out",
+    1,
+    "rbe"
+   ],
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "OUT1_B",
+    "2": "GND"
+   },
+   "ref": "R24",
+   "role": null,
+   "rots": null,
+   "value": "10k"
   },
   {
    "block": "out2",
@@ -1530,8 +1766,9 @@
     "1": "VBAT_P",
     "2": "OUT2_G"
    },
-   "ref": "R24",
+   "ref": "R25",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1548,8 +1785,9 @@
     "1": "OUT2_G",
     "2": "OUT2_C"
    },
-   "ref": "R25",
+   "ref": "R26",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1566,9 +1804,29 @@
     "1": "OUT2_M",
     "2": "OUT2_B"
    },
-   "ref": "R26",
+   "ref": "R27",
    "role": null,
+   "rots": null,
    "value": "1k"
+  },
+  {
+   "block": "out2",
+   "channel": [
+    "out",
+    2,
+    "rbe"
+   ],
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "OUT2_B",
+    "2": "GND"
+   },
+   "ref": "R28",
+   "role": null,
+   "rots": null,
+   "value": "10k"
   },
   {
    "block": "out3",
@@ -1586,8 +1844,9 @@
     "1": "VBAT_P",
     "2": "OUT3_G"
    },
-   "ref": "R27",
+   "ref": "R29",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1604,8 +1863,9 @@
     "1": "OUT3_G",
     "2": "OUT3_C"
    },
-   "ref": "R28",
+   "ref": "R30",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1622,9 +1882,29 @@
     "1": "OUT3_M",
     "2": "OUT3_B"
    },
-   "ref": "R29",
+   "ref": "R31",
    "role": null,
+   "rots": null,
    "value": "1k"
+  },
+  {
+   "block": "out3",
+   "channel": [
+    "out",
+    3,
+    "rbe"
+   ],
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "OUT3_B",
+    "2": "GND"
+   },
+   "ref": "R32",
+   "role": null,
+   "rots": null,
+   "value": "10k"
   },
   {
    "block": "out4",
@@ -1642,8 +1922,9 @@
     "1": "VBAT_P",
     "2": "OUT4_G"
    },
-   "ref": "R30",
+   "ref": "R33",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1660,8 +1941,9 @@
     "1": "OUT4_G",
     "2": "OUT4_C"
    },
-   "ref": "R31",
+   "ref": "R34",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1678,9 +1960,29 @@
     "1": "OUT4_M",
     "2": "OUT4_B"
    },
-   "ref": "R32",
+   "ref": "R35",
    "role": null,
+   "rots": null,
    "value": "1k"
+  },
+  {
+   "block": "out4",
+   "channel": [
+    "out",
+    4,
+    "rbe"
+   ],
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "OUT4_B",
+    "2": "GND"
+   },
+   "ref": "R36",
+   "role": null,
+   "rots": null,
+   "value": "10k"
   },
   {
    "block": "in1",
@@ -1689,7 +1991,7 @@
     1,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1698,9 +2000,10 @@
     "1": "VBAT_P",
     "2": "IN1"
    },
-   "ref": "R33",
+   "ref": "R37",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in1",
@@ -1716,9 +2019,10 @@
     "1": "IN1",
     "2": "IN1_M"
    },
-   "ref": "R34",
+   "ref": "R38",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in1",
@@ -1734,8 +2038,9 @@
     "1": "IN1_M",
     "2": "GND"
    },
-   "ref": "R35",
+   "ref": "R39",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1745,7 +2050,7 @@
     2,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1754,9 +2059,10 @@
     "1": "VBAT_P",
     "2": "IN2"
    },
-   "ref": "R36",
+   "ref": "R40",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in2",
@@ -1772,9 +2078,10 @@
     "1": "IN2",
     "2": "IN2_M"
    },
-   "ref": "R37",
+   "ref": "R41",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in2",
@@ -1790,8 +2097,9 @@
     "1": "IN2_M",
     "2": "GND"
    },
-   "ref": "R38",
+   "ref": "R42",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1801,7 +2109,7 @@
     3,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1810,9 +2118,10 @@
     "1": "VBAT_P",
     "2": "IN3"
    },
-   "ref": "R39",
+   "ref": "R43",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in3",
@@ -1828,9 +2137,10 @@
     "1": "IN3",
     "2": "IN3_M"
    },
-   "ref": "R40",
+   "ref": "R44",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in3",
@@ -1846,8 +2156,9 @@
     "1": "IN3_M",
     "2": "GND"
    },
-   "ref": "R41",
+   "ref": "R45",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1857,7 +2168,7 @@
     4,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1866,9 +2177,10 @@
     "1": "VBAT_P",
     "2": "IN4"
    },
-   "ref": "R42",
+   "ref": "R46",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in4",
@@ -1884,9 +2196,10 @@
     "1": "IN4",
     "2": "IN4_M"
    },
-   "ref": "R43",
+   "ref": "R47",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in4",
@@ -1902,8 +2215,9 @@
     "1": "IN4_M",
     "2": "GND"
    },
-   "ref": "R44",
+   "ref": "R48",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1913,7 +2227,7 @@
     5,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1922,9 +2236,10 @@
     "1": "VBAT_P",
     "2": "IN5"
    },
-   "ref": "R45",
+   "ref": "R49",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in5",
@@ -1940,9 +2255,10 @@
     "1": "IN5",
     "2": "IN5_M"
    },
-   "ref": "R46",
+   "ref": "R50",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in5",
@@ -1958,8 +2274,9 @@
     "1": "IN5_M",
     "2": "GND"
    },
-   "ref": "R47",
+   "ref": "R51",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -1969,7 +2286,7 @@
     6,
     "rpu"
    ],
-   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
    "lowcur": [
     "1"
    ],
@@ -1978,9 +2295,10 @@
     "1": "VBAT_P",
     "2": "IN6"
    },
-   "ref": "R48",
+   "ref": "R52",
    "role": "anchor",
-   "value": "2k2"
+   "rots": null,
+   "value": "4k7"
   },
   {
    "block": "in6",
@@ -1996,9 +2314,10 @@
     "1": "IN6",
     "2": "IN6_M"
    },
-   "ref": "R49",
+   "ref": "R53",
    "role": null,
-   "value": "47k"
+   "rots": null,
+   "value": "82k"
   },
   {
    "block": "in6",
@@ -2014,8 +2333,9 @@
     "1": "IN6_M",
     "2": "GND"
    },
-   "ref": "R50",
+   "ref": "R54",
    "role": null,
+   "rots": null,
    "value": "10k"
   },
   {
@@ -2030,6 +2350,7 @@
    },
    "ref": "SW1",
    "role": null,
+   "rots": null,
    "value": "RESET"
   },
   {
@@ -2039,16 +2360,17 @@
    "lowcur": [],
    "near": null,
    "pins": {
-    "1": "GND",
-    "2": "SW5",
-    "3": "VBAT_F",
-    "4": "FB5",
-    "5": "EN5",
-    "6": "BOOT5"
+    "1": "BOOT5",
+    "2": "GND",
+    "3": "FB5",
+    "4": "EN5",
+    "5": "VBAT_F",
+    "6": "SW5"
    },
    "ref": "U1",
    "role": "anchor",
-   "value": "TPS54202"
+   "rots": null,
+   "value": "LMR16006X-Q1"
   },
   {
    "block": "ldo",
@@ -2063,7 +2385,8 @@
    },
    "ref": "U2",
    "role": "anchor",
-   "value": "AMS1117-3.3"
+   "rots": null,
+   "value": "TLV1117LV33-Q1"
   },
   {
    "block": "can",
@@ -2083,6 +2406,7 @@
    },
    "ref": "U3",
    "role": "anchor",
+   "rots": null,
    "value": "TJA1051T/3"
   },
   {
@@ -2100,10 +2424,12 @@
     "4": "LIN_TX",
     "5": "GND",
     "6": "LIN",
-    "7": "VBAT_P"
+    "7": "VBAT_P",
+    "8": "LIN_INH"
    },
    "ref": "U4",
    "role": "anchor",
+   "rots": null,
    "value": "TJA1021T/20"
   },
   {
@@ -2148,6 +2474,7 @@
    },
    "ref": "U5",
    "role": "anchor",
+   "rots": null,
    "value": "STM32F103C8T6"
   },
   {
@@ -2167,6 +2494,9 @@
    },
    "ref": "Y1",
    "role": null,
+   "rots": [
+    270
+   ],
    "value": "8MHz"
   }
  ],

@@ -23,9 +23,9 @@ fixed:   # linh kiện cố định theo cơ khí: [x, y, góc]
 # Thứ tự đặt khối = thứ tự trong danh sách.
 blocks:
   - {name: mcu,      rect: [18, 5, 56, 36], anchor: {ref: U5, at: [37, 18], rot: 0}}
-  - {name: pwr_in,   rect: [62, 12, 80, 50]}
-  - {name: buck,     rect: [50, 0, 80, 16]}
+  - {name: buck,     rect: [50, 0, 80, 16]}    # trước pwr_in: khối theo mẫu (T16) cần chỗ liền
   - {name: ldo,      rect: [44, 0, 66, 14]}
+  - {name: pwr_in,   rect: [62, 12, 80, 50]}
   - {name: out,      rect: [27, 34, 48, 59.6], channels: 4, axis: x}
   - {name: in,       rect: [8, 24, 28, 43],  channels: 6, grid: [3, 2]}
   - {name: io_strip, rect: [3, 43, 28, 50]}

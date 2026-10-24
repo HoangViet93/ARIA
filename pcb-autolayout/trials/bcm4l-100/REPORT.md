@@ -1,6 +1,68 @@
-# Luyện tập #1 — BCM-mini 12 V, 4 lớp, 120 linh kiện
+# Luyện tập #1 — BCM-mini 12 V, 4 lớp, 128 linh kiện
 
-## Vòng 2 (cập nhật mới nhất)
+## Vòng 3 — sau review độc lập (mới nhất)
+
+Hai agent review **độc lập** (không được xem kết luận của mình): một kỹ sư phần cứng
+automotive review mạch + layout, một reviewer code tìm bug engine. Họ tìm ra **4 lỗi
+mức Critical mà DRC và bộ rule cũ đều bỏ qua** — đúng lý do phải review độc lập.
+
+**Kết quả vòng 3:** 128 linh kiện, **16/16 rule đạt**, KiCad DRC 0 lỗi / 0 cảnh báo /
+0 chân hở, router kết thúc với 0 ô chồng (đúng theo cấu trúc, không nhờ biên), ~95 s,
+hai lần chạy cùng hash `10125c887e9c1a41`.
+
+### Review phần cứng (18 phát hiện)
+
+| # | Mức | Phát hiện | Xử lý |
+|---|---|---|---|
+| 1 | C | TVS SMBJ24A kẹp 39 V > U1 30 V, Q 30 V, tụ 35 V | ✅ Buck 60 V (LMR16006X-Q1), TVS SMBJ33CA, tụ 63/100 V, P-FET 60 V. **Còn mở:** TJA1021 BAT tối đa 40 V < kẹp 53 V → cần quyết định kiến trúc bảo vệ (R/RC trước BAT hay load-dump tập trung) |
+| 2 | C | Vgs AO3401A vượt ±12 V; không chống ngắn mạch | ✅ P-FET −60 V + zener kẹp 10 V. **Còn mở:** chống ngắn mạch → smart high-side switch (quyết định tầng C, nằm trong TARGET-BCM) |
+| 3 | C | TVS một chiều trước MOSFET chống ngược cực → chập ắc-quy ngược | ✅ TVS hai chiều |
+| 4 | C | Cuộn CMC nối sai (1↔4) → chập CANH/CANL | ✅ Nối 1→2, 4→3. Vẫn phải đo thông mạch mẫu đầu |
+| 5 | M | Đường VBAT 0.5 mm, 1 via 0.3 mm cho 2 A | ✅ Engine: thắt cổ chỉ sát pad nhỏ (0.6 mm), net ≥ 1 A không via (hoặc gia cố via), rule PWR-001 chặt + PWR-005 mới |
+| 6 | M | FB sát nút SW | ✅ **T16 layout mẫu** cho buck + rule SMPS-004 (keep-away, KiCad DRC phân xử) |
+| 7 | M | Thạch anh: OSC_OUT 2 via, đi dưới MCU | ✅ Hướng 270° (quyết định tầng B), net CLK cấm via, rule SI-070 |
+| 8 | M | Điện trở quá công suất ở 18–27 V | ✅ 4k7/1206, LIN 1k/2512 |
+| 9 | M | 98 via sát pad SMD (hút thiếc) | ✅ Via cách pad ≥ 0.25 mm, rule DFM-005 |
+| 10 | M | Dòng tĩnh KL30 | 🟡 Buck tắt theo INH của LIN, LDO Iq thấp. **Còn mở:** wetting luôn bật (~mA) |
+| 11 | m | AMS1117 cần tụ ra có ESR | ✅ TLV1117LV (ổn định với ceramic) |
+| 12 | m | Base NPN thả nổi khi reset | ✅ Pull-down 10k |
+| 13 | m | Linh kiện chưa định danh/sai | ✅ PESD1LIN, 1N4148W, tụ thạch anh 15 pF |
+| 14 | m | Phân áp ADC quá 3.3 V ở 27 V | ✅ 82k/10k |
+| 15 | m | Hot loop buck khép qua via | ✅ Mẫu T16, SMPS-002 = 1.32 mm² |
+| 16 | m | Mảnh pour lớp ngoài chỉ 1 via | ❌ Chưa làm (via khâu theo đảo) |
+| 17 | m | CAN/LIN: U3 xa J1, termination xa CMC, D1 tới J1 qua tab Q1 | 🟡 Termination có rule near; thứ tự đường đi ESD (ESD-001) **chưa có checker** |
+| 18 | m | Pour B.Cu bị đường nguồn cắt | Chấp nhận — In1/In2 GND liền |
+
+### Review code engine (11 phát hiện)
+
+| # | Mức | Phát hiện | Xử lý |
+|---|---|---|---|
+| 1 | M | Ô nguồn A* không được kiểm clearance | ✅ Kiểm mọi ô nguồn |
+| 2 | M | Router kết thúc khi còn ô chồng | ✅ Gỡ chồng theo nhóm net + rule RT-CLR (mức C) |
+| 3 | M | Clearance net class bị bỏ qua | ✅ Router theo net class + xuất `.kicad_dru` để KiCad kiểm |
+| 4 | M | PWR-001 bỏ sót (đoạn hẹp dài vẫn đạt) | ✅ Viết lại theo loại đoạn, có test |
+| 5 | M | Pour ngoài không nối pad SMD | ❌ **Bác** — đo thực tế 72/73 pad SMD GND có đồng pour chạm sát mép (nối đặc) |
+| 6 | m | EMC-001 không thấy plane bị cắt rời | ✅ Plane trong giữ mọi mảnh để đếm |
+| 7 | m | Biên lưới = 0; làm tròn nm | ✅ Biên 1.5 ô, toạ độ nm nguyên |
+| 8 | m | Không có hole clearance cho chân xuyên lỗ | ✅ |
+| 9 | m | canonicalize bỏ sót group / UUID có ngoặc kép | ✅ Map toàn bộ UUID |
+| 10 | m | Pad hình dạng tùy biến | ❌ Chưa (không có trên board này) |
+| 11 | m | Checker yếu (near với chân không net, hot_loop, edge_stitch, parity) | 🟡 Sửa near; còn lại chưa |
+
+### Engine học thêm ở vòng 3
+
+- **T16 layout mẫu** (`templates.yaml`) + tự kiểm mẫu (mẫu đầu tiên của mình **tự chồng
+  courtyard** — validator bắt được ngay).
+- Placer: ưu tiên linh kiện net clock trước decap; phạt ratline xuyên pad khác net; nới vùng
+  khối có ghi log khi hết chỗ; góc cho phép theo linh kiện.
+- Rule chặt hơn lộ ra lỗi thật ngay: chân VSS của LQFP không thoát được (fanout 0.3 mm quá
+  rộng khi có biên an toàn) → bề rộng thắt cổ theo pad nhỏ nhất của net.
+- Gỡ chồng cứng từng net một không đủ (kẹt ở 80 ô): phải gỡ **cả nhóm** net chồng nhau.
+- Chế độ cứng phải giới hạn số bước tìm: 973 s → 77 s.
+
+---
+
+## Vòng 2
 
 Thêm theo plan: **T24** nắn đường (59 net đi lại gọn hơn, 1 069 → 802 đoạn),
 **T22** pour GND hai lớp ngoài + 221 via khâu (lưới 4 mm + vòng mép 3 mm),

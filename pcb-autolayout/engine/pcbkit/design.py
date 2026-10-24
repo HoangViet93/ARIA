@@ -8,7 +8,7 @@ import json
 
 class Part:
     def __init__(self, ref, value, footprint, pins, block, role=None,
-                 near=None, channel=None, lowcur=()):
+                 near=None, channel=None, lowcur=(), rots=None):
         self.ref = ref
         self.value = value
         self.footprint = footprint          # "Lib:Name"
@@ -18,12 +18,13 @@ class Part:
         self.near = near                    # (ref, pad) phải đặt gần
         self.channel = channel              # (tên kênh, chỉ số) cho nhân bản
         self.lowcur = set(lowcur)           # pad nối net dòng lớn nhưng tự nó chỉ mang dòng nhỏ
+        self.rots = list(rots) if rots else None   # góc cho phép (quyết định tầng B), mặc định cả 4
 
     def to_dict(self):
         return {"ref": self.ref, "value": self.value, "footprint": self.footprint,
                 "pins": self.pins, "block": self.block, "role": self.role,
                 "near": self.near, "channel": self.channel,
-                "lowcur": sorted(self.lowcur)}
+                "lowcur": sorted(self.lowcur), "rots": self.rots}
 
 
 class Design:
@@ -32,15 +33,16 @@ class Design:
         self.parts = {}
         self.netclasses = {}     # tên -> {width, clearance, nets, current_a}
         self.plane_nets = []     # net nối plane bằng via (GND)
+        self.keep_away = []      # [(netA, netB, mm)]: đồng hai net phải cách nhau ít nhất mm
 
     def part(self, ref, value, footprint, pins, block, **kw):
         assert ref not in self.parts, ref
         self.parts[ref] = Part(ref, value, footprint, pins, block, **kw)
         return self.parts[ref]
 
-    def netclass(self, name, width, nets, clearance=0.2, current_a=None):
+    def netclass(self, name, width, nets, clearance=0.15, current_a=None, via_max=None):
         self.netclasses[name] = {"width": width, "clearance": clearance,
-                                 "nets": list(nets), "current_a": current_a}
+                                 "nets": list(nets), "current_a": current_a, "via_max": via_max}
 
     def nets(self):
         out = {}
@@ -53,7 +55,8 @@ class Design:
     def to_json(self, path):
         data = {"name": self.name,
                 "parts": [self.parts[r].to_dict() for r in sorted(self.parts, key=natkey)],
-                "netclasses": self.netclasses, "plane_nets": self.plane_nets}
+                "netclasses": self.netclasses, "plane_nets": self.plane_nets,
+                "keep_away": self.keep_away}
         with open(path, "w") as f:
             json.dump(data, f, indent=1, sort_keys=True)
 

@@ -116,8 +116,15 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
     if not reach:      # mọi ô đích đều bị chặn cứng: thất bại ngay, không quét board
         return np.zeros((0, 3), dtype=np.int64)
     pops = 0
+    pushed = 0
     for k in range(src.shape[0]):
         l, y, x = src[k, 0], src[k, 1], src[k, 2]
+        # ô nguồn cũng phải hợp lệ với bán kính của chính đường này (review code #1)
+        so = offs_neck if neck[l, y, x] else offs_main
+        sp = _probe(fixed, occ, padmask, net, l, y, x, so, False)
+        if sp < 0.0 or (hard and sp > 0.0):
+            continue
+        pushed += 1
         s = ((l * H + y) * W + x) * NDIR + 8
         if stamp[s] != cur or g[s] > 0.0:
             stamp[s] = cur
@@ -137,6 +144,8 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
             h = (1.41421356 * mn + (max(hx, hy) - mn)) * hweight
             size = _heap_push(hf, hc, hs, size, h, cnt, s)
             cnt += 1
+    if pushed == 0:
+        return np.zeros((0, 3), dtype=np.int64)
     found = -1
     while size > 0:
         s, size = _heap_pop(hf, hc, hs, size)

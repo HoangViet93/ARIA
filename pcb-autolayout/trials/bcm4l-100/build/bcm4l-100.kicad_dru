@@ -1,0 +1,22 @@
+(version 1)
+(rule "nc_BUS_DIFF_clearance"
+  (condition "A.NetName == 'CANH' || A.NetName == 'CANL' || A.NetName == 'CANH_T' || A.NetName == 'CANL_T'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_CLK_via_count"
+  (condition "A.NetName == 'OSC_IN' || A.NetName == 'OSC_OUT'")
+  (constraint via_count (max 0)))
+(rule "nc_FB_clearance"
+  (condition "A.NetName == 'FB5'")
+  (constraint clearance (min 0.300mm)))
+(rule "nc_PWR_2A5_clearance"
+  (condition "A.NetName == 'VBAT_IN' || A.NetName == 'VBAT_P'")
+  (constraint clearance (min 0.200mm)))
+(rule "keep_SW5_FB5"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'FB5') || (A.NetName == 'FB5' && B.NetName == 'SW5')")
+  (constraint clearance (min 1.000mm)))
+(rule "keep_SW5_OSC_IN"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'OSC_IN') || (A.NetName == 'OSC_IN' && B.NetName == 'SW5')")
+  (constraint clearance (min 5.000mm)))
+(rule "keep_SW5_OSC_OUT"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'OSC_OUT') || (A.NetName == 'OSC_OUT' && B.NetName == 'SW5')")
+  (constraint clearance (min 5.000mm)))

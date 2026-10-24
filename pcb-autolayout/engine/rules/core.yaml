@@ -23,8 +23,10 @@
   severity: M
   title: Linh kiện có chỉ định "near" nằm gần đích
   applies_to: {role: other}
-  metric: pad_to_pin_mm
-  threshold: {max: 6.0}
+  # v1 đo tâm–tâm 6 mm: phạt oan linh kiện pad to (cuộn 6×6 mm). v2: mép pad–mép pad 4 mm.
+  metric: pad_edge_to_pin_edge_mm
+  edge: true
+  threshold: {max: 4.0}
   checker: near_distance
 - id: PLC-OVL
   severity: C
@@ -81,3 +83,41 @@
   threshold: {max: 5.0}
   checker: edge_stitch
   knowledge: knowledge/05-emc-esd-automotive.md#4-mép-board--stitching
+- id: RT-CLR
+  severity: C
+  title: Router kết thúc với 0 ô chồng (clearance đúng theo cấu trúc, không nhờ may)
+  metric: overused_cells
+  threshold: {max: 0}
+  checker: router_clearance
+- id: PWR-005
+  severity: C
+  title: Đổi lớp của net dòng lớn có đủ via song song (1 A/via + 1 dự phòng)
+  metric: short_vias
+  min_current_a: 1.0
+  amps_per_via: 1.0
+  threshold: {max: 0}
+  checker: hc_vias
+  knowledge: knowledge/03-power-pdn-thermal.md#via-mang-dòng
+- id: DFM-005
+  severity: M
+  title: Via cách mép pad SMD ≥ 0.25 mm (mask web, không hút thiếc)
+  metric: close_vias
+  threshold: {max: 0, min: 0.25}
+  checker: via_pad_gap
+  knowledge: knowledge/09-dfm-dfa-dft.md#1-fab-profile-fab-profilesyaml
+- id: SMPS-004
+  severity: C
+  title: Giữ khoảng cách net nhạy ↔ nút chuyển mạch (keep_away, KiCad DRC phân xử)
+  metric: violations
+  rule_prefix: keep_
+  threshold: {max: 0}
+  checker: kicad_rule
+  knowledge: knowledge/03-power-pdn-thermal.md#4-nguồn-xung-smps
+- id: SI-070
+  severity: C
+  title: Clock/thạch anh không via (via_count của net class, KiCad DRC phân xử)
+  metric: violations
+  rule_prefix: nc_CLK_via_count
+  threshold: {max: 0}
+  checker: kicad_rule
+  knowledge: knowledge/04-high-speed-si.md#8-clock
