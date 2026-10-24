@@ -143,6 +143,9 @@ def main():
             overuse = r.overuse
             print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
                   % (len(tracks), len(vias), overuse, fails or "không", time.time() - t))
+        r = None            # giải phóng lưới router (~2.5 GB ở BCM 6 lớp) trước vòng T34 kế
+        import gc
+        gc.collect()
         n_open = sum(len(v) for v in fails.values())
         cand = ((n_open, overuse), dict(escape), pos, pl, key, tracks, vias, fails, overuse)
         if best is None or cand[0] < best[0]:

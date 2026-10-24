@@ -8,3 +8,4 @@ trials/*/build/t.kicad_*
 trials/.skilltest-*/
 trials/.bench-v/
 trials/*/build/run.log
+trials/.exp-*/

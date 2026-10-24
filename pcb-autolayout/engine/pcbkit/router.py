@@ -16,6 +16,7 @@ from .design import natkey
 RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
 HWEIGHT = 1.3      # trọng số heuristic A* (> 1: nhanh hơn, đường có thể dài hơn — nắn đường sửa)
+PRES_MUL = 1.7     # PathFinder: phạt chồng nhân ngần này mỗi vòng
 STALL_ITERS = 5
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
@@ -81,6 +82,8 @@ class Router:
         self.cur = 0
         self._zero_hist = None
         self.hweight = float(os.environ.get("PCB_HWEIGHT", HWEIGHT))   # biến môi trường: chỉ để đo
+        self.pres_mul = float(os.environ.get("PCB_PRES_MUL", PRES_MUL))
+        self.stall = int(os.environ.get("PCB_STALL", STALL_ITERS))
         self.occ = np.zeros((self.L, self.H, self.W), np.int16)
         self.hist = np.zeros((self.L, self.H, self.W), np.float32)
         self._offs = {}
@@ -497,12 +500,12 @@ class Router:
             # dừng khi 5 vòng liền không lập kỷ lục mới (chân hở trước, rồi ô chồng). Bản cũ
             # đòi 6 vòng GIỐNG HỆT nhau — số ô chồng dao động 526–585 nên không bao giờ dừng.
             hist_log.append((n_fail, n_over))
-            if len(hist_log) > STALL_ITERS and min(hist_log[-STALL_ITERS:]) > min(hist_log[:-STALL_ITERS]):
+            if len(hist_log) > self.stall and min(hist_log[-self.stall:]) > min(hist_log[:-self.stall]):
                 self.log("PathFinder dừng: %d vòng liền không lập kỷ lục — chuyển sang gỡ chồng cứng"
-                         % STALL_ITERS)
+                         % self.stall)
                 break
             flat_hist[over] += 0.6
-            self.pres_fac *= 1.7
+            self.pres_fac *= self.pres_mul
             dirty = set()
             for net in order:
                 if over[self.fp_cells[net]].any() or self.result[net][1]:
