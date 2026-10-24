@@ -1,5 +1,8 @@
 # Kế hoạch skill `pcb-autolayout`
 
+> **Kế hoạch hiện hành: `PLAN-v2.md`** (lộ trình, benchmark, chương trình rule/skill). File này
+> vẫn dùng cho danh mục công cụ T01–T42 (§4) và định dạng dữ liệu (§5).
+
 Skill để Claude **tự vận hành** quy trình layout PCB trên KiCad: từ schematic →
 netlist → gom cụm → floorplan → placement → đi dây (RF, high-speed, nguồn, còn
 lại) → kiểm tra SI/PI/EMC/nhiệt/DFM → báo cáo cho kỹ sư.

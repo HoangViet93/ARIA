@@ -1,5 +1,7 @@
 # Mục tiêu: board 6 lớp cho zonal ECU / BCM automotive
 
+> **Lộ trình hiện hành: `PLAN-v2.md`.** File này vẫn dùng cho hồ sơ board BCM (§1–§8).
+
 > Tài liệu này đặt **mục tiêu cuối** cho bộ skill + engine. `PLAN.md` mô tả công
 > cụ, `ROLES.md` mô tả phân vai và tính tái lập. Khi lộ trình mâu thuẫn, lộ trình
 > ở §9 của file này đúng.
