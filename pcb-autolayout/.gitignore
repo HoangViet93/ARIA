@@ -7,3 +7,4 @@ trials/*/build/t.kicad_*
 # bản sao tạm của bộ kiểm skill (engine/tests/skills)
 trials/.skilltest-*/
 trials/.bench-v/
+trials/*/build/run.log

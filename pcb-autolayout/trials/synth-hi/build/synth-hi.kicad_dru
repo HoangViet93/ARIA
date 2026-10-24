@@ -5,6 +5,6 @@
 (rule "nc_W020_C020_clearance"
   (condition "A.NetName == 'S1_OUT' || A.NetName == 'S2_OUT' || A.NetName == 'S3_OUT' || A.NetName == 'S4_OUT' || A.NetName == 'S5_OUT' || A.NetName == 'S6_OUT' || A.NetName == 'S7_OUT' || A.NetName == 'S8_OUT' || A.NetName == 'S9_OUT' || A.NetName == 'S10_OUT' || A.NetName == 'S11_OUT' || A.NetName == 'S12_OUT'")
   (constraint clearance (min 0.200mm)))
-(rule "nc_W040_C020_clearance"
+(rule "nc_W040_C020_OUT_clearance"
   (condition "A.NetName == 'VIN'")
   (constraint clearance (min 0.200mm)))

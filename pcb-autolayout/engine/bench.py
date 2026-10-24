@@ -43,6 +43,7 @@ def run_r(name, reuse):
     p = subprocess.run(args, capture_output=True, text=True, cwd=HERE)
     dt = time.time() - t
     b = os.path.join(tdir, "build")
+    open(os.path.join(b, "run.log"), "w").write(p.stdout + p.stderr)   # để truy hồi quy
     if p.returncode != 0 or not os.path.exists(os.path.join(b, "checks.json")):
         return {"trial": name, "error": (p.stdout + p.stderr)[-400:]}
     design = json.load(open(os.path.join(b, "design.json")))

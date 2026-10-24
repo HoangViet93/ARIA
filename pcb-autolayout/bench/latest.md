@@ -4,14 +4,11 @@
 
 | Trial | Linh kiện | Chân nối | DRC lỗi | Rule đạt | C trượt | M trượt | Đoạn/via | Thời gian | Hash |
 |---|---|---|---|---|---|---|---|---|---|
-| bcm4l-100 | 120 | 100.00 % (0 hở) | 0 | 16/16 | — | — | 899/357 | 343 s | `3184f9d6a07d6be5` |
-| synth-lo | 44 | 100.00 % (0 hở) | 0 | 16/16 | — | — | 412/291 | 181 s | `5f386d72a4ee31c8` |
-| synth-hi | 74 | 100.00 % (0 hở) | 21 | 12/16 | DRC-ERR, RT-CLR | EMC-021, PLC-NEAR | 1035/210 | 475 s | `c8ff0192a995639e` |
+| bcm4l-100 | 120 | 100.00 % (0 hở) | 0 | 16/16 | — | — | 848/333 | 374 s | `b72ab77b02287fb5` |
+| synth-lo | 44 | 99.28 % (1 hở) | 0 | 15/16 | RT-OPEN | — | 395/291 | 1358 s | `694674f77a5a7c72` |
+| synth-hi | 74 | 99.15 % (2 hở) | 0 | 13/16 | RT-OPEN | EMC-021, PLC-NEAR | 824/193 | 2627 s | `63cef9bdea59a875` |
 
 ## V — board người vẽ (verify)
 
 | Board | Linh kiện | Rule trượt |
 |---|---|---|
-| pic_programmer | 63 | EMC-021 |
-| stickhub | 90 | DFM-005, EMC-021, PLC-OVL |
-| video | 189 | DFM-005, EMC-001, EMC-021, PWR-001 |

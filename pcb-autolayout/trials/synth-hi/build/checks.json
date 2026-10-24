@@ -3,7 +3,7 @@
   "rule": "PLC-011",
   "severity": "C",
   "title": "Tụ decoupling gần chân nguồn được gán",
-  "value": 2.3000000000000043,
+  "value": 2.3000000000000007,
   "max": 2.5,
   "status": "ok",
   "violations": [],
@@ -23,11 +23,13 @@
   "rule": "PLC-NEAR",
   "severity": "M",
   "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
-  "value": 3.5455191791894185,
+  "value": 8.380000000000003,
   "max": 4.0,
-  "status": "ok",
-  "violations": [],
-  "n": 0
+  "status": "FAIL",
+  "violations": [
+   "R50→U20.6 8.4 mm"
+  ],
+  "n": 1
  },
  {
   "rule": "PLC-OVL",
@@ -47,8 +49,8 @@
   "max": 0,
   "status": "FAIL",
   "violations": [
-   "Missing connection between items Local override; error @(111.1279 mm, 84.0218 mm): Pad 2 [S6_B] of R46 on F.Cu",
-   "Missing connection between items Local override; error @(111.3113 mm, 87.6181 mm): Pad 2 [S11_B] of R51 on F.Cu"
+   "Missing connection between items Local override; error @(121.8375 mm, 66.2500 mm): Pad 3 [S1_B] of U1 on F.Cu",
+   "Missing connection between items Local override; error @(126.7500 mm, 72.1625 mm): Pad 20 [S7_B] of U1 on F.Cu"
   ],
   "n": 2
  },
@@ -106,19 +108,22 @@
   "rule": "EMC-021",
   "severity": "M",
   "title": "Via khâu GND dọc mép board (ngoài vùng connector/lỗ vít)",
-  "value": 8.2,
+  "value": 20.66,
   "max": 5.0,
   "status": "FAIL",
   "violations": [
-   "(50.7,1.2) khoảng hở 5.0 mm",
-   "(50.8,1.6) khoảng hở 5.3 mm",
-   "(50.8,2.1) khoảng hở 5.6 mm",
+   "(43.2,1.2) khoảng hở 5.8 mm",
    "(50.8,9.1) khoảng hở 8.2 mm",
    "(50.8,9.6) khoảng hở 7.2 mm",
    "(50.8,10.1) khoảng hở 6.2 mm",
-   "(50.8,10.6) khoảng hở 5.2 mm"
+   "(50.8,10.6) khoảng hở 5.2 mm",
+   "(39.0,38.8) khoảng hở 6.9 mm",
+   "(38.5,38.8) khoảng hở 7.9 mm",
+   "(38.0,38.8) khoảng hở 8.8 mm",
+   "(37.5,38.8) khoảng hở 9.8 mm",
+   "(37.0,38.8) khoảng hở 10.7 mm"
   ],
-  "n": 7
+  "n": 58
  },
  {
   "rule": "RT-CLR",
