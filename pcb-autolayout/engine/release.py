@@ -23,8 +23,6 @@ LAYERS = "F.Cu,In1.Cu,In2.Cu,B.Cu,F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.S
 
 
 def gate(checks_path, waivers_path):
-    if not checks_path:
-        return []
     res = json.load(open(checks_path))
     res = res["results"] if isinstance(res, dict) else res
     waived = set()
@@ -42,6 +40,16 @@ def main():
     ap.add_argument("--checks")
     ap.add_argument("--waivers")
     a = ap.parse_args()
+    bdir = os.path.dirname(os.path.abspath(a.board))
+    if not a.checks:   # không có kết quả kiểm thì không có phát hành — bỏ --checks không phải lối tắt
+        a.checks = os.path.join(bdir, "checks.json")
+    if not os.path.exists(a.checks):
+        sys.exit("[release] TỪ CHỐI: không có %s (chạy run.py hoặc verify.py --out trước)" % a.checks)
+    hpath = os.path.join(bdir, "hash.txt")
+    if os.path.exists(hpath):   # board do run.py sinh: checks.json chỉ đúng cho đúng file đó
+        h = hashlib.sha256(open(a.board, "rb").read()).hexdigest()[:16]
+        if h != open(hpath).read().strip():
+            sys.exit("[release] TỪ CHỐI: board đã đổi sau lần kiểm (hash %s ≠ hash.txt) — kiểm lại" % h)
     blocked = gate(a.checks, a.waivers)
     if blocked:
         print("[release] TỪ CHỐI: rule mức C chưa đạt và chưa có miễn trừ ký tên: %s" % ", ".join(blocked))

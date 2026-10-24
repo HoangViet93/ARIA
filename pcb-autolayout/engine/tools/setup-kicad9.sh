@@ -40,5 +40,5 @@ export http_proxy="${http_proxy:-$HTTP_PROXY}" https_proxy="${https_proxy:-$HTTP
 k9 sh -c 'DEBIAN_FRONTEND=noninteractive apt-get update -q &&
   DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends \
     kicad kicad-footprints python3-numpy python3-numba python3-shapely python3-yaml \
-    python3-matplotlib ca-certificates'
+    python3-matplotlib librsvg2-bin ca-certificates'
 k9 python3 -c "import pcbnew; print('KiCad', pcbnew.Version())"

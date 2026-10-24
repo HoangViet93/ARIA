@@ -51,7 +51,7 @@
   "max": 0,
   "status": "FAIL",
   "violations": [
-   "Missing connection between items Local override; Severity: error @(135.2500 mm, 82.1625 mm): Pad 15 [IN4_M] of U5 on F.Cu"
+   "Missing connection between items Local override; error @(135.2500 mm, 82.1625 mm): Pad 15 [IN4_M] of U5 on F.Cu"
   ],
   "n": 1
  },

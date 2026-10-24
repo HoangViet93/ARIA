@@ -192,3 +192,38 @@ Rule đạt hết **không** có nghĩa là layout đẹp. Nhìn ảnh KiCad:
 4. Chế độ cặp vi sai cho CAN/LIN/Ethernet.
 5. Bộ đặt silkscreen tất định.
 6. Pour GND lớp ngoài + via khâu.
+
+## Vòng 5 — chuyển sang KiCad 9 (C0)
+
+KiCad 9.0.8 cài trong chroot Ubuntu 26.04 (`engine/tools/setup-kicad9.sh`, lệnh `k9`) vì PPA
+bị proxy chặn và conda-forge không có KiCad. KiCad 7 trên máy giữ nguyên để chạy đối chứng.
+
+| | KiCad 7.0.11 | KiCad 9.0.8 |
+|---|---|---|
+| Rule đạt | 13/16 | 13/16 (cùng 3 rule trượt: RT-OPEN U5.15, PWR-005 +5V, PLC-NEAR) |
+| DRC lỗi | 0 | 0 |
+| Đoạn / via | 878 / 341 | 878 / 342 |
+| Hash | `ca42f5ccebc444e9` (trùng mốc vòng 4) | `cdfd7b4d4849eec8`, 2 lượt độc lập trùng từng byte |
+
+Khác biệt placement duy nhất: **C20** (tụ tải thạch anh) dịch 0.5 mm + xoay — thư viện footprint
+KiCad 9 đổi courtyard `Crystal_SMD_3225` (cao 3.4 → 3.5 mm), cũng đổi SOT-23, header 1×05,
+pad TL3342/TO-252. Đầu vào khác → kết quả khác là đúng; `build/toolchain.txt` ghi phiên bản +
+dấu thư viện để không nhầm thành lỗi tất định.
+
+Lỗi engine tìm ra khi chuyển:
+
+| # | Lỗi | Sửa |
+|---|---|---|
+| 1 | `EDA_UNITS_MILLIMETRES` không còn | `EDA_UNITS_MM`, rơi về tên cũ trên KiCad 7 |
+| 2 | Report DRC KiCad 9 bỏ chữ `Severity:` → **mọi cảnh báo bị đếm thành lỗi** (DRC-ERR sai, im lặng) | Regex nhận cả hai định dạng + `tests/test_drc_parse.py` (trượt khi gỡ bản sửa) |
+| 3 | `NET_SETTINGS.m_DefaultNetClass` không còn | `GetDefaultNetclass()` |
+| 4 | Nhiễu dấu phẩy động hình học footprint khác nhau giữa bản (`0.46` vs `0.45999999999999996`) | Lượng tử 1 nm khi nạp (`fplib._q`); hash KiCad 7 không đổi |
+| 5 | `release.py` bỏ `--checks` là **qua cổng** | Mặc định `checks.json` cạnh board, không có → từ chối; board khác `hash.txt` → từ chối |
+
+Kiểm chứng thêm trên KiCad 9: net class trong `.kicad_pro` được nạp đúng giá trị; thử âm
+(chèn via vào net clock cấm via) → DRC báo `via_count_W020_C015_NOVIA`; intake netlist
+`kicad-cli` 9 khớp 159/159 chân; `verify.py` chạy trên 3 board demo; release xuất đủ 15 file.
+
+Thêm `run.py --reuse-routes`: dùng lại `routes.json` khi khoá (design + floorplan + placement +
+số vòng + mã router) khớp — sửa pha KiCad còn 30 s thay vì 15 phút. Đối chứng: KiCad 7 dùng lại
+routes ra đúng hash `ca42f5ccebc444e9`.

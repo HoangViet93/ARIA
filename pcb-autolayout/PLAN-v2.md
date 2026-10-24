@@ -92,7 +92,7 @@ lượt làm việc dài như các lượt vừa qua). Ước lượng chưa ki�
 
 | Mốc | Nội dung | Tiêu chí xong |
 |---|---|---|
-| **C0** KiCad 9 | Mở network policy cho PPA hoặc gói khác; chạy lại toàn bộ test/benchmark | Bộ R/V xanh trên KiCad 9 |
+| **C0** KiCad 9 | 🟡 **Đã cài 9.0.8** (chroot 26.04, `engine/tools/setup-kicad9.sh`); test nhanh + trial + verify demo + release xanh, tất định trên 9. Còn: bộ R/V (chờ A0) | Bộ R/V xanh trên KiCad 9 |
 | **C1** T06/T07 | Stackup + bộ tính trở kháng (microstrip/stripline/coupled/GCPW, `knowledge/01` §4) | Sai số ≤ 2 % so với KiCad PCB Calculator trên ≥ 20 điểm |
 | **C2** 6 lớp | Router đi dây lớp trong (tham chiếu plane), luật theo lớp | Trial 6 lớp tổng hợp đạt rule C |
 | **C3** Cặp vi sai | Chế độ cặp trong T20 (CAN, 100BASE-T1, USB): khe, đối xứng, skew; luật từ C1 | CAN/T1 trên trial: Zdiff ± 10 %, skew trong ngưỡng |
@@ -160,7 +160,7 @@ Thêm **kiểm thử skill**: mỗi skill có 1 kịch bản chạy thật (lệ
 
 1. **Board BCM/ECU thật** (KiCad, hoặc Altium để import) + schematic — cho bộ V và giai đoạn E.
 2. **Lỗi mạch** trong `trials/bcm4l-100/CIRCUIT-ISSUES.md` — giữ mạch luyện như cũ hay sửa?
-3. **Fab + stackup** mục tiêu (cho C1) và **cho phép đổi network policy** để cài KiCad 9 (C0).
+3. **Fab + stackup** mục tiêu (cho C1). (KiCad 9 đã cài bằng chroot, không cần đổi network policy.)
 4. **Thứ tự sau A**: B (placement) trước hay C (6 lớp, vi sai) trước? Đề xuất: B trước.
 
 ## 10. Ba việc làm ngay

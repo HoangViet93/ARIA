@@ -32,7 +32,9 @@ def build(design, floorplan, pos, tracks, vias, out_path):
     # Chân xuyên lỗ GND luôn nối plane trong (In1/In2) bằng thermal đủ nan; trên pour lớp
     # ngoài bị dây chen thì 1 nan là chấp nhận được (KiCad mặc định đòi 2 → starved_thermal).
     ds.m_MinResolvedSpokes = 1
-    nc = ds.m_NetSettings.m_DefaultNetClass
+    ns = ds.m_NetSettings
+    # KiCad 9: GetDefaultNetclass() — KiCad 7: thuộc tính m_DefaultNetClass
+    nc = ns.GetDefaultNetclass() if hasattr(ns, "GetDefaultNetclass") else ns.m_DefaultNetClass
     nc.SetClearance(pcbnew.FromMM(r["clearance"]))
     nc.SetTrackWidth(pcbnew.FromMM(r["track"]))
     nc.SetViaDiameter(pcbnew.FromMM(r["via_dia"]))

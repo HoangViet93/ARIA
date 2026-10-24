@@ -8,7 +8,9 @@ description: Chạy pha đi dây của engine pcb-autolayout (A* + PathFinder, g
 ## Bước
 1. Placement đã đạt (`pcb-place`) — đi dây trên placement tồi là phí thời gian.
 2. `cd pcb-autolayout/engine && python3 -u run.py ../trials/<tên> --until route > log` (chạy nền;
-   2–10 phút). Toàn trình + KiCad + check: bỏ `--until`.
+   2–15 phút). Toàn trình + KiCad + check: bỏ `--until`. Chỉ sửa pha KiCad/check/render (không
+   đụng design/floorplan/placement/router) → thêm `--reuse-routes` (~30 s): dùng lại `routes.json`
+   khi khoá đầu vào khớp, lệch một byte là tự đi dây lại. Đã đối chứng: cùng hash với chạy đủ.
 3. Đọc dòng `[route]`:
    - `ô chồng còn lại N` > 0 → vi phạm clearance thật (RT-CLR) → bug engine, báo.
    - `rip-up: lặp lại trạng thái — vùng thiếu dung lượng` → không phải lỗi router: vùng

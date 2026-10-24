@@ -56,7 +56,8 @@ cần một pha hoặc đang chẩn đoán.
    python3 tests/test_checks.py && python3 tests/test_netclass.py && python3 tests/test_fplib.py &&
    python3 tests/test_intake.py && python3 tests/test_drc_parse.py`. Lỗi → dừng, là lỗi engine.
 3. **Đầu vào trial**: `circuit.py`, `floorplan.yaml`, `checks.yaml`, tuỳ chọn `templates.yaml`.
-4. **Chạy** (nền; ~2–10 phút): `python3 -u run.py ../trials/<tên> > log`. Theo dõi dòng
+4. **Chạy** (nền; ~15 phút): `python3 -u run.py ../trials/<tên> > log`. Chỉ sửa pha sau routing
+   → `--reuse-routes` (~30 s, xem `pcb-route`). Theo dõi dòng
    `[class] [place] [route] [silk] [kicad] [check] [done]`.
 5. **Đọc kết quả**: `build/checks.json`; mỗi rule FAIL tra trường `knowledge` của rule.
    Phân biệt: lỗi board / lỗi engine / **rule sai** (không đạt được về hình học → sửa rule có

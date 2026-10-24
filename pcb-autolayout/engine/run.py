@@ -1,6 +1,6 @@
 """Pipeline tất định: design → placement → routing → KiCad → DRC → check → ảnh.
 
-    python3 run.py <thư-mục-trial> [--iters N] [--until constraints|place|route|all]
+    python3 run.py <thư-mục-trial> [--iters N] [--until constraints|place|route|all] [--reuse-routes]
 
 Đầu vào: <trial>/circuit.py (mạch viết bằng Python), hoặc <trial>/build/design.json do
 `intake.py` sinh từ netlist KiCad (khi không có circuit.py). Mọi đầu ra nằm trong
@@ -32,6 +32,17 @@ def normalized_hash(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16]
 
 
+def routes_key(design, fp, pos, iters):
+    """Khoá của routes.json: mọi thứ quyết định kết quả đi dây — design, floorplan, placement,
+    số vòng và mã nguồn router. Khác một byte là đi dây lại."""
+    h = hashlib.sha256()
+    h.update(json.dumps([design, fp, sorted((k, list(v)) for k, v in pos.items()), iters],
+                        sort_keys=True).encode())
+    for f in ("router.py", "router_core.py"):
+        h.update(open(os.path.join(ENGINE, "pcbkit", f), "rb").read())
+    return h.hexdigest()[:16]
+
+
 def write_toolchain(bdir, design):
     """build/toolchain.txt: mọi thứ ngoài file trial mà hash.txt phụ thuộc vào."""
     import numba
@@ -50,6 +61,8 @@ def main():
     ap.add_argument("trial")
     ap.add_argument("--iters", type=int, default=30)
     ap.add_argument("--until", choices=["constraints", "place", "route", "all"], default="all")
+    ap.add_argument("--reuse-routes", action="store_true",
+                    help="dùng lại build/routes.json nếu khoá đầu vào khớp (sửa pha KiCad/check không phải đi dây lại)")
     a = ap.parse_args()
     t_all = time.time()
     tdir = os.path.abspath(a.trial)
@@ -101,18 +114,31 @@ def main():
         return
 
     t = time.time()
-    r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
-    res = r.run(max_iter=a.iters)
-    tracks, vias = r.segments()
-    from pcbkit.router import stitch_vias
-    stitch = stitch_vias(r)
-    vias = sorted(set(vias) | set(stitch))
-    print("[route] via khâu GND: %d" % len(stitch))
-    fails = {n: f for n, (c, f) in sorted(res.items()) if f}
-    print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
-          % (len(tracks), len(vias), r.overuse, fails or "không", time.time() - t))
-    json.dump({"tracks": tracks, "vias": vias, "fails": fails, "overuse": r.overuse},
-              open(os.path.join(bdir, "routes.json"), "w"))
+    key = routes_key(design, fp, pos, a.iters)
+    rpath = os.path.join(bdir, "routes.json")
+    old = json.load(open(rpath)) if a.reuse_routes and os.path.exists(rpath) else {}
+    if old.get("key") == key:
+        tracks = [tuple(x) for x in old["tracks"]]
+        vias = [tuple(x) for x in old["vias"]]
+        fails, overuse = old["fails"], old["overuse"]
+        print("[route] dùng lại routes.json (khoá %s khớp): %d đoạn, %d via, net lỗi %s"
+              % (key, len(tracks), len(vias), fails or "không"))
+    else:
+        if a.reuse_routes:
+            print("[route] routes.json không khớp khoá đầu vào → đi dây lại")
+        r = Router(design, fp, pos, log=lambda s: print("[route] " + s))
+        res = r.run(max_iter=a.iters)
+        tracks, vias = r.segments()
+        from pcbkit.router import stitch_vias
+        stitch = stitch_vias(r)
+        vias = sorted(set(vias) | set(stitch))
+        print("[route] via khâu GND: %d" % len(stitch))
+        fails = {n: f for n, (c, f) in sorted(res.items()) if f}
+        overuse = r.overuse
+        print("[route] %d đoạn, %d via, ô chồng còn lại %d, net lỗi %s, %.1fs"
+              % (len(tracks), len(vias), overuse, fails or "không", time.time() - t))
+        json.dump({"key": key, "tracks": tracks, "vias": vias, "fails": fails, "overuse": overuse},
+                  open(rpath, "w"))
     render.draw(os.path.join(bdir, "routed.png"), design, fp, pos, [x[:6] for x in tracks],
                 [v[:2] for v in vias], title="routed")
     if a.until == "route":
@@ -131,7 +157,7 @@ def main():
                                                           time.time() - t))
 
     ck = Checker(design, fp, pos, tracks, drc=drc, board=board, hot_loops=extra.get("hot_loops", []),
-                 vias=vias, router_overuse=r.overuse)
+                 vias=vias, router_overuse=overuse)
     results = ck.run(os.path.join(ENGINE, "rules", "core.yaml"))
     json.dump(results, open(os.path.join(bdir, "checks.json"), "w"), indent=1, ensure_ascii=False)
     for x in results:
