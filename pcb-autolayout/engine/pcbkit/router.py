@@ -17,10 +17,11 @@ RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
 HWEIGHT = 1.3      # trọng số heuristic A* (> 1: nhanh hơn, đường có thể dài hơn — nắn đường sửa)
 PRES_MUL = 1.7     # PathFinder: phạt chồng nhân ngần này mỗi vòng
-STALL_ITERS = 5
+STALL_ITERS = 10   # PathFinder dừng sau ngần này vòng liền không lập kỷ lục. 5 cắt trước khi hội tụ:
+                   # synth-lo 1 chân hở / 1300 s → 0 chân hở / 194 s (đo 3 biến thể)
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
-HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)    # PathFinder dừng sau ngần này vòng liền không lập kỷ lục (chân hở, ô chồng)
+HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
 
 
