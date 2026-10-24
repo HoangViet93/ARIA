@@ -1,0 +1,54 @@
+[
+ {
+  "rule": "PLC-011",
+  "severity": "C",
+  "title": "Tụ decoupling gần chân nguồn được gán",
+  "value": 2.3000000000000043,
+  "max": 2.5,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-034",
+  "severity": "C",
+  "title": "Linh kiện bảo vệ/lọc sát thân connector",
+  "value": 1.4800000000000004,
+  "max": 3.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-NEAR",
+  "severity": "M",
+  "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
+  "value": 8.880000000000003,
+  "max": 4.0,
+  "status": "FAIL",
+  "violations": [
+   "R49→U19.6 8.9 mm"
+  ],
+  "n": 1
+ },
+ {
+  "rule": "PLC-OVL",
+  "severity": "C",
+  "title": "Không chồng courtyard",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "SMPS-002",
+  "severity": "C",
+  "title": "Diện tích hot loop bộ buck",
+  "value": 0.0,
+  "max": 15,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ }
+]

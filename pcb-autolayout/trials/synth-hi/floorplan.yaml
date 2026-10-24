@@ -1,0 +1,60 @@
+# Sinh bởi engine/tools/make_synth.py synth-hi --cells 12 --board 52 40 — đừng sửa tay
+board:
+  w: 52.0
+  h: 40.0
+  edge_clear: 0.3
+stackup:
+  layers:
+  - F.Cu
+  - In1.Cu
+  - In2.Cu
+  - B.Cu
+  planes:
+    In1.Cu: GND
+    In2.Cu: GND
+  pours:
+    F.Cu: GND
+    B.Cu: GND
+  routing:
+  - F.Cu
+  - B.Cu
+rules:
+  clearance: 0.15
+  track: 0.2
+  via_dia: 0.6
+  via_drill: 0.3
+fixed:
+  J1:
+  - 14.57
+  - 35.8
+  - 90
+blocks:
+- name: mcu
+  rect:
+  - 13.0
+  - 1
+  - 39.0
+  - 16.8
+  anchor:
+    ref: U1
+    at:
+    - 26.0
+    - 8.0
+- name: pwr
+  rect:
+  - 39.0
+  - 1
+  - 51.0
+  - 16.8
+- name: io
+  rect:
+  - 1
+  - 28.0
+  - 51.0
+  - 39.0
+- name: cells
+  rect:
+  - 1
+  - 1
+  - 51.0
+  - 31.0

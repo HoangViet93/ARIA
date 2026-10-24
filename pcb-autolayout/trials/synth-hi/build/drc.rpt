@@ -1,0 +1,316 @@
+** Drc report for /home/user/ARIA/pcb-autolayout/trials/synth-hi/build/synth-hi.kicad_pcb **
+** Created on 2026-10-24 15:28:44 **
+
+** Found 95 DRC violations **
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(107.5992 mm, 65.7957 mm): Footprint C25
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(112.6756 mm, 80.3621 mm): Footprint C26
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(113.0782 mm, 82.6617 mm): Footprint C31
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(113.5202 mm, 75.8691 mm): Footprint C23
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(117.2375 mm, 71.6000 mm): Footprint C9
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(119.4375 mm, 65.9000 mm): Footprint C8
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(120.0875 mm, 63.7500 mm): Footprint C3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(120.0875 mm, 68.7500 mm): Footprint C7
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(120.7971 mm, 82.7028 mm): Footprint C29
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(122.7500 mm, 62.0875 mm): Footprint C6
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(124.8010 mm, 88.5551 mm): Footprint C28
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(128.0825 mm, 75.8098 mm): Footprint C21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(128.2500 mm, 73.9125 mm): Footprint C4
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(131.3716 mm, 75.9466 mm): Footprint C22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(131.9125 mm, 64.7500 mm): Footprint C5
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(136.8289 mm, 67.3514 mm): Footprint C24
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(138.5761 mm, 82.9434 mm): Footprint C30
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(143.4104 mm, 78.9601 mm): Footprint C27
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(149.5439 mm, 61.6437 mm): Footprint C32
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(137.4725 mm, 72.2123 mm): Footprint C2
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(140.7225 mm, 77.7623 mm): Footprint C1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'.
+    Local override; warning
+    @(114.5700 mm, 95.8000 mm): Footprint J1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Crystal'.
+    Local override; warning
+    @(117.3375 mm, 68.7500 mm): Footprint Y1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(110.2700 mm, 95.8000 mm): Footprint D17
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(110.6900 mm, 93.2600 mm): Footprint D14
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(111.3500 mm, 90.2600 mm): Footprint D22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(118.6500 mm, 90.3000 mm): Footprint D11
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(122.1500 mm, 90.2600 mm): Footprint D12
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(125.6900 mm, 90.3000 mm): Footprint D13
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(129.2300 mm, 90.3000 mm): Footprint D15
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(133.7300 mm, 90.2600 mm): Footprint D16
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(140.2700 mm, 90.2600 mm): Footprint D18
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(141.3100 mm, 93.2600 mm): Footprint D20
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(141.3100 mm, 95.8000 mm): Footprint D19
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(141.3500 mm, 98.3000 mm): Footprint D21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_QFP'.
+    Local override; warning
+    @(126.0000 mm, 68.0000 mm): Footprint U1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(109.2706 mm, 78.3871 mm): Footprint U16
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(111.0042 mm, 68.7707 mm): Footprint U15
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(112.1032 mm, 86.0667 mm): Footprint U21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(116.9252 mm, 78.8441 mm): Footprint U13
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(119.8221 mm, 86.1078 mm): Footprint U19
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(126.1075 mm, 79.2148 mm): Footprint U11
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(127.7760 mm, 85.1501 mm): Footprint U18
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(134.7766 mm, 78.9216 mm): Footprint U12
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(135.6011 mm, 86.3484 mm): Footprint U20
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(138.8039 mm, 63.9464 mm): Footprint U14
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(146.5689 mm, 65.0487 mm): Footprint U22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(146.8154 mm, 81.9351 mm): Footprint U17
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_TO_SOT_SMD'.
+    Local override; warning
+    @(143.8725 mm, 72.2123 mm): Footprint U2
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(105.8856 mm, 80.3621 mm): Footprint R46
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(107.6282 mm, 84.9317 mm): Footprint R31
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(108.6556 mm, 73.9121 mm): Footprint R26
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(110.8692 mm, 73.2457 mm): Footprint R25
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(112.1392 mm, 64.2957 mm): Footprint R45
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(115.0782 mm, 89.4517 mm): Footprint R51
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(117.5602 mm, 73.8691 mm): Footprint R43
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(118.3375 mm, 64.7500 mm): Footprint R1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(120.7902 mm, 80.3191 mm): Footprint R23
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(120.8471 mm, 81.4728 mm): Footprint R29
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(121.2971 mm, 77.2428 mm): Footprint R49
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(122.8010 mm, 82.7651 mm): Footprint R48
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(123.6325 mm, 75.3298 mm): Footprint R21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(126.0825 mm, 75.8498 mm): Footprint R41
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(128.5010 mm, 88.5351 mm): Footprint R28
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(130.6261 mm, 88.7134 mm): Footprint R30
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(130.8916 mm, 81.3966 mm): Footprint R22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(133.8289 mm, 63.3114 mm): Footprint R44
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(134.9116 mm, 74.4466 mm): Footprint R42
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(140.0761 mm, 86.4834 mm): Footprint R50
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(140.7789 mm, 67.3314 mm): Footprint R24
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(143.5939 mm, 61.6637 mm): Footprint R32
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(145.6804 mm, 86.4101 mm): Footprint R27
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(147.4504 mm, 76.9601 mm): Footprint R47
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(151.0439 mm, 66.1837 mm): Footprint R52
+[tracks_crossing]: Tracks crossing
+    Rule: netclass 'Default'; error
+    @(127.6500 mm, 72.0500 mm): Track [S9_B] on B.Cu, length 1.4849 mm
+    @(128.9500 mm, 72.6000 mm): Track [S11_B] on B.Cu, length 1.7678 mm
+[clearance]: Clearance violation (netclass 'Default' clearance 0.1500 mm; actual 0.1182 mm)
+    Rule: netclass 'Default'; error
+    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
+    @(123.8000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.1414 mm
+[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
+    Local override; error
+    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
+    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
+    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(122.9000 mm, 70.6500 mm): Track [OSC_OUT] on F.Cu, length 1.7678 mm
+    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
+[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
+    Local override; error
+    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
+    @(123.9000 mm, 71.8000 mm): Track [S1_B] on B.Cu, length 0.0707 mm
+[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
+    Local override; error
+    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
+    @(123.9000 mm, 72.0500 mm): Track [S1_B] on B.Cu, length 0.2500 mm
+[tracks_crossing]: Tracks crossing
+    Rule: netclass 'Default'; error
+    @(123.9500 mm, 71.7500 mm): Track [S1_B] on B.Cu, length 0.2500 mm
+    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
+[shorting_items]: Items shorting two nets (nets S1_B and S9_B)
+    Local override; error
+    @(123.9500 mm, 71.5000 mm): Track [S1_B] on B.Cu, length 0.0707 mm
+    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
+[shorting_items]: Items shorting two nets (nets S9_B and S1_B)
+    Local override; error
+    @(123.4500 mm, 71.6500 mm): Track [S9_B] on B.Cu, length 1.0500 mm
+    @(124.0000 mm, 71.4500 mm): Track [S1_B] on B.Cu, length 0.3500 mm
+[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
+    Local override; error
+    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
+    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
+[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
+    Local override; error
+    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
+    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
+[shorting_items]: Items shorting two nets (nets S2_B and OSC_OUT)
+    Local override; error
+    @(124.1000 mm, 69.3000 mm): Track [S2_B] on F.Cu, length 0.3000 mm
+    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
+    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(124.1500 mm, 69.2000 mm): Track [OSC_OUT] on F.Cu, length 0.0707 mm
+    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
+    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
+[tracks_crossing]: Tracks crossing
+    Rule: netclass 'Default'; error
+    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
+    @(124.1500 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.0707 mm
+[tracks_crossing]: Tracks crossing
+    Rule: netclass 'Default'; error
+    @(124.1500 mm, 69.4000 mm): Track [OSC_OUT] on F.Cu, length 0.2000 mm
+    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
+[shorting_items]: Items shorting two nets (nets OSC_OUT and S2_B)
+    Local override; error
+    @(124.2000 mm, 69.1500 mm): Track [OSC_OUT] on F.Cu, length 0.5500 mm
+    @(124.6000 mm, 69.3500 mm): Track [S2_B] on F.Cu, length 0.4500 mm
+[tracks_crossing]: Tracks crossing
+    Rule: netclass 'Default'; error
+    @(127.2000 mm, 78.3500 mm): Track [S9_A] on B.Cu, length 0.9192 mm
+    @(126.8000 mm, 79.4000 mm): Track [S8_B] on B.Cu, length 1.2021 mm
+[shorting_items]: Items shorting two nets (nets S9_A and S8_B)
+    Local override; error
+    @(127.2000 mm, 78.3500 mm): Track [S9_A] on B.Cu, length 0.9192 mm
+    @(127.6500 mm, 78.5500 mm): Track [S8_B] on B.Cu, length 0.5500 mm
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** End of Report **

@@ -1,0 +1,126 @@
+{
+ "kicad": "KiCad 9.0.8",
+ "R": [
+  {
+   "trial": "bcm4l-100",
+   "parts": 120,
+   "pins": 311,
+   "open": 0,
+   "pin_pct": 100.0,
+   "drc_err": 0,
+   "c_fail": [],
+   "m_fail": [],
+   "rules_ok": 16,
+   "rules": 16,
+   "tracks": 899,
+   "vias": 357,
+   "time_s": 343.0,
+   "hash": "3184f9d6a07d6be5"
+  },
+  {
+   "trial": "synth-lo",
+   "parts": 44,
+   "pins": 139,
+   "open": 0,
+   "pin_pct": 100.0,
+   "drc_err": 0,
+   "c_fail": [],
+   "m_fail": [],
+   "rules_ok": 16,
+   "rules": 16,
+   "tracks": 412,
+   "vias": 291,
+   "time_s": 180.7,
+   "hash": "5f386d72a4ee31c8"
+  },
+  {
+   "trial": "synth-hi",
+   "parts": 74,
+   "pins": 235,
+   "open": 0,
+   "pin_pct": 100.0,
+   "drc_err": 21,
+   "c_fail": [
+    "DRC-ERR",
+    "RT-CLR"
+   ],
+   "m_fail": [
+    "EMC-021",
+    "PLC-NEAR"
+   ],
+   "rules_ok": 12,
+   "rules": 16,
+   "tracks": 1035,
+   "vias": 210,
+   "time_s": 474.7,
+   "hash": "c8ff0192a995639e"
+  }
+ ],
+ "V": [
+  {
+   "board": "pic_programmer",
+   "parts": 63,
+   "fails": [
+    "EMC-021"
+   ],
+   "values": {
+    "PLC-OVL": 0,
+    "RT-OPEN": 0,
+    "DRC-ERR": 0,
+    "DRC-WARN": 0,
+    "PWR-001": 0,
+    "EMC-001": 0,
+    "EMC-021": 198.0,
+    "PWR-005": 0,
+    "DFM-005": 0,
+    "SMPS-004": 0,
+    "SI-070": 0
+   }
+  },
+  {
+   "board": "stickhub",
+   "parts": 90,
+   "fails": [
+    "DFM-005",
+    "EMC-021",
+    "PLC-OVL"
+   ],
+   "values": {
+    "PLC-OVL": 45,
+    "RT-OPEN": 0,
+    "DRC-ERR": 0,
+    "DRC-WARN": 0,
+    "PWR-001": 0,
+    "EMC-001": 0,
+    "EMC-021": 26.92,
+    "PWR-005": 0,
+    "DFM-005": 89,
+    "SMPS-004": 0,
+    "SI-070": 0
+   }
+  },
+  {
+   "board": "video",
+   "parts": 189,
+   "fails": [
+    "DFM-005",
+    "EMC-001",
+    "EMC-021",
+    "PWR-001"
+   ],
+   "values": {
+    "PLC-OVL": 0,
+    "RT-OPEN": 0,
+    "DRC-ERR": 0,
+    "DRC-WARN": 0,
+    "PWR-001": 66,
+    "EMC-001": 6,
+    "EMC-021": 140.73,
+    "PWR-005": 0,
+    "DFM-005": 91,
+    "SMPS-004": 0,
+    "SI-070": 0
+   }
+  }
+ ]
+}

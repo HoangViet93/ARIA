@@ -1,0 +1,60 @@
+# Sinh bởi engine/tools/make_synth.py synth-lo --cells 6 --board 70 50 — đừng sửa tay
+board:
+  w: 70.0
+  h: 50.0
+  edge_clear: 0.3
+stackup:
+  layers:
+  - F.Cu
+  - In1.Cu
+  - In2.Cu
+  - B.Cu
+  planes:
+    In1.Cu: GND
+    In2.Cu: GND
+  pours:
+    F.Cu: GND
+    B.Cu: GND
+  routing:
+  - F.Cu
+  - B.Cu
+rules:
+  clearance: 0.15
+  track: 0.2
+  via_dia: 0.6
+  via_drill: 0.3
+fixed:
+  J1:
+  - 23.57
+  - 45.8
+  - 90
+blocks:
+- name: mcu
+  rect:
+  - 17.5
+  - 1
+  - 52.5
+  - 21.0
+  anchor:
+    ref: U1
+    at:
+    - 35.0
+    - 10.0
+- name: pwr
+  rect:
+  - 52.5
+  - 1
+  - 69.0
+  - 21.0
+- name: io
+  rect:
+  - 1
+  - 38.0
+  - 69.0
+  - 49.0
+- name: cells
+  rect:
+  - 1
+  - 1
+  - 69.0
+  - 41.0

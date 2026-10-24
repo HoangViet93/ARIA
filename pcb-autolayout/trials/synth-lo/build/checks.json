@@ -1,0 +1,162 @@
+[
+ {
+  "rule": "PLC-011",
+  "severity": "C",
+  "title": "Tụ decoupling gần chân nguồn được gán",
+  "value": 2.3000000000000043,
+  "max": 2.5,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-034",
+  "severity": "C",
+  "title": "Linh kiện bảo vệ/lọc sát thân connector",
+  "value": 1.2199999999999989,
+  "max": 3.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-NEAR",
+  "severity": "M",
+  "title": "Linh kiện có chỉ định \"near\" nằm gần đích",
+  "value": 3.5455191791894185,
+  "max": 4.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PLC-OVL",
+  "severity": "C",
+  "title": "Không chồng courtyard",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "RT-OPEN",
+  "severity": "C",
+  "title": "Mọi chân đã nối (theo connectivity của KiCad)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "DRC-ERR",
+  "severity": "C",
+  "title": "DRC KiCad sạch",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "DRC-WARN",
+  "severity": "m",
+  "title": "Cảnh báo DRC KiCad (silkscreen…)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PWR-001",
+  "severity": "C",
+  "title": "Bề rộng đường đủ cho dòng (trừ đoạn cổ chai ≤ 1 mm quanh pad)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "SMPS-002",
+  "severity": "C",
+  "title": "Diện tích hot loop bộ buck",
+  "value": 0.0,
+  "max": 15,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "EMC-001",
+  "severity": "C",
+  "title": "Plane GND liền một khối (không bị via/antipad cắt rời)",
+  "value": 1,
+  "max": 1,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "EMC-021",
+  "severity": "M",
+  "title": "Via khâu GND dọc mép board (ngoài vùng connector/lỗ vít)",
+  "value": 3.67,
+  "max": 5.0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "RT-CLR",
+  "severity": "C",
+  "title": "Router kết thúc với 0 ô chồng (clearance đúng theo cấu trúc, không nhờ may)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "PWR-005",
+  "severity": "C",
+  "title": "Đổi lớp của net dòng lớn có đủ via song song (1 A/via + 1 dự phòng)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "DFM-005",
+  "severity": "M",
+  "title": "Via cách mép pad SMD ≥ 0.25 mm (mask web, không hút thiếc)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "SMPS-004",
+  "severity": "C",
+  "title": "Giữ khoảng cách net nhạy ↔ nút chuyển mạch (keep_away, KiCad DRC phân xử)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ },
+ {
+  "rule": "SI-070",
+  "severity": "C",
+  "title": "Clock/thạch anh không via (via_count của net class, KiCad DRC phân xử)",
+  "value": 0,
+  "max": 0,
+  "status": "ok",
+  "violations": [],
+  "n": 0
+ }
+]

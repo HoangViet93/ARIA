@@ -1,0 +1,878 @@
+{
+ "keep_away": [],
+ "name": "synth-lo",
+ "net_attrs": {
+  "+3V3": {
+   "current_a": 0.5,
+   "kind": "power",
+   "voltage_v": 3.3
+  },
+  "OSC_IN": {
+   "current_a": 0.0,
+   "kind": "clock",
+   "voltage_v": 3.3
+  },
+  "OSC_OUT": {
+   "current_a": 0.0,
+   "kind": "clock",
+   "voltage_v": 3.3
+  },
+  "S1_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "S2_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "S3_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "S4_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "S5_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "S6_OUT": {
+   "current_a": 0.1,
+   "kind": "signal",
+   "voltage_v": 13.5
+  },
+  "VIN": {
+   "current_a": 1.0,
+   "kind": "power",
+   "voltage_v": 13.5
+  }
+ },
+ "netclasses": {},
+ "parts": [
+  {
+   "block": "pwr",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0805_2012Metric",
+   "lowcur": [],
+   "near": [
+    "U2",
+    "3"
+   ],
+   "pins": {
+    "1": "VIN",
+    "2": "GND"
+   },
+   "ref": "C1",
+   "role": "decap",
+   "rots": null,
+   "value": "10u"
+  },
+  {
+   "block": "pwr",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0805_2012Metric",
+   "lowcur": [],
+   "near": [
+    "U2",
+    "2"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C2",
+   "role": "decap",
+   "rots": null,
+   "value": "10u"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U11",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C21",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U12",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C22",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U13",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C23",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U14",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C24",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U15",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C25",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U16",
+    "8"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C26",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "1"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C3",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "24"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C4",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "36"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C5",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "48"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C6",
+   "role": "decap",
+   "rots": null,
+   "value": "100n"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "9"
+   ],
+   "pins": {
+    "1": "+3V3",
+    "2": "GND"
+   },
+   "ref": "C7",
+   "role": "decap",
+   "rots": null,
+   "value": "1u"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "Y1",
+    "1"
+   ],
+   "pins": {
+    "1": "OSC_IN",
+    "2": "GND"
+   },
+   "ref": "C8",
+   "role": null,
+   "rots": null,
+   "value": "12p"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "Y1",
+    "3"
+   ],
+   "pins": {
+    "1": "OSC_OUT",
+    "2": "GND"
+   },
+   "ref": "C9",
+   "role": null,
+   "rots": null,
+   "value": "12p"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "5"
+   ],
+   "pins": {
+    "1": "S1_OUT",
+    "2": "GND"
+   },
+   "ref": "D11",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "6"
+   ],
+   "pins": {
+    "1": "S2_OUT",
+    "2": "GND"
+   },
+   "ref": "D12",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "7"
+   ],
+   "pins": {
+    "1": "S3_OUT",
+    "2": "GND"
+   },
+   "ref": "D13",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "8"
+   ],
+   "pins": {
+    "1": "S4_OUT",
+    "2": "GND"
+   },
+   "ref": "D14",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "9"
+   ],
+   "pins": {
+    "1": "S5_OUT",
+    "2": "GND"
+   },
+   "ref": "D15",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Diode_SMD:D_SOD-323",
+   "lowcur": [],
+   "near": [
+    "J1",
+    "10"
+   ],
+   "pins": {
+    "1": "S6_OUT",
+    "2": "GND"
+   },
+   "ref": "D16",
+   "role": "esd",
+   "rots": null,
+   "value": "ESD"
+  },
+  {
+   "block": "io",
+   "channel": null,
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "VIN",
+    "10": "S6_OUT",
+    "2": "VIN",
+    "3": "GND",
+    "4": "GND",
+    "5": "S1_OUT",
+    "6": "S2_OUT",
+    "7": "S3_OUT",
+    "8": "S4_OUT",
+    "9": "S5_OUT"
+   },
+   "ref": "J1",
+   "role": null,
+   "rots": null,
+   "value": "CONN"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "7"
+   ],
+   "pins": {
+    "1": "NRST",
+    "2": "+3V3"
+   },
+   "ref": "R1",
+   "role": null,
+   "rots": null,
+   "value": "10k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U11",
+    "2"
+   ],
+   "pins": {
+    "1": "S1_A",
+    "2": "S1_IN"
+   },
+   "ref": "R21",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U12",
+    "2"
+   ],
+   "pins": {
+    "1": "S2_A",
+    "2": "S2_IN"
+   },
+   "ref": "R22",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U13",
+    "2"
+   ],
+   "pins": {
+    "1": "S3_A",
+    "2": "S3_IN"
+   },
+   "ref": "R23",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U14",
+    "2"
+   ],
+   "pins": {
+    "1": "S4_A",
+    "2": "S4_IN"
+   },
+   "ref": "R24",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U15",
+    "2"
+   ],
+   "pins": {
+    "1": "S5_A",
+    "2": "S5_IN"
+   },
+   "ref": "R25",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U16",
+    "2"
+   ],
+   "pins": {
+    "1": "S6_A",
+    "2": "S6_IN"
+   },
+   "ref": "R26",
+   "role": null,
+   "rots": null,
+   "value": "33R"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U11",
+    "6"
+   ],
+   "pins": {
+    "1": "S1_FB",
+    "2": "S1_B"
+   },
+   "ref": "R41",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U12",
+    "6"
+   ],
+   "pins": {
+    "1": "S2_FB",
+    "2": "S2_B"
+   },
+   "ref": "R42",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U13",
+    "6"
+   ],
+   "pins": {
+    "1": "S3_FB",
+    "2": "S3_B"
+   },
+   "ref": "R43",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U14",
+    "6"
+   ],
+   "pins": {
+    "1": "S4_FB",
+    "2": "S4_B"
+   },
+   "ref": "R44",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U15",
+    "6"
+   ],
+   "pins": {
+    "1": "S5_FB",
+    "2": "S5_B"
+   },
+   "ref": "R45",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "lowcur": [],
+   "near": [
+    "U16",
+    "6"
+   ],
+   "pins": {
+    "1": "S6_FB",
+    "2": "S6_B"
+   },
+   "ref": "R46",
+   "role": null,
+   "rots": null,
+   "value": "1k"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Package_QFP:LQFP-48_7x7mm_P0.5mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "+3V3",
+    "10": "S2_B",
+    "11": "S3_A",
+    "12": "S3_B",
+    "13": "S4_A",
+    "14": "S4_B",
+    "15": "S5_A",
+    "16": "S5_B",
+    "17": "S6_A",
+    "18": "S6_B",
+    "2": "S1_A",
+    "23": "GND",
+    "24": "+3V3",
+    "3": "S1_B",
+    "35": "GND",
+    "36": "+3V3",
+    "4": "S2_A",
+    "47": "GND",
+    "48": "+3V3",
+    "5": "OSC_IN",
+    "6": "OSC_OUT",
+    "7": "NRST",
+    "8": "GND",
+    "9": "+3V3"
+   },
+   "ref": "U1",
+   "role": "anchor",
+   "rots": null,
+   "value": "MCU"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S1_IN",
+    "3": "S1_OUT",
+    "4": "GND",
+    "6": "S1_FB",
+    "8": "+3V3"
+   },
+   "ref": "U11",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S2_IN",
+    "3": "S2_OUT",
+    "4": "GND",
+    "6": "S2_FB",
+    "8": "+3V3"
+   },
+   "ref": "U12",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S3_IN",
+    "3": "S3_OUT",
+    "4": "GND",
+    "6": "S3_FB",
+    "8": "+3V3"
+   },
+   "ref": "U13",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S4_IN",
+    "3": "S4_OUT",
+    "4": "GND",
+    "6": "S4_FB",
+    "8": "+3V3"
+   },
+   "ref": "U14",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S5_IN",
+    "3": "S5_OUT",
+    "4": "GND",
+    "6": "S5_FB",
+    "8": "+3V3"
+   },
+   "ref": "U15",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "cells",
+   "channel": null,
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "2": "S6_IN",
+    "3": "S6_OUT",
+    "4": "GND",
+    "6": "S6_FB",
+    "8": "+3V3"
+   },
+   "ref": "U16",
+   "role": "anchor",
+   "rots": null,
+   "value": "BUF"
+  },
+  {
+   "block": "pwr",
+   "channel": null,
+   "footprint": "Package_TO_SOT_SMD:SOT-223-3_TabPin2",
+   "lowcur": [],
+   "near": null,
+   "pins": {
+    "1": "GND",
+    "2": "+3V3",
+    "3": "VIN"
+   },
+   "ref": "U2",
+   "role": "anchor",
+   "rots": null,
+   "value": "LDO"
+  },
+  {
+   "block": "mcu",
+   "channel": null,
+   "footprint": "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm",
+   "lowcur": [],
+   "near": [
+    "U1",
+    "5"
+   ],
+   "pins": {
+    "1": "OSC_IN",
+    "2": "GND",
+    "3": "OSC_OUT",
+    "4": "GND"
+   },
+   "ref": "Y1",
+   "role": null,
+   "rots": null,
+   "value": "8MHz"
+  }
+ ],
+ "plane_nets": [
+  "GND"
+ ]
+}

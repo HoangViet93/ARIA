@@ -1,0 +1,142 @@
+** Drc report for /home/user/ARIA/pcb-autolayout/trials/synth-lo/build/synth-lo.kicad_pcb **
+** Created on 2026-10-24 15:20:50 **
+
+** Found 44 DRC violations **
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(123.2483 mm, 79.6158 mm): Footprint C24
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(126.2375 mm, 73.6000 mm): Footprint C9
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(128.4375 mm, 67.9000 mm): Footprint C8
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(129.0875 mm, 65.7500 mm): Footprint C3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(129.0875 mm, 70.7500 mm): Footprint C7
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(131.7500 mm, 64.0875 mm): Footprint C6
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(132.3271 mm, 86.9711 mm): Footprint C25
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(137.0200 mm, 77.7281 mm): Footprint C21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(137.2500 mm, 75.9125 mm): Footprint C4
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(140.2503 mm, 79.7766 mm): Footprint C22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(140.9125 mm, 66.7500 mm): Footprint C5
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(142.8433 mm, 67.6713 mm): Footprint C23
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(147.6878 mm, 87.0146 mm): Footprint C26
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(151.4725 mm, 76.4431 mm): Footprint C2
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
+    Local override; warning
+    @(151.4725 mm, 78.7431 mm): Footprint C1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'.
+    Local override; warning
+    @(123.5700 mm, 105.8000 mm): Footprint J1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Crystal'.
+    Local override; warning
+    @(126.3375 mm, 70.7500 mm): Footprint Y1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(124.1900 mm, 100.2600 mm): Footprint D14
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(127.6500 mm, 100.3000 mm): Footprint D11
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(131.1500 mm, 100.2600 mm): Footprint D12
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(134.6900 mm, 100.3000 mm): Footprint D13
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(138.2300 mm, 100.3000 mm): Footprint D15
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Diode_SMD'.
+    Local override; warning
+    @(141.7300 mm, 100.2600 mm): Footprint D16
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_QFP'.
+    Local override; warning
+    @(135.0000 mm, 70.0000 mm): Footprint U1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(126.6533 mm, 81.5908 mm): Footprint U14
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(135.0450 mm, 81.1331 mm): Footprint U11
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(135.7321 mm, 89.9461 mm): Footprint U15
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(143.6553 mm, 81.7516 mm): Footprint U12
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(144.7128 mm, 90.4196 mm): Footprint U16
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_SO'.
+    Local override; warning
+    @(146.2483 mm, 69.6463 mm): Footprint U13
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Package_TO_SOT_SMD'.
+    Local override; warning
+    @(157.8725 mm, 76.4431 mm): Footprint U2
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(126.5183 mm, 86.0658 mm): Footprint R24
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(127.2883 mm, 76.6158 mm): Footprint R44
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(127.3375 mm, 66.7500 mm): Footprint R1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(132.5700 mm, 77.2481 mm): Footprint R21
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(134.5971 mm, 94.4211 mm): Footprint R25
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(136.3671 mm, 84.9711 mm): Footprint R45
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(139.5200 mm, 81.7681 mm): Footprint R41
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(139.7378 mm, 89.7846 mm): Footprint R26
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(142.5203 mm, 86.2266 mm): Footprint R22
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(144.2903 mm, 76.7766 mm): Footprint R42
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(145.1133 mm, 74.1213 mm): Footprint R23
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(146.3833 mm, 65.1713 mm): Footprint R43
+[lib_footprint_issues]: The current configuration does not include the footprint library 'Resistor_SMD'.
+    Local override; warning
+    @(149.1878 mm, 90.5546 mm): Footprint R46
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** End of Report **

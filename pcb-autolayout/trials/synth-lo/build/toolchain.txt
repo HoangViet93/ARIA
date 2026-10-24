@@ -1,0 +1,4 @@
+kicad 9.0.8
+python 3.14.4
+numba 0.64.0
+footprints /usr/share/kicad/footprints efe90a465f1fa62a
