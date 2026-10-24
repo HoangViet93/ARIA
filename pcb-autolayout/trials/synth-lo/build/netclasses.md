@@ -9,7 +9,7 @@ Bề rộng = max(0.20 mm, IPC-2221 lớp ngoài 1 oz ΔT 10 °C, làm tròn lê
 | W020_C015_NOVIA | 0.20 mm | 0.15 mm | cấm | OSC_IN, OSC_OUT |
 | W020_C020 | 0.20 mm | 0.20 mm | — | S1_OUT, S2_OUT, S3_OUT, S4_OUT, S5_OUT, S6_OUT |
 | W040_C015 | 0.40 mm | 0.15 mm | — | +3V3 |
-| W040_C020 | 0.40 mm | 0.20 mm | — | VIN |
+| W040_C020_OUT | 0.40 mm | 0.20 mm | — | VIN |
 | Default | 0.20 mm | 0.15 mm | — | mọi net còn lại (tín hiệu logic ≤ 6 V) |
 
 ## Từng net khai thuộc tính
