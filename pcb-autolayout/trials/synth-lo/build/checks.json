@@ -43,13 +43,11 @@
   "rule": "RT-OPEN",
   "severity": "C",
   "title": "Mọi chân đã nối (theo connectivity của KiCad)",
-  "value": 1,
+  "value": 0,
   "max": 0,
-  "status": "FAIL",
-  "violations": [
-   "Missing connection between items Local override; error @(125.7500 mm, 72.6500 mm): Track [OSC_OUT] on F.Cu, length 0.6500 mm"
-  ],
-  "n": 1
+  "status": "ok",
+  "violations": [],
+  "n": 0
  },
  {
   "rule": "DRC-ERR",

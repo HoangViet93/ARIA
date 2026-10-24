@@ -12,10 +12,10 @@
    "m_fail": [],
    "rules_ok": 16,
    "rules": 16,
-   "tracks": 899,
-   "vias": 357,
-   "time_s": 343.0,
-   "hash": "3184f9d6a07d6be5"
+   "tracks": 848,
+   "vias": 333,
+   "time_s": 363.5,
+   "hash": "b72ab77b02287fb5"
   },
   {
    "trial": "synth-lo",
@@ -28,32 +28,31 @@
    "m_fail": [],
    "rules_ok": 16,
    "rules": 16,
-   "tracks": 412,
-   "vias": 291,
-   "time_s": 180.7,
-   "hash": "5f386d72a4ee31c8"
+   "tracks": 398,
+   "vias": 295,
+   "time_s": 225.0,
+   "hash": "471f509446dc15d6"
   },
   {
    "trial": "synth-hi",
    "parts": 74,
    "pins": 235,
-   "open": 0,
-   "pin_pct": 100.0,
-   "drc_err": 21,
+   "open": 2,
+   "pin_pct": 99.15,
+   "drc_err": 0,
    "c_fail": [
-    "DRC-ERR",
-    "RT-CLR"
+    "RT-OPEN"
    ],
    "m_fail": [
     "EMC-021",
     "PLC-NEAR"
    ],
-   "rules_ok": 12,
+   "rules_ok": 13,
    "rules": 16,
-   "tracks": 1035,
-   "vias": 210,
-   "time_s": 474.7,
-   "hash": "c8ff0192a995639e"
+   "tracks": 824,
+   "vias": 193,
+   "time_s": 2234.7,
+   "hash": "63cef9bdea59a875"
   }
  ],
  "V": [
@@ -122,5 +121,6 @@
     "SI-070": 0
    }
   }
- ]
+ ],
+ "note": "baseline 2: synth-hi 2 chân hở DRC 0 (baseline 1 ghi lúc còn 21 chập — không trung thực)"
 }

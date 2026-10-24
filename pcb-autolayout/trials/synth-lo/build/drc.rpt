@@ -1,5 +1,5 @@
 ** Drc report for /home/user/ARIA/pcb-autolayout/trials/synth-lo/build/synth-lo.kicad_pcb **
-** Created on 2026-10-24 19:16:16 **
+** Created on 2026-10-24 19:49:53 **
 
 ** Found 44 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the footprint library 'Capacitor_SMD'.
@@ -135,11 +135,7 @@
     Local override; warning
     @(149.0242 mm, 90.4346 mm): Footprint R46
 
-** Found 1 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(125.7500 mm, 72.6500 mm): Track [OSC_OUT] on F.Cu, length 0.6500 mm
-    @(130.8375 mm, 69.7500 mm): Pad 6 [OSC_OUT] of U1 on F.Cu
+** Found 0 unconnected pads **
 
 ** Found 0 Footprint errors **
 

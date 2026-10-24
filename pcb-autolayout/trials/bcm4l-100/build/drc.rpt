@@ -1,5 +1,5 @@
 ** Drc report for /home/user/ARIA/pcb-autolayout/trials/bcm4l-100/build/bcm4l-100.kicad_pcb **
-** Created on 2026-10-24 17:47:13 **
+** Created on 2026-10-24 19:46:06 **
 
 ** Found 120 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the footprint library 'Button_Switch_SMD'.

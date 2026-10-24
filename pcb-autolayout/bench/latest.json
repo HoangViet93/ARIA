@@ -14,26 +14,24 @@
    "rules": 16,
    "tracks": 848,
    "vias": 333,
-   "time_s": 374.0,
+   "time_s": 363.5,
    "hash": "b72ab77b02287fb5"
   },
   {
    "trial": "synth-lo",
    "parts": 44,
    "pins": 139,
-   "open": 1,
-   "pin_pct": 99.28,
+   "open": 0,
+   "pin_pct": 100.0,
    "drc_err": 0,
-   "c_fail": [
-    "RT-OPEN"
-   ],
+   "c_fail": [],
    "m_fail": [],
-   "rules_ok": 15,
+   "rules_ok": 16,
    "rules": 16,
-   "tracks": 395,
-   "vias": 291,
-   "time_s": 1358.1,
-   "hash": "694674f77a5a7c72"
+   "tracks": 398,
+   "vias": 295,
+   "time_s": 225.0,
+   "hash": "471f509446dc15d6"
   },
   {
    "trial": "synth-hi",
@@ -53,7 +51,7 @@
    "rules": 16,
    "tracks": 824,
    "vias": 193,
-   "time_s": 2626.7,
+   "time_s": 2234.7,
    "hash": "63cef9bdea59a875"
   }
  ]
