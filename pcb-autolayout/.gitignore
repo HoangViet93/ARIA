@@ -4,3 +4,5 @@ __pycache__/
 trials/*/build/*.svg
 trials/*/build/*.kicad_prl
 trials/*/build/t.kicad_*
+# bản sao tạm của bộ kiểm skill (engine/tests/skills)
+trials/.skilltest-*/

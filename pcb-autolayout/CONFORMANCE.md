@@ -23,7 +23,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T01 | env_check | 🟡 | Kiểm tay. KiCad **7.0.11** (máy) + **9.0.8** (chroot `/opt/k9`, lệnh `k9`, cài bằng `engine/tools/setup-kicad9.sh`); `build/toolchain.txt` ghi phiên bản + dấu thư viện footprint |
 | T02 | netlist_export | ✅ | `kicad-cli sch export netlist` (skill pcb-intake) |
 | T03 | summarize_design | ✅ | `intake.py`: netlist kicadsexpr → design.json; thử trên netlist KiCad 7 thật (159/159 chân) |
-| T04 | net_classify | 🟡 | Mạch khai thuộc tính net (dòng/điện áp/loại); chưa tự đoán từ tên net |
+| T04 | net_classify | 🟡 | Mạch khai thuộc tính net (dòng/điện áp/loại); chưa tự đoán từ tên net. `lint_lowcur` chặn nhánh hẹp trên linh kiện nối tiếp đường dòng lớn |
 | T05 | part_rules / parts-db | 🟡 | Schema + `parts_lint.py` + 1 file draft (TPS54202); engine chưa đọc parts-db khi đặt |
 | T06/T07 | stackup / impedance | ❌ | Stackup cố định SIG/GND/GND/SIG |
 | T08 | current | ✅ | `pcbkit/netclass.py`: IPC-2221 lớp ngoài, có test khớp bảng knowledge/03 |
@@ -50,7 +50,7 @@ rule "đồng ý với nhau" cùng sai. Cần board vẽ tay thật để kiểm
 | T36 | rules_lint | ✅ | 16 rule, mỗi rule có test |
 | T37 | channel_replicate | ✅ | Kênh ra ×4, vào ×6 |
 | T38–T42 | BCM-specific | ❌ | |
-| Skill | đóng gói | ✅ | 8 skill: `pcb-autolayout` (điều phối) + intake, part, constraints, place, route, verify, release |
+| Skill | đóng gói | ✅ | 8 skill: `pcb-autolayout` (điều phối) + intake, part, constraints, place, route, verify, release; mỗi skill một kịch bản kiểm thật có ca âm (`engine/tests/skills/run_skills.py`) |
 
 ## Định dạng theo ROLES.md
 

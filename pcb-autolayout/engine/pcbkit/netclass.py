@@ -31,6 +31,31 @@ def clearance_for(voltage_v, pol):
     raise ValueError("điện áp %.0f V vượt bảng clearance — cần người duyệt (HV-001)" % voltage_v)
 
 
+def lint_lowcur(design, max_series_a=0.5):
+    """Chân `lowcur` (nhánh được đi hẹp) chỉ hợp lệ khi linh kiện không nằm NỐI TIẾP trên
+    đường dòng lớn: nếu một chân khác của nó nối net khai ≥ max_series_a thì dòng đó chảy
+    qua chính nhánh hẹp. Lỗi thật đã gặp: FB1 (ferrite cấp nguồn buck, VBAT_P → VBAT_F 1 A)
+    bị khai lowcur → 1 A qua dây 0.3 mm, DRC và mọi rule đều im lặng."""
+    attrs = design.get("net_attrs", {})
+    planes = set(design.get("plane_nets", []))
+    errs = []
+    for p in design["parts"]:
+        for pin in p.get("lowcur") or []:
+            net = p["pins"].get(pin)
+            if net is None:
+                errs.append("%s: chân lowcur '%s' không tồn tại" % (p["ref"], pin))
+                continue
+            for other_pin, other in sorted(p["pins"].items()):
+                if other == net or other in planes:
+                    continue
+                cur = (attrs.get(other) or {}).get("current_a") or 0.0
+                if cur >= max_series_a:
+                    errs.append("%s.%s (%s) khai lowcur nhưng %s.%s nối %s %.1f A — linh kiện nằm nối "
+                                "tiếp đường dòng lớn, nhánh hẹp sẽ gánh dòng đó" % (
+                                    p["ref"], pin, net, p["ref"], other_pin, other, cur))
+    return errs
+
+
 def compile_netclasses(design, pol):
     """design["net_attrs"]: {net: {current_a, voltage_v, kind}}. Trả về net class đã gộp
     (mỗi bộ (bề rộng, clearance, via_max) là một class) + bảng giải thích từng net."""

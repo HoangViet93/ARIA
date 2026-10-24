@@ -143,7 +143,8 @@ B2 + C2 + D1 ─► E (trial BCM tổng hợp) ─► E trên board BCM thật
 | `pcb-autolayout` | mọi mốc | Bài học mới đưa vào ngay sau mỗi mốc (không để nằm trong REPORT) |
 
 Thêm **kiểm thử skill**: mỗi skill có 1 kịch bản chạy thật (lệnh + kết quả mong đợi) trong
-`engine/tests/skills/`, chạy ở cổng mỗi mốc.
+`engine/tests/skills/`, chạy ở cổng mỗi mốc. ✅ Đã có `run_skills.py` (8 skill, mỗi skill có ca
+âm; `--full` đi dây thật). Lần chạy đầu tìm ra lỗi khai `lowcur` FB1 và lỗi viền 0.05 mm của verify.
 
 ## 8. Rủi ro (cập nhật)
 

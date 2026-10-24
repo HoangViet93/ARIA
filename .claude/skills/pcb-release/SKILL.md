@@ -21,3 +21,7 @@ Phát hành là quyết định **tầng C** — chỉ khi người dùng yêu c
 
 ## Giới hạn
 - Chưa xuất bản vẽ lắp ráp/PDF, chưa nén zip theo yêu cầu fab cụ thể.
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only release` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.

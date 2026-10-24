@@ -24,3 +24,7 @@ Kết quả của skill này là **tầng B**: Claude soạn, kỹ sư duyệt, 
 ## Không được
 - Đánh dấu `approved` thay kỹ sư.
 - Bịa giá trị khi datasheet không nói — ghi "datasheet không nêu".
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only part` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.

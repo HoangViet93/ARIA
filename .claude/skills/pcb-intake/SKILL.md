@@ -23,8 +23,12 @@ Luật chung (không sửa mạch, AI không ở trong pipeline…): đọc skil
 
 ## Đã kiểm
 - `python3 tests/test_intake.py` (khứ hồi 120 linh kiện).
-- Netlist thật KiCad 7 (demo `pic_programmer`): 63 linh kiện, 2 khối, 159/159 chân khớp.
+- Netlist thật KiCad 7 và KiCad 9 (demo `pic_programmer`): 63 linh kiện, 2 khối, 159/159 chân khớp.
 
 ## Giới hạn
 - Net phân cấp giữ nguyên đường dẫn (`/sheet/NET`); chỉ bỏ `/` đầu khi ở sheet gốc.
 - Kênh lặp (sheet nhiều instance) chưa tự nhận thành `channel` cho T37 — khai tay trong floorplan.
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only intake` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.

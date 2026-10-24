@@ -20,3 +20,7 @@ description: Chạy riêng pha placement của engine pcb-autolayout (floorplan,
 - Nhạy thứ tự; không tự chừa chỗ cho đường đi dây → có thể gây chân hở ở pha route (cần
   T34). PLC-NEAR (termination CAN) trượt trên trial hiện tại.
 - T33 floorplan_gen chưa có: floorplan do Claude soạn.
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only place` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.

@@ -88,6 +88,9 @@ def main():
         for name, c in classes.items():
             print("[class] %-16s %.2f mm / clr %.2f%s: %s" % (name, c["width"], c["clearance"],
                   " / cấm via" if c["via_max"] == 0 else "", ", ".join(c["nets"])))
+    bad = netclass.lint_lowcur(design)
+    if bad:   # ràng buộc layout sai → dừng trước khi tốn 15 phút đi dây trên nó
+        sys.exit("[LỖI] " + "\n[LỖI] ".join(bad))
     if a.until == "constraints":
         return
 

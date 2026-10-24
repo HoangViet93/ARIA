@@ -54,7 +54,9 @@ cần một pha hoặc đang chẩn đoán.
    Container mới thì chroot mất — chạy lại script.
 2. **Bộ rule nguyên vẹn** (trong `engine/`): `python3 rules_lint.py && python3 parts_lint.py &&
    python3 tests/test_checks.py && python3 tests/test_netclass.py && python3 tests/test_fplib.py &&
-   python3 tests/test_intake.py && python3 tests/test_drc_parse.py`. Lỗi → dừng, là lỗi engine.
+   python3 tests/test_intake.py && python3 tests/test_drc_parse.py`. Trước khi tin một skill:
+   `python3 tests/skills/run_skills.py` (~3 phút; `--full` đi dây thật ~15 phút) — mỗi skill một
+   kịch bản thật có ca âm; SKIP khi `toolchain.txt` khác mốc (không phải PASS). Lỗi → dừng, là lỗi engine.
 3. **Đầu vào trial**: `circuit.py`, `floorplan.yaml`, `checks.yaml`, tuỳ chọn `templates.yaml`.
 4. **Chạy** (nền; ~15 phút): `python3 -u run.py ../trials/<tên> > log`. Chỉ sửa pha sau routing
    → `--reuse-routes` (~30 s, xem `pcb-route`). Theo dõi dòng
@@ -85,6 +87,9 @@ cần một pha hoặc đang chẩn đoán.
 - Thắt cổ chỉ sát pad hẹp hơn đường (0.6 mm); net ≥ 1 A tránh via, buộc đổi lớp thì gia cố via.
 - KiCad 7: `ZONE_FILLER` segfault trên board dựng trong bộ nhớ → lưu/nạp lại rồi fill; UUID
   ngẫu nhiên → `canonicalize()`; `.kicad_dru` và net class trong `.kicad_pro` được DRC nạp.
+- **Hai đường kiểm phải đối chứng nhau**: `verify.py --routes` trên board của `run.py` phải ra
+  đúng `checks.json`. Lần đầu lệch đã lộ lỗi khai `lowcur` FB1 (1 A qua 0.3 mm) và lỗi viền
+  0.05 mm — cả hai DRC/rule đều im lặng. `lowcur` giờ được `lint_lowcur` chặn.
 - KiCad 9: `EDA_UNITS_MILLIMETRES` → `EDA_UNITS_MM`; report DRC bỏ chữ `Severity:` (trước khi
   sửa, mọi cảnh báo bị đếm thành lỗi). Hình học footprint lượng tử về 1 nm khi nạp (`fplib._q`)
   — nhiễu `0.45999999999999996` khác nhau giữa các bản Python/KiCad.

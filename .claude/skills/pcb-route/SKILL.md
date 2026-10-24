@@ -24,3 +24,7 @@ description: Chạy pha đi dây của engine pcb-autolayout (A* + PathFinder, g
 - Chỉ 2 lớp đi dây (F/B), lớp trong là plane.
 - Chưa có cặp vi sai, length tuning, teardrop.
 - Rip-up nặng: ~9 phút cho 120 linh kiện khi có chân bị nhốt.
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only route` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.

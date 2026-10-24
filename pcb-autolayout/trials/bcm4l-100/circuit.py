@@ -51,8 +51,10 @@ P("Q1", "SQD40P06 (P-MOS)", "Package_TO_SOT_SMD:TO-252-2",
 P("D3", "BZT52C10", "Diode_SMD:D_SOD-123", {"1": "VBAT_P", "2": "Q1_G"}, "pwr_in", near=("Q1", "1"))
 P("R1", "10k", R0603, {"1": "Q1_G", "2": "GND"}, "pwr_in", near=("Q1", "1"))
 P("C2", "100n 50V", C1206, {"1": "VBAT_P", "2": "GND"}, "pwr_in", near=("Q1", "3"))
+# FB1 nằm nối tiếp đường cấp buck (VBAT_F 1 A): KHÔNG lowcur — từng khai nhầm, 1 A đi dây
+# 0.3 mm; lint_lowcur của engine giờ chặn lỗi này.
 P("FB1", "600R@100M 3A", "Inductor_SMD:L_1812_4532Metric", {"1": "VBAT_P", "2": "VBAT_F"},
-  "pwr_in", lowcur=("1",))
+  "pwr_in")
 P("C3", "47u 35V", "Capacitor_SMD:CP_Elec_8x10", {"1": "VBAT_F", "2": "GND"}, "pwr_in")
 P("C4", "4u7 50V", C1206, {"1": "VBAT_F", "2": "GND"}, "pwr_in", near=("FB1", "2"))
 

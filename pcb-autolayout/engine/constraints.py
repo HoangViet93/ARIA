@@ -33,6 +33,7 @@ def main():
     nets = {n for p in design["parts"] for n in p["pins"].values()}
     attrs = design.get("net_attrs", {})
     errs = ["thuộc tính khai cho net không tồn tại: %s" % n for n in sorted(set(attrs) - nets)]
+    errs += netclass.lint_lowcur(design)
     try:
         classes, rows = netclass.compile_netclasses(design, pol)
     except ValueError as e:

@@ -15,7 +15,9 @@ description: Biên dịch bộ luật đi dây của một trial pcb-autolayout 
 
 ## Bước
 1. `cd pcb-autolayout/engine && python3 constraints.py ../trials/<tên>`
-2. `[LỖI]` (thuộc tính cho net không tồn tại, điện áp vượt bảng) → sửa khai báo.
+2. `[LỖI]` (thuộc tính cho net không tồn tại, điện áp vượt bảng, **`lowcur` trên linh kiện nối
+   tiếp đường dòng lớn** — chân khác của nó nối net ≥ 0.5 A) → sửa khai báo. `run.py` cũng dừng
+   ở lỗi lowcur trước khi đi dây. Lỗi thật đã gặp: FB1 cấp buck khai lowcur → 1 A qua 0.3 mm.
 3. `[warn]` net trông như nguồn chưa khai → hỏi người dùng dòng/điện áp (tầng B).
 4. Trình `build/netclasses.md` (bảng class + từng net + lý do clearance).
 5. Khi chạy `run.py`, net class được ghi vào `.kicad_pro` và luật via/keep-away vào
@@ -24,3 +26,7 @@ description: Biên dịch bộ luật đi dây của một trial pcb-autolayout 
 ## Giới hạn
 - Chưa có trở kháng (T06/T07): cặp vi sai chưa có bề rộng/khe theo Zdiff.
 - Một fab profile (trong policy); chưa có fab-profiles riêng.
+
+## Kiểm thử skill
+`cd pcb-autolayout/engine && python3 tests/skills/run_skills.py --only constraints` (thêm `k9` cho KiCad 9).
+Trượt = skill hỏng; sửa trước khi dùng skill cho board thật.
