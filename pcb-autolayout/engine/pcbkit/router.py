@@ -15,6 +15,7 @@ from .design import natkey
 RES = 0.05          # mm / ô
 NECK_DIST = 0.6    # mm quanh pad nhỏ được phép thắt cổ (1.0 làm các vùng nối thành hành lang)
 STALL_ITERS = 5
+SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)    # PathFinder dừng sau ngần này vòng liền không lập kỷ lục (chân hở, ô chồng)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
 
@@ -69,6 +70,7 @@ class Router:
         self.viablock = np.zeros((self.H, self.W), np.int16)
         self.net_vias = {}
         self.cur = 0
+        self._zero_hist = None
         self.occ = np.zeros((self.L, self.H, self.W), np.int16)
         self.hist = np.zeros((self.L, self.H, self.W), np.float32)
         self._offs = {}
@@ -207,6 +209,23 @@ class Router:
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
                             self.via_cost, self.pres_fac, allow_via,
+                            self.hf, self.hc, self.hs, tb, 1.3, self.max_pops,
+                            self.hard, self.bend1, self.bend2)
+            if len(path):
+                return path
+        if not self.hard and self.pres_fac > SOFT_RETRY_PRES:
+            # chế độ mềm (cho chồng có phạt) mà thất bại = hết bước tìm vì phạt chồng/lịch sử đã quá
+            # cao, không phải không có đường. Nối được mà còn chồng thì PathFinder thương lượng tiếp;
+            # bỏ hở thì kẹt hẳn (synth-lo: 1 chân hở → mỗi vòng 20 s, rồi gỡ cứng ra 7 chân hở).
+            if self._zero_hist is None:
+                self._zero_hist = np.zeros_like(self.hist)
+            self.cur += 1
+            bbox = np.array([0, 0, self.H - 1, self.W - 1], np.int64)
+            path = rc.astar(self.fixed, self.occ, self._zero_hist, self.padmask, neck, nid, self.viablock, self.closed,
+                            offs_main, offs_neck, offs_via, offs_viapad,
+                            src_a, tgt_a, tgt_layer, bbox,
+                            self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
+                            self.via_cost, SOFT_RETRY_PRES, allow_via,
                             self.hf, self.hc, self.hs, tb, 1.3, self.max_pops,
                             self.hard, self.bend1, self.bend2)
             if len(path):

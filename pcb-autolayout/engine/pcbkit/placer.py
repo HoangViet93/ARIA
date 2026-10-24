@@ -12,6 +12,7 @@ from .design import natkey
 MARGIN = 0.15       # khoảng hở tối thiểu giữa hai courtyard
 DECAP_SLACK = 3.0   # tụ decap được tràn khỏi vùng khối tối đa 3 mm
 HALO = 1.8          # vành trống quanh IC có vệ tinh khi đặt IC
+NEAR_MARGIN = 0.05  # mm, đặt near cách ngưỡng rule ít nhất ngần này (không sát biên)
 NEAR_REACH = 4.0    # linh kiện "near" được vươn khỏi vùng khối tới hộp ± ngần này quanh chân đích
 
 
@@ -169,6 +170,16 @@ class Placer:
             if best is None:
                 best = min(math.hypot(x - tx, y - ty) for (tx, ty) in near_xy)
             cost += 8.0 * best
+            # biết ngưỡng rule: phần vượt ngưỡng bị phạt nặng (C nặng hơn M) — chỉ cực tiểu hoá
+            # khoảng cách thì nhận cả vị trí 2.5005 mm khi ngưỡng 2.5 (PLC-011, bộ R tổng hợp)
+            if self.near_rules:
+                from .checks import near_gap
+                trial = {ref: (x, y, rot), tref: self.pos[tref]}
+                for rule in self.near_rules:
+                    dd = near_gap(self.parts, trial, ref, rule)
+                    if dd is not None and dd > rule["threshold"]["max"] - NEAR_MARGIN:
+                        cost += (5000.0 if rule["severity"] == "C" else 500.0) * \
+                            (dd - rule["threshold"]["max"] + NEAR_MARGIN)
         return cost
 
     def _free(self, rect, ignore=()):
@@ -191,17 +202,31 @@ class Placer:
             # vùng khối là "mềm" với tụ decap: bám chân IC quan trọng hơn ranh giới khối
             region = (region[0] - DECAP_SLACK, region[1] - DECAP_SLACK,
                       region[2] + DECAP_SLACK, region[3] + DECAP_SLACK)
-        if near_xy:
-            # chân đích có thể nằm ngoài vùng khối (C25 → J1.1 ở x 58.3, khối lin dừng ở 56.5):
-            # cho vươn tới hộp quanh đích — "near" là ràng buộc rõ ràng hơn ranh giới khối
+        if near_xy and not p.get("channel"):
+            # (linh kiện kênh nhân bản giữ trong ô kênh: vươn ra thì bản sao đụng nhau)
+            # "near" thắng ranh giới khối: cho vươn tới mọi chỗ mà linh kiện còn đạt rule near —
+            # hộp quanh chân đích nửa cạnh = ngưỡng rule + cạnh dài courtyard. Chân đích có thể nằm
+            # ngoài vùng khối (C25 → J1.1), hoặc IC neo sát mép vùng (C2 → U2.2 ở synth-hi).
+            c0 = fplib.placed_court(p["footprint"], 0, 0, 0)
+            lim = max([r["threshold"]["max"] for r in self.near_rules] or [NEAR_REACH])
+            reach = lim + max(c0[2] - c0[0], c0[3] - c0[1])
             tx = [q[0] for q in near_xy]
             ty = [q[1] for q in near_xy]
-            region = (min(region[0], min(tx) - NEAR_REACH), min(region[1], min(ty) - NEAR_REACH),
-                      max(region[2], max(tx) + NEAR_REACH), max(region[3], max(ty) + NEAR_REACH))
+            region = (min(region[0], min(tx) - reach), min(region[1], min(ty) - reach),
+                      max(region[2], max(tx) + reach), max(region[3], max(ty) + reach))
         # IC có linh kiện vệ tinh (tụ decap, linh kiện "near" chân nó): giữ vành trống
         # quanh courtyard để vệ tinh còn chỗ bám chân — đặt tham lam không tự biết chừa.
-        halo = HALO if (use_halo and p.get("role") == "anchor"
-                        and any(q.get("near") and q["near"][0] == ref for q in self.parts.values())) else 0.0
+        # Vành = cạnh ngắn của tụ decap vệ tinh lớn nhất + khe (tụ 0805 cần 2.15 mm, không phải 1.8).
+        # (Thử bắt vành nằm trong vùng khối: các IC dồn vào giữa, synth-hi tệ hơn — đã bỏ.)
+        sats = [q for q in self.parts.values() if q.get("near") and q["near"][0] == ref]
+        halo = 0.0
+        if use_halo and p.get("role") == "anchor" and sats:
+            halo = HALO
+            for q in sats:
+                if q.get("role") != "decap":
+                    continue            # vành để chừa chỗ tụ bám chân; thạch anh 3.4 mm từng làm vành MCU 3.55 mm
+                c0 = fplib.placed_court(q["footprint"], 0, 0, 0)
+                halo = max(halo, min(c0[2] - c0[0], c0[3] - c0[1]) + MARGIN)
         best = None
         for (x, y) in _spiral(*target):
             for rot in rots:
@@ -224,6 +249,10 @@ class Placer:
                 self.log.append("nới vùng %.1f mm cho %s" % (g, ref))
                 return self.place_one(ref, (region[0] - 2.5, region[1] - 2.5, region[2] + 2.5, region[3] + 2.5),
                                       None, rots, grow=g, use_halo=use_halo)
+            if region != self.board_rect and grow >= 5.0:
+                # thiếu linh kiện tệ hơn mọi vi phạm khác: đặt ở chỗ trống bất kỳ trên board
+                self.log.append("hết chỗ trong vùng: đặt %s ở chỗ trống bất kỳ trên board" % ref)
+                return self.place_one(ref, self.board_rect, target, rots, grow=grow, use_halo=False)
             self.log.append("FAIL place %s trong vùng %s" % (ref, region))
             return False
         self._commit(ref, best[1], best[2], best[3])
