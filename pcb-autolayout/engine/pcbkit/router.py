@@ -22,7 +22,8 @@ STALL_ITERS = 10   # PathFinder dừng sau ngần này vòng liền không lập
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
 BIG = 1 << 30          # gsz khi tắt hành lang (mọi ô // BIG = 0)
-GLOBAL_ROUTE = True    # global routing cấp hành lang cho PathFinder (chế độ mềm)
+GLOBAL_ROUTE = False   # global routing (hành lang) — TẮT: đo trên bench chưa ổn định (synth-lo 2× nhanh
+                       # ở bản đầu nhưng bcm4l hở U1.3; bản chỉ net dài: cả hai tụt). Bật thử: PCB_GLOBAL=1
 CORR_DROP = 3          # net còn chồng ngần này vòng liền → bỏ hành lang của nó
 HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
@@ -485,7 +486,7 @@ class Router:
         self.pres_fac = 0.5
         flat_occ = self.occ.reshape(-1)
         flat_hist = self.hist.reshape(-1)
-        if GLOBAL_ROUTE and os.environ.get("PCB_GLOBAL", "1") == "1":
+        if os.environ.get("PCB_GLOBAL", "1" if GLOBAL_ROUTE else "0") == "1":
             from .global_route import GlobalRouter
             t_g = time.time()
             gr = GlobalRouter(self, order, log=self.log)
