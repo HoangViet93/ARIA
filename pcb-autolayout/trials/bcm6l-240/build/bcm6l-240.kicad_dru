@@ -1,0 +1,44 @@
+(version 1)
+(rule "via_count_W020_C015_NOVIA"
+  (condition "A.NetName == 'OSC_IN' || A.NetName == 'OSC_OUT'")
+  (constraint via_count (max 0)))
+(rule "nc_W020_C020_clearance"
+  (condition "A.NetName == 'AIN1' || A.NetName == 'AIN2' || A.NetName == 'AIN3' || A.NetName == 'AIN4' || A.NetName == 'BOOT5' || A.NetName == 'CAN1H' || A.NetName == 'CAN1H_T' || A.NetName == 'CAN1L' || A.NetName == 'CAN1L_T' || A.NetName == 'CAN1_SPL' || A.NetName == 'CAN2H' || A.NetName == 'CAN2H_T' || A.NetName == 'CAN2L' || A.NetName == 'CAN2L_T' || A.NetName == 'CAN2_SPL' || A.NetName == 'DIN1' || A.NetName == 'DIN2' || A.NetName == 'DIN3' || A.NetName == 'DIN4' || A.NetName == 'DIN5' || A.NetName == 'DIN6' || A.NetName == 'DIN7' || A.NetName == 'DIN8' || A.NetName == 'DIN9' || A.NetName == 'DIN10' || A.NetName == 'DIN11' || A.NetName == 'DIN12' || A.NetName == 'EN5' || A.NetName == 'KL15' || A.NetName == 'LIN1' || A.NetName == 'LIN1_PU' || A.NetName == 'LIN1_WAKE' || A.NetName == 'LIN2' || A.NetName == 'LIN2_PU' || A.NetName == 'LIN2_WAKE' || A.NetName == 'OUT1_C' || A.NetName == 'OUT1_G' || A.NetName == 'OUT2_C' || A.NetName == 'OUT2_G' || A.NetName == 'OUT3_C' || A.NetName == 'OUT3_G' || A.NetName == 'OUT4_C' || A.NetName == 'OUT4_G' || A.NetName == 'OUT5_C' || A.NetName == 'OUT5_G' || A.NetName == 'OUT6_C' || A.NetName == 'OUT6_G' || A.NetName == 'OUT7_C' || A.NetName == 'OUT7_G' || A.NetName == 'OUT8_C' || A.NetName == 'OUT8_G' || A.NetName == 'Q1_G'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_W035_C020_OUT_clearance"
+  (condition "A.NetName == 'SW5'")
+  (constraint clearance (min 0.200mm)))
+(rule "outer_only_W035_C020_OUT"
+  (layer inner)
+  (condition "A.NetName == 'SW5'")
+  (constraint disallow track))
+(rule "outer_only_W040_C015_OUT"
+  (layer inner)
+  (condition "A.NetName == '+5V'")
+  (constraint disallow track))
+(rule "nc_W040_C020_clearance"
+  (condition "A.NetName == 'LS1' || A.NetName == 'LS2' || A.NetName == 'LS3' || A.NetName == 'LS4' || A.NetName == 'OUT1' || A.NetName == 'OUT2' || A.NetName == 'OUT3' || A.NetName == 'OUT4' || A.NetName == 'OUT5' || A.NetName == 'OUT6' || A.NetName == 'OUT7' || A.NetName == 'OUT8'")
+  (constraint clearance (min 0.200mm)))
+(rule "nc_W040_C020_OUT_clearance"
+  (condition "A.NetName == 'VBAT_F'")
+  (constraint clearance (min 0.200mm)))
+(rule "outer_only_W040_C020_OUT"
+  (layer inner)
+  (condition "A.NetName == 'VBAT_F'")
+  (constraint disallow track))
+(rule "nc_W280_C020_OUT_clearance"
+  (condition "A.NetName == 'VBAT_IN' || A.NetName == 'VBAT_P'")
+  (constraint clearance (min 0.200mm)))
+(rule "outer_only_W280_C020_OUT"
+  (layer inner)
+  (condition "A.NetName == 'VBAT_IN' || A.NetName == 'VBAT_P'")
+  (constraint disallow track))
+(rule "keep_SW5_FB5"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'FB5') || (A.NetName == 'FB5' && B.NetName == 'SW5')")
+  (constraint clearance (min 1.000mm)))
+(rule "keep_SW5_OSC_IN"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'OSC_IN') || (A.NetName == 'OSC_IN' && B.NetName == 'SW5')")
+  (constraint clearance (min 5.000mm)))
+(rule "keep_SW5_OSC_OUT"
+  (condition "(A.NetName == 'SW5' && B.NetName == 'OSC_OUT') || (A.NetName == 'OSC_OUT' && B.NetName == 'SW5')")
+  (constraint clearance (min 5.000mm)))

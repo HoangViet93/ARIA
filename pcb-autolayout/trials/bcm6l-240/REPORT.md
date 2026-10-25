@@ -23,3 +23,24 @@ Lỗi mạch: `CIRCUIT-ISSUES.md` (chờ chủ mạch quyết — engine không 
 | B1 | VBAT_P 5 A: class `_OUT` (lớp trong cần ~7 mm) → dây 2.8 mm dài 60–90 mm trên F/B cắt ngang vùng bus, xé pour GND lớp ngoài | **T22 power_synth**: đổ đồng/plane theo net cho net dòng lớn (vùng VBAT trên lớp trong 2 oz hoặc pour), thay vì dây |
 | B8 | Hai lớp tín hiệu kề nhau (In2/In3): cần hướng vuông góc + điện môi dày | Hướng ưu tiên theo lớp (luật grid/hướng — đã đề xuất) |
 | — | Rule chưa có: lọc ngõ vào phải sát connector (B5), nút trở kháng cao dài (B4) | Rule EMC mới có checker |
+
+## Kết quả đi dây (một lượt, `run.py --t34 0`, KiCad 9)
+
+| Chỉ số | Giá trị |
+|---|---|
+| Rule đạt | **13/16** |
+| DRC KiCad | **0 vi phạm**, 7 chưa nối |
+| Chập mạch | **0** (chốt `_no_shorts`) |
+| Đoạn / via | 2108 / 730 |
+| Thời gian | 6466 s (PathFinder 4189 s, gỡ chồng 2107 s) |
+| Hash | `8a943a470c957085` |
+
+Rule trượt:
+- **RT-OPEN (7)**: U5.15/19/21/27/8 (chân MCU — thoát chân LQFP-64), C12.1, U1.3 (VBAT_F vào buck).
+- **PWR-001 (1)**: VBAT_P thắt 0.50 mm dài 1.3 mm (vượt vùng thắt cổ) ở (38.6, 57.7) — sát pad SOT-23 của kênh ra.
+- **PWR-005 (9)**: cụm via VBAT_P (5 A cần 6 via mỗi chỗ đổi lớp) chỉ có 2–5.
+
+Nhận xét thẳng:
+- Lớp trong In2/In3 gần như trống — router ngại via (chi phí via cao), chưa có hướng ưu tiên theo lớp.
+- Dây chéo dài MCU ↔ ngõ vào/ra; VBAT_P 2.8 mm phải đi lớp ngoài cắt ngang board (B1 — cần đổ đồng nguồn T22).
+- Thời gian ~1.8 giờ cho một lượt: router chưa đủ nhanh cho board cỡ này (global routing đang thử, chưa ổn định).
