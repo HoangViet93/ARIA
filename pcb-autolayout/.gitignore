@@ -9,3 +9,4 @@ trials/.skilltest-*/
 trials/.bench-v/
 trials/*/build/run.log
 trials/.exp-*/
+reference/

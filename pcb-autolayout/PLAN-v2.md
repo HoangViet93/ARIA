@@ -1,3 +1,5 @@
+> **Đã thay bằng [PLAN-v3.md](PLAN-v3.md) (2026-10-25).**
+
 # Kế hoạch v2 — engine + bộ skill layout PCB tới zonal ECU/BCM 6 lớp
 
 > **Thay thế** lộ trình ở `PLAN.md` §8 và `TARGET-BCM.md` §9. Vẫn dùng: `PLAN.md` §4
