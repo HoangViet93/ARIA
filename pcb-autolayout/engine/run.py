@@ -66,6 +66,8 @@ def main():
     ap.add_argument("trial")
     ap.add_argument("--iters", type=int, default=30)
     ap.add_argument("--until", choices=["constraints", "place", "route", "all"], default="all")
+    ap.add_argument("--t34", type=int, default=T34_ROUNDS,
+                    help="số vòng route → placement tối đa (0 = chỉ một lượt đi dây; board lớn mỗi lượt hàng giờ)")
     ap.add_argument("--reuse-routes", action="store_true",
                     help="dùng lại build/routes.json nếu khoá đầu vào khớp (sửa pha KiCad/check không phải đi dây lại)")
     a = ap.parse_args()
@@ -111,7 +113,7 @@ def main():
     # --reuse-routes vào thẳng vòng cuối.
     escape = dict(old.get("escape", {}))
     best = None
-    for rnd in range(T34_ROUNDS + 1):
+    for rnd in range(a.t34 + 1):
         t = time.time()
         pl = Placer(design, fp, templates, near_rules=near_rules, escape=escape)
         pos = pl.run()
@@ -150,7 +152,14 @@ def main():
         cand = ((n_open, overuse), dict(escape), pos, pl, key, tracks, vias, fails, overuse)
         if best is None or cand[0] < best[0]:
             best = cand
-        if n_open == 0 or rnd == T34_ROUNDS:
+            # lưu kết quả tốt nhất NGAY: board lớn mỗi vòng hàng giờ — dừng giữa chừng không được mất
+            # trắng (BCM-6L từng chạy 5 giờ chưa ghi gì). Dựng lại board: run.py --reuse-routes
+            json.dump({k: list(v) for k, v in sorted(pos.items())}, open(os.path.join(bdir, "placement.json"), "w"),
+                      indent=1)
+            json.dump({"key": key, "escape": dict(escape), "tracks": tracks, "vias": vias, "fails": fails,
+                       "overuse": overuse}, open(rpath, "w"))
+            print("[T34] đã lưu kết quả tốt nhất (vòng %d: %d chân hở) → routes.json" % (rnd, n_open), flush=True)
+        if n_open == 0 or rnd == a.t34:
             break
         hit = set()
         for pins in fails.values():
