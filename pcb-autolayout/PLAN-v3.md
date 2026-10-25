@@ -61,3 +61,56 @@ Tốc độ (global routing) làm xen vào khi nó chặn H1/H4 — mỗi lần 
 - Chọn A (trợ lý, đề xuất) hay B (tự động hoàn toàn).
 - Board BCM/ECU thật của công ty (nếu có) để bổ sung bộ H — hai board trên là ECU động cơ, không phải BCM.
 - Quyết định về lỗi mạch BCM (`trials/bcm6l-240/CIRCUIT-ISSUES.md`).
+
+## 7. Đi dây theo trang schematic + kế hoạch lớp + đổ đồng (yêu cầu người dùng, 2026-10-25)
+
+Thay thứ tự đi dây hiện tại (mọi net một hàng, xếp theo dòng điện rồi HPWL) bằng cách làm của người vẽ:
+từng trang (khối) một, rồi mới nối giữa các trang. Số liệu bcm6l-240 (khối = trang schematic, `intake.py`):
+
+- 49 net **nội trang** (out 24, mcu 6, can 6, buck 4, lin 4, ls 4, pwr_in 1)
+- 85 net **liên trang**: nguồn (GND, +3V3, +5V, VBAT_P), connector → kênh (OUT1–8, LS1–4, DIN1–12, AIN),
+  MCU → kênh (tín hiệu điều khiển / đọc)
+
+### 7.1 Kế hoạch lớp (`build/netplan.json` + `.md`, sinh tự động, người duyệt)
+
+| Lớp | Đề xuất mặc định | Hiện tại |
+|---|---|---|
+| F.Cu | linh kiện; dây **nội trang**; ngõ ra dòng lớn (`_OUT`); GND đổ phần trống | đi dây chung |
+| In1.Cu | GND liền | GND |
+| In2.Cu | tín hiệu liên trang, hướng **ngang** | đi dây chung |
+| In3.Cu | **lớp nguồn chia vùng**: VBAT_P, +5V, +3V3 mỗi net một mảng đồng theo vùng các trang nó cấp | đi dây chung |
+| In4.Cu | GND liền | GND |
+| B.Cu | tín hiệu liên trang, hướng **dọc**; GND đổ phần trống | đi dây chung |
+
+Mỗi lớp tín hiệu vẫn kề một lớp GND (F–In1, In2–In1, B–In4). Net nối vào mảng đồng bằng via
+ngay cạnh chân, không kéo dây 2.8 mm như bây giờ.
+
+### 7.2 Đổ đồng
+
+- Vùng của một net nguồn = hợp các hình chữ nhật của những trang dùng net đó, cộng một hành lang
+  từ trang nguồn (pwr_in/buck/ldo) sang. Ví dụ VBAT_P: pwr_in + out + din + lin.
+- Kiểm: chỗ hẹp nhất của mảng ≥ bề rộng IPC theo dòng (5 A trên VBAT_P); mảng không bị via/dây
+  khác cắt rời; không có cặp CAN/LIN nào đi trên In2 mà vắt qua khe giữa hai mảng ở In3.
+- Engine coi mảng đồng là đích: chân nguồn = via xuống mảng, không còn bị tính là "chân hở".
+
+### 7.3 Thứ tự đi dây
+
+1. **Nội trang**, từng trang một: chỉ cho dây đi trong hình chữ nhật của trang (+1 mm), dùng lớp F
+   (B nếu kẹt). Trang có nhiều kênh giống nhau: đi dây một kênh rồi chép sang các kênh còn lại.
+2. **Nguồn**: via xuống mảng đồng (7.2).
+3. **Liên trang**: gom thành bó theo cặp (trang A → trang B), ví dụ 8 net OUTx từ out → J2. Mỗi bó
+   một lớp theo hướng của nó (7.1), dây trong bó đi song song.
+4. Phần còn kẹt: thả lỏng các ràng buộc (cho phép mọi lớp đi dây), dùng PathFinder như bây giờ.
+
+### 7.4 Các bước, mỗi bước đo trên bcm6l-240 (chạy ≤ 15 phút)
+
+| Bước | Việc | Đo |
+|---|---|---|
+| N1 | Phân loại net + sinh `netplan` + vẽ ảnh vùng đổ đồng | Bảng net/lớp/vùng hiện đúng; chưa đổi dây |
+| N2 | Mảng đồng nguồn trên In3 + via xuống mảng | PWR-001/005 đạt; độ dài dây nguồn giảm |
+| N3 | Đi dây nội trang trong vùng trang + chép kênh | Thời gian đi dây giảm; 0 dây nội trang thoát ra ngoài vùng |
+| N4 | Bó liên trang theo lớp/hướng | Chân hở 0; tỉ lệ dây đi thành bó (H0) tăng |
+
+Rủi ro: dùng In3 làm lớp nguồn thì chỉ còn 3 lớp đi dây thay vì 4. Bù lại, dây nguồn to không
+còn chiếm chỗ trên các lớp tín hiệu. N2 sẽ đo xem bù có đủ không. Nếu không đủ, lùi về phương án:
+mảng nguồn đặt trên F/B ở vùng trang nguồn, In3 vẫn đi dây.
