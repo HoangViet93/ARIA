@@ -21,6 +21,9 @@ STALL_ITERS = 10   # PathFinder dừng sau ngần này vòng liền không lập
                    # synth-lo 1 chân hở / 1300 s → 0 chân hở / 194 s (đo 3 biến thể)
 SOFT_RETRY_PRES = 0.5  # chế độ mềm thất bại → thử lại với phạt chồng này, không lịch sử
 CASCADE_STALL = 4      # rip-up dây chuyền dừng sau ngần này bước liền không bớt chân hở
+BIG = 1 << 30          # gsz khi tắt hành lang (mọi ô // BIG = 0)
+GLOBAL_ROUTE = True    # global routing cấp hành lang cho PathFinder (chế độ mềm)
+CORR_DROP = 3          # net còn chồng ngần này vòng liền → bỏ hành lang của nó
 HC_VIA_PITCH = 0.7  # mm, khoảng tâm–tâm via song song của net dòng lớn (≥ drill + lỗ–lỗ)
 VIA_PAD_GAP = 0.25  # mm, mép via ↔ mép pad (mask web, chống hút thiếc — DFM-005)
 
@@ -81,6 +84,11 @@ class Router:
         self.viablock = np.zeros((self.H, self.W), np.int16)
         self.net_vias = {}
         self.cur = 0
+        self.res = RES
+        self.corr = {}            # net → mặt nạ hành lang (global_route); rỗng = tắt
+        self.corr_off = set()     # net bỏ hành lang (chồng nhiều vòng liền)
+        self._no_corr = np.ones((1, 1), np.uint8)
+        self.gr_gs = BIG
         self._zero_hist = None
         self.hweight = float(os.environ.get("PCB_HWEIGHT", HWEIGHT))   # biến môi trường: chỉ để đo
         self.pres_mul = float(os.environ.get("PCB_PRES_MUL", PRES_MUL))
@@ -217,7 +225,12 @@ class Router:
             tb = np.array([ys.min(), xs.min(), ys.max(), xs.max()], np.int64)
         else:
             tb = np.array([tgt_a[:, 1].min(), tgt_a[:, 2].min(), tgt_a[:, 1].max(), tgt_a[:, 2].max()], np.int64)
-        for m in margin_list:
+        net = self.net_names[nid]
+        tries = [(m, self._no_corr, BIG) for m in margin_list]
+        cm = self.corr.get(net) if (self.corr and not self.hard and net not in self.corr_off) else None
+        if cm is not None:
+            tries = [(200, cm, self.gr_gs)] + tries     # hành lang trước; thất bại thì như cũ
+        for m, corr_m, corr_g in tries:
             mc = int(m / RES)
             bbox = np.array([max(0, ys.min() - mc), max(0, xs.min() - mc),
                              min(self.H - 1, ys.max() + mc), min(self.W - 1, xs.max() + mc)], np.int64)
@@ -226,7 +239,7 @@ class Router:
                             offs_stk, stk_n, offs_via, offs_viapad,
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
-                            self.via_cost, self.pres_fac, allow_via, self._lay_ok(nid),
+                            self.via_cost, self.pres_fac, allow_via, self._lay_ok(nid), corr_m, corr_g,
                             self.hf, self.hc, self.hs, tb, self.hweight, self.max_pops,
                             self.hard, self.bend1, self.bend2)
             if len(path):
@@ -243,7 +256,7 @@ class Router:
                             offs_stk, stk_n, offs_via, offs_viapad,
                             src_a, tgt_a, tgt_layer, bbox,
                             self.g, self.par, self.stamp, self.cur, self.memo, self.memo_stamp,
-                            self.via_cost, SOFT_RETRY_PRES, allow_via, self._lay_ok(nid),
+                            self.via_cost, SOFT_RETRY_PRES, allow_via, self._lay_ok(nid), self._no_corr, BIG,
                             self.hf, self.hc, self.hs, tb, self.hweight, self.max_pops,
                             self.hard, self.bend1, self.bend2)
             if len(path):
@@ -472,6 +485,14 @@ class Router:
         self.pres_fac = 0.5
         flat_occ = self.occ.reshape(-1)
         flat_hist = self.hist.reshape(-1)
+        if GLOBAL_ROUTE and os.environ.get("PCB_GLOBAL", "1") == "1":
+            from .global_route import GlobalRouter
+            t_g = time.time()
+            gr = GlobalRouter(self, order, log=self.log)
+            self.corr = gr.run()
+            self.gr_gs = gr.gs
+            self.log("global routing: %d hành lang, %.1fs" % (len(self.corr), time.time() - t_g))
+        streak = {}
         dirty = set(order)
         hist_log = []
         t_pf = time.time()
@@ -511,6 +532,11 @@ class Router:
             for net in order:
                 if over[self.fp_cells[net]].any() or self.result[net][1]:
                     dirty.add(net)
+                    streak[net] = streak.get(net, 0) + 1
+                    if streak[net] >= CORR_DROP and net in self.corr and net not in self.corr_off:
+                        self.corr_off.add(net)   # hành lang quá chật cho net này: thương lượng tự do
+                else:
+                    streak[net] = 0
         t1 = time.time()
         self.resolve_overuse(order)
         t2 = time.time()

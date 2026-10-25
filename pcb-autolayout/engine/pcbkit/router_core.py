@@ -98,9 +98,10 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
           offs_stk, stk_n, offs_via, offs_viapad,
           src, tgt, tgt_layer, bbox,
           g, par, stamp, cur, memo, memo_stamp,
-          via_cost, pres_fac, allow_via, lay_ok,
+          via_cost, pres_fac, allow_via, lay_ok, corr, gsz,
           hf, hc, hs, tb, hweight, max_pops, hard, bend1, bend2):
-    """lay_ok[l] = 0: net không được đi trên lớp l (net dòng lớn chỉ đi lớp ngoài) — không xuất
+    """corr[y // gsz, x // gsz] = 0: ô ngoài hành lang global routing — không mở rộng vào (tắt
+    hành lang: corr = [[1]], gsz rất lớn). lay_ok[l] = 0: net không được đi trên lớp l (net dòng lớn chỉ đi lớp ngoài) — không xuất
     phát, không qua via sang lớp đó. src/tgt: mảng (k, 3) [l, y, x]. tgt_layer ≥ 0: đích = bất kỳ ô nào trên
     lớp đó (dùng để thả via xuống plane). tb = hộp bao của đích (y0,x0,y1,x1)
     cho heuristic. Trả về mảng trạng thái của đường đi (rỗng nếu thất bại)."""
@@ -186,6 +187,8 @@ def astar(fixed, occ, hist, padmask, neck, net, viablock, closed,
             nx = x + DX[nd]
             ny = y + DY[nd]
             if nx < x0 or nx > x1 or ny < y0 or ny > y1:
+                continue
+            if corr[ny // gsz, nx // gsz] == 0:
                 continue
             nc = (l * H + ny) * W + nx
             # memo giá trị probe cho ô đích (bán kính tuỳ vùng cổ chai)
