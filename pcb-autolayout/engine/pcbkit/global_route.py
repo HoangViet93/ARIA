@@ -15,6 +15,8 @@ from numba import njit
 
 GCELL = 1.0        # mm / ô thô
 DILATE = 2         # hành lang = đường thô giãn ngần này ô thô (mỗi phía)
+MIN_HPWL = 15.0    # mm: chỉ net dài mới có hành lang — net ngắn A* vốn nhanh, bó hành lang trong
+                   # vùng chật (cụm buck T16) làm hở chân (bcm4l: VBAT_F → U1.3)
 G_ITERS = 6        # số vòng PathFinder thô
 VIA_G = 2.0        # chi phí via (đơn vị ô thô)
 
@@ -246,6 +248,10 @@ class GlobalRouter:
         out = {}
         H, W = self.Hg, self.Wg
         for n in self.order:
+            ps = [p for p in self.r.pads if p["net"] == n]
+            if not ps or (max(p["x"] for p in ps) - min(p["x"] for p in ps)
+                          + max(p["y"] for p in ps) - min(p["y"] for p in ps)) < MIN_HPWL:
+                continue
             m = np.zeros((H, W), np.uint8)
             for path in self.paths.get(n, []):
                 for s in path:
