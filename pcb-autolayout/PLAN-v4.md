@@ -1,5 +1,7 @@
 # PLAN v4 — cải tổ sau review độc lập (2026-11-13)
 
+> **Lộ trình F0 (Freerouting) bị loại theo quyết định chủ dự án; yêu cầu/kiến trúc mới: SPEC-v4.md.**
+
 Thay PLAN-v3. Nguồn: hai review độc lập (chuyên gia layout PCB ô tô; kiến trúc sư phần mềm CAD),
 mỗi bên chỉ được giao code + dữ liệu, không được giao kết luận của tác giả.
 
