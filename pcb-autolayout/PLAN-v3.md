@@ -1,5 +1,7 @@
 # PLAN v3 — lấy board người vẽ làm chuẩn
 
+> **Đã bị thay bởi PLAN-v4.md (2026-11-13).**
+
 Thay PLAN-v2 (2026-10-25). Lý do: BCM-6L do engine vẽ đạt 13/16 rule, DRC 0, nhưng **không dùng
 được** (người dùng đánh giá, review độc lập xác nhận). Đo trên board ECU mã nguồn mở do người vẽ cho
 thấy khoảng cách nằm ở *cách làm*, không phải ở số lớp hay tham số.
